@@ -1,7 +1,7 @@
 # Engineering standards: adopt `engineering-standards.md` in EasyRMS
 
 - **Date:** 2026-10-13
-- **Status:** Implemented on branch `feat/engineering-standards`, except the green `npm run audit` gate (see Implementation notes). Stays in `specs/` until that is resolved.
+- **Status:** Implemented on branch `feat/engineering-standards` (browser check of the two client islands still pending, see Implementation notes).
 - **Source:** `/engineering-standards.md` (repo root)
 
 ## Goal
@@ -102,7 +102,7 @@ No imports from `core`/`app`/`db`; the envelope type is declared locally in `ui`
   (`core` ⇢ no `next`/`react`/`@easyrms/db|ui|app`; `ui` ⇢ no `@easyrms/*` internals; only `db` imports
   `@mikro-orm/*`; no raw `fetch(` to `/api` outside `api-call.ts` via `no-restricted-syntax`).
   Lint currently runs only for `@easyrms/app`; add configs for the other packages and a root `lint` that covers all.
-- Add `npm audit --audit-level=high` as a root `audit` script and to the validation gate; a finding at or above the
+- Add a root `audit` script (`npm audit` at `--audit-level=high` semantics via `scripts/audit.mjs`, with an expiring allowlist) and to the validation gate; a finding at or above the
   threshold fails the build (decided by user).
 
 ### 8. Standards that are documented only (no code now)
@@ -152,10 +152,11 @@ Each phase leaves the app building and `/`, `/admin/returns`, `/api/returns`, `/
 
 Deviations and findings:
 
-- **`npm run audit` fails on the baseline, not because of this change:** `next` 16.0.0–16.3.7 (1 critical, several
-  advisories; fixed in 16.4.0, outside the pinned `16.3.4`) and `braces` (high, via `awilix → fast-glob` and
-  `eslint-config-next`; no non-breaking fix). The script and gate exist and correctly fail; going green needs a decision on
-  bumping Next/`eslint-config-next` and on the `braces` chain.
+- **Audit gate:** the baseline was red (`next` critical advisories, `braces` high). Next and `eslint-config-next` were
+  bumped to 16.4.0 (clears all Next advisories). `braces` has **no patched version** (`<= 3.0.3` is latest) and is reached only via
+  `fast-glob` from `awilix` (we never call `loadModules`) and `@next/eslint-plugin-next` (dev-time lint). `npm run audit` is
+  therefore `scripts/audit.mjs`: it runs `npm audit --json`, fails on any high+ advisory not in `audit-allowlist.json`, and
+  each allowlist entry needs a reason and an expiry (the braces entry expires 2027-01-13; an expired entry fails the gate).
 - **Public form** keeps the Tailwind `ReturnRequestForm` and submits via `apiCall` (client island
   `app/_components/submit-return-form.tsx`), not the shadcn `CrudForm`, because public pages use plain Tailwind (AGENTS.md).
   `CrudForm` is built and exported but has no consumer yet.

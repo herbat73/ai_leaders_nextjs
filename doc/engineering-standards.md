@@ -81,7 +81,7 @@ Apply as the relevant feature appears.
 
 - **Now:** no raw SQL concatenation (MikroORM APIs only); never spread a raw request body into
   `em.create()`/`em.assign()` — go through the parsed Zod output; no secrets, tokens or passwords in logs,
-  responses or commits; secrets only via env (documented in README); `npm audit` (high+) must pass.
+  responses or commits; secrets only via env (documented in README); `npm run audit` (high+, expiring allowlist in `audit-allowlist.json`) must pass.
 - **(when auth exists)** bcrypt/bcryptjs cost ≥ 12 (upgrade path argon2id); JWT HS256+ with ≥ 32-byte env secret
   and short expiry; `httpOnly`, `secure` in production, `sameSite=lax|strict` cookies, never `localStorage`;
   CSRF custom-header check on state-changing routes; rate limiting on login/register/reset; generic auth error
