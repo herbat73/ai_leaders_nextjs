@@ -101,7 +101,7 @@ The monorepo structure is in place (npm workspaces, `packages/{app,core,db,ui}`,
 
 Practical notes:
 
-- Run commands from the repo root: `npm run dev | build | lint | typecheck`. Root scripts delegate to `@easyrms/app`.
+- Run commands from the repo root: `npm run dev | build | lint | typecheck | audit`. `lint` (root `eslint.config.mjs`) covers all packages and enforces the dependency direction; `audit` is `npm audit --audit-level=high` and is part of the validation gate.
 - Internal packages ship TypeScript source (no build step); `packages/app/next.config.ts` lists them in `transpilePackages`. Add any new internal package there.
 - Add a dependency to the workspace that uses it (`npm install <pkg> -w @easyrms/<name>`), not the root.
 - If the shell sets `NODE_ENV=development`, `next build` fails prerendering `/_global-error`; run it as `NODE_ENV=production npm run build`.

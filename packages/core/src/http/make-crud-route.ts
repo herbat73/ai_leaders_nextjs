@@ -1,7 +1,8 @@
 import { z, type ZodType } from "zod";
 
 import { apiHandler } from "./api-handler";
-import { parseJsonBody, parseWith } from "./parse";
+import { ValidationError } from "../errors";
+import { parseJsonBody, validateWith } from "./parse";
 import type { ApiLogger, RouteContext } from "./types";
 
 type Handler = (request: Request, context: RouteContext) => Promise<Response>;
@@ -30,17 +31,17 @@ export interface CrudRouteConfig<
   remove?: { handler: (service: TService, id: TId) => Promise<unknown> };
 }
 
-const VERB_BY_OPERATION = {
-  list: "GET",
-  create: "POST",
-  update: "PUT",
-  patch: "PATCH",
-  remove: "DELETE",
-} as const;
+type VerbByOperation = {
+  list: "GET";
+  create: "POST";
+  update: "PUT";
+  patch: "PATCH";
+  remove: "DELETE";
+};
 
 /** The verbs for exactly the operations present in the config (`K` is the config's key set). */
 export type CrudHandlers<K extends string> = {
-  [P in Extract<K, keyof typeof VERB_BY_OPERATION> as (typeof VERB_BY_OPERATION)[P]]: Handler;
+  [P in Extract<K, keyof VerbByOperation> as VerbByOperation[P]]: Handler;
 };
 
 const defaultIdSchema = z.coerce.number().int().positive();
@@ -62,8 +63,11 @@ export function makeCrudRoute<
 ): CrudHandlers<K> {
   const options = { logger: config.logger };
   const idSchema = (config.idSchema ?? defaultIdSchema) as ZodType<TId>;
-  const readId = async (context: RouteContext): Promise<TId> =>
-    parseWith(idSchema, (await context.params).id, "Invalid id");
+  const readId = async (context: RouteContext): Promise<TId> => {
+    const result = validateWith(idSchema, (await context.params).id);
+    if (result.success) return result.data;
+    throw new ValidationError("Invalid id", { id: "Must be a positive integer" });
+  };
 
   const handlers: Partial<Record<"GET" | "POST" | "PUT" | "PATCH" | "DELETE", Handler>> = {};
   const { list, create, update, patch, remove } = config;

@@ -1,7 +1,7 @@
 # Engineering standards: adopt `engineering-standards.md` in EasyRMS
 
 - **Date:** 2026-10-13
-- **Status:** Draft — all open questions resolved; awaiting approval to implement
+- **Status:** Implemented on branch `feat/engineering-standards`, except the green `npm run audit` gate (see Implementation notes). Stays in `specs/` until that is resolved.
 - **Source:** `/engineering-standards.md` (repo root)
 
 ## Goal
@@ -147,3 +147,23 @@ Each phase leaves the app building and `/`, `/admin/returns`, `/api/returns`, `/
    run in the validation gate; threshold `high` is my default, say if you want `moderate` or any.
 6. ~~**Response envelope change**~~ — **Resolved (user):** no consumers outside the app today, so the `{ ok, data }` envelope
    ships without a compatibility shim. Revisit if an external consumer appears.
+
+## Implementation notes (2026-10-13)
+
+Deviations and findings:
+
+- **`npm run audit` fails on the baseline, not because of this change:** `next` 16.0.0–16.3.7 (1 critical, several
+  advisories; fixed in 16.4.0, outside the pinned `16.3.4`) and `braces` (high, via `awilix → fast-glob` and
+  `eslint-config-next`; no non-breaking fix). The script and gate exist and correctly fail; going green needs a decision on
+  bumping Next/`eslint-config-next` and on the `braces` chain.
+- **Public form** keeps the Tailwind `ReturnRequestForm` and submits via `apiCall` (client island
+  `app/_components/submit-return-form.tsx`), not the shadcn `CrudForm`, because public pages use plain Tailwind (AGENTS.md).
+  `CrudForm` is built and exported but has no consumer yet.
+- **ESLint** config moved to the repo root (`eslint.config.mjs`) so it covers all packages; root `lint` is `eslint .`,
+  `@easyrms/app` no longer has its own `lint` script.
+- `makeCrudRoute` infers present operations from the config keys, so `export const { PATCH } = makeCrudRoute(...)` is
+  type-checked and a missing verb is a compile error.
+- Added `validateWith` (core) returning field errors without throwing, for client-side `CrudForm.validate`.
+- Verified: typecheck, lint (boundary rules fire on deliberate violations), production build, and every `/api/returns*`
+  and `/api/health` case via curl against a real DB. **Not verified in a browser:** the two client islands
+  (`SubmitReturnForm`, `ReturnStatusActions`).
