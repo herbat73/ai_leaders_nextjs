@@ -1,0 +1,26 @@
+{
+  "name": "@easyrms/db",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "db:migration:create": "tsx ../../node_modules/@mikro-orm/cli/cli.js migration:create",
+    "db:migrate": "tsx ../../node_modules/@mikro-orm/cli/cli.js migration:up",
+    "db:migration:pending": "tsx ../../node_modules/@mikro-orm/cli/cli.js migration:pending",
+    "db:migration:down": "tsx ../../node_modules/@mikro-orm/cli/cli.js migration:down"
+  },
+  "dependencies": {
+    "@easyrms/core": "*",
+    "@mikro-orm/cli": "^7.2.5",
+    "@mikro-orm/core": "^7.2.5",
+    "@mikro-orm/migrations": "^7.2.5",
+    "@mikro-orm/postgresql": "^7.2.5",
+    "awilix": "^13.0.5"
+  },
+  "devDependencies": {
+    "tsx": "^4.23.15",
+    "typescript": "^5"
+  }
+}

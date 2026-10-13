@@ -14,7 +14,7 @@ export default function Home() {
           <span className="status-dot" aria-hidden="true" />
           Running
         </p>
-        <h1>Your Next.js app is ready.</h1>
+        <h1>EasyRMS app is ready.</h1>
         <p className="lede">
           Describe what you want in the AI Coding Agent tab, and this page turns into it.
         </p>

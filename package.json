@@ -1,24 +1,15 @@
 {
-  "name": "workspace-app",
+  "name": "easyrms",
   "version": "0.1.0",
   "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
-  },
-  "dependencies": {
-    "next": "16.3.4",
-    "react": "19.2.8",
-    "react-dom": "19.2.8"
-  },
-  "devDependencies": {
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.3.4",
-    "typescript": "^5"
+    "dev": "npm run dev -w @easyrms/app --",
+    "build": "npm run build -w @easyrms/app",
+    "start": "npm run start -w @easyrms/app --",
+    "lint": "npm run lint -w @easyrms/app",
+    "typecheck": "npm run typecheck --workspaces --if-present"
   }
 }

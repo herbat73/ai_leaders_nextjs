@@ -25,7 +25,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 Notes:
 
-- The DI container is **Awilix** (the request spelled it "Awillix"). Use the `awilix` npm package.
+- The DI container is **Awilix**. Use the `awilix` npm package.
 - Next.js here has breaking changes versus common knowledge — see the Next.js block at the top of this file and read `node_modules/next/dist/docs/` before writing Next.js code.
 - "Frontend pages" means customer-facing pages (e.g. starting and tracking a return); "backend pages" means the admin/back-office UI (e.g. processing returns). Frontend pages use plain Tailwind; backend pages use shadcn/ui components.
 
@@ -67,7 +67,14 @@ core →  (nothing internal)
 
 ## Current state
 
-The repo currently still contains the bootstrapped single-package Next.js app at the root. Migrating it to the `packages/` layout above (npm workspaces) is pending; when you touch this, follow the target layout rather than adding more code to the root `src/`.
+The monorepo structure is in place (npm workspaces, `packages/{app,core,db,ui}`, shared `tsconfig.base.json`). The Next.js app lives in `packages/app`; `core`, `db` and `ui` are empty skeletons. MikroORM, Awilix, Tailwind and shadcn/ui are not installed yet (see `.ai/specs/2026-10-13-monorepo-migration.md`, Phasing).
+
+Practical notes:
+
+- Run commands from the repo root: `npm run dev | build | lint | typecheck`. Root scripts delegate to `@easyrms/app`.
+- Internal packages ship TypeScript source (no build step); `packages/app/next.config.ts` lists them in `transpilePackages`. Add any new internal package there.
+- Add a dependency to the workspace that uses it (`npm install <pkg> -w @easyrms/<name>`), not the root.
+- If the shell sets `NODE_ENV=development`, `next build` fails prerendering `/_global-error`; run it as `NODE_ENV=production npm run build`.
 
 # Project memory and spec-driven development (SDD)
 

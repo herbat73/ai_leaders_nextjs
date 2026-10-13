@@ -50,12 +50,15 @@ PostgreSQL is accessed through MikroORM with a single shared connection pool. Sc
 
 ```bash
 npm install
-npm run dev
+npm run dev        # starts @easyrms/app
+npm run lint
+npm run typecheck  # all workspaces
+NODE_ENV=production npm run build
 ```
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-> **Status:** the repo currently holds the bootstrapped single-package Next.js app at the root. Moving it into the `packages/` layout described above is pending.
+> **Status:** the monorepo structure is in place. `core`, `db` and `ui` are empty skeletons; MikroORM, Awilix, Tailwind and shadcn/ui are not installed yet. See `.ai/specs/`.
 
 ## For AI coding agents
 

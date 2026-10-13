@@ -23,4 +23,6 @@ What happened / what was learned. Why it matters. Link to `.ai/lessons/...` for 
 
 ---
 
-(no entries yet)
+## 2026-10-13 — `next build` fails with `NODE_ENV=development`; rm of node_modules breaks the live dev server
+
+The sandbox shell sets `NODE_ENV=development`, which makes `next build` crash with `Cannot read properties of null (reading 'useContext')` on `/_global-error`. Build with `NODE_ENV=production`. Also, the preview dev server auto-restarts while `node_modules` is deleted for a reinstall and ends up wedged (500s); kill it and start `npm run dev` again afterwards. `mv`/`git mv` across top-level dirs fails here with "Invalid cross-device link" — use `cp -a` then `rm -rf`.
