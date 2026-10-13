@@ -1,7 +1,7 @@
 import { asClass, asFunction, asValue, type AwilixContainer } from "awilix";
 import type { EntityManager, MikroORM } from "@mikro-orm/postgresql";
 
-import { MikroOrmReturnRepository } from "./repositories/return-repository";
+import { MikroOrmReturnRepository } from "./repositories/returns/return.repository";
 
 /**
  * Registers persistence. `orm` is a singleton (one pool); `em` is a fork per scope,
