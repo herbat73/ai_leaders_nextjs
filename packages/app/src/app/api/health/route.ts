@@ -1,11 +1,12 @@
+import { apiHandler, ServiceUnavailableError } from "@easyrms/core";
 import { getOrm } from "@easyrms/db";
 
-export async function GET(): Promise<Response> {
+export const GET = apiHandler(async () => {
   try {
     const orm = await getOrm();
     await orm.em.fork().getConnection().execute("select 1");
-    return Response.json({ status: "ok" });
   } catch {
-    return Response.json({ status: "error" }, { status: 503 });
+    throw new ServiceUnavailableError("Database unreachable");
   }
-}
+  return { status: "ok" };
+});

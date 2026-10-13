@@ -30,3 +30,8 @@ export async function createRequestScope(): Promise<AwilixContainer<Cradle>> {
   const root = await getRootContainer();
   return root.createScope() as AwilixContainer<Cradle>;
 }
+
+/** Resolver handed to `makeCrudRoute`: one request scope per call, returns the requested service. */
+export function resolveReturnService(): Promise<ReturnService> {
+  return createRequestScope().then((scope) => scope.cradle.returnService);
+}
