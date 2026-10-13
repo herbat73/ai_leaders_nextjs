@@ -7,7 +7,7 @@ import {
   type ReturnStatus,
 } from "@easyrms/core";
 
-import { ReturnRequestSchema, type ReturnRequestEntity } from "../entities";
+import { ReturnRequestSchema, type ReturnRequestEntity } from "../../entities";
 
 function toDomain(entity: ReturnRequestEntity): ReturnRequest {
   return {

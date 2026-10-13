@@ -23,6 +23,10 @@ What happened / what was learned. Why it matters. Link to `.ai/lessons/...` for 
 
 ---
 
+## 2026-10-13 — `makeCrudRoute` typing: infer present verbs from config keys, not per-operation generics
+
+Per-operation generics (`TList extends (service: TService) => …`) fail with context-sensitive lambdas (`service => service.list()`): TS falls back to the default and the param becomes `any`. Keep `list`/`remove` plain-typed and infer the key set with `config: Config & { [P in K]: unknown }`. Also: `pkill -f "<pattern>"` inside a Bash command kills the shell running it (the pattern is in its own command line) — kill by PID instead. The `npm audit` baseline was already red (Next < 16.4.0, `braces`) before the gate was added; `braces` has no patched release, so the gate uses `scripts/audit.mjs` with an expiring `audit-allowlist.json` instead of bare `npm audit`.
+
 ## 2026-10-13 — Don't mark a spec "Implemented" until its app-side pieces exist
 
 Three phase specs claimed "Implemented" while `packages/app` had no container, routes, Tailwind or pages and `ui` was empty. Verify each spec's Design bullets against the tree (and run the flow against a real DB) before changing status or moving it to `implemented/`.

@@ -1,6 +1,9 @@
 // Reusable, framework-agnostic business logic for EasyRMS.
 // Must not import React, Next.js, or the database.
 export * from "./errors";
+export * from "./http";
 export * from "./register";
-export * from "./returns/return-service";
-export * from "./returns/types";
+export * from "./services/returns/return.service";
+export * from "./services/returns/types";
+export * from "./validators/returns/return-request-create.schema";
+export * from "./validators/returns/return-status-update.schema";

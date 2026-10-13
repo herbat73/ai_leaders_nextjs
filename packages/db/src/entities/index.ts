@@ -1,5 +1,5 @@
-import { ReturnRequestSchema } from "./return-request";
+import { ReturnRequestSchema } from "./returns/return-request.entity";
 
-export * from "./return-request";
+export * from "./returns/return-request.entity";
 
 export const entities = [ReturnRequestSchema];

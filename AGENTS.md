@@ -20,6 +20,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 | Database | PostgreSQL |
 | ORM / data layer | MikroORM — migrations, connection pooling, entity-manager-per-request |
 | Dependency injection | [Awilix](https://github.com/jeffijoe/awilix) container |
+| Validation | [Zod](https://zod.dev) schemas in `core`, shared by API routes and forms |
 | Public/customer-facing pages (frontend) | Tailwind CSS |
 | Admin/back-office pages (backend) | shadcn/ui (built on Tailwind) |
 
@@ -56,6 +57,35 @@ core →  (nothing internal)
 - `app` is the only place that wires everything together (the Awilix composition root) and the only package that contains Next.js routes.
 - Packages are referenced by workspace name (e.g. `@easyrms/core`), never by relative paths across package boundaries.
 
+### Domain concept convention
+
+Domain code is not organized into `modules/`. Each concept (today: `returns`) is a same-named sub-folder repeated
+across the layers that need it:
+
+- `packages/db/src/entities/<concept>/<name>.entity.ts` and `packages/db/src/repositories/<concept>/<name>.repository.ts`
+- `packages/core/src/services/<concept>/<name>.service.ts` and `packages/core/src/validators/<concept>/` (shared Zod schemas)
+- `packages/app/src/app/api/<concept>/route.ts` and the matching pages
+
+Create a concept folder only when its first file is added; never scaffold empty ones. There is no per-concept
+setup/ACL/auto-discovery. Register every service explicitly in Awilix (no `loadModules`). See
+`doc/engineering-standards.md` for the naming table, security minimums and the "adding a concept" checklist;
+review against `doc/code-review-checklist.md`.
+
+### Reusable API & UI layer
+
+Every route and page reuses two shared layers instead of re-implementing fetch/validation/error handling:
+
+- `packages/core/src/http/` — `apiHandler` (maps `AppError`s to status + `{ ok, data } | { ok: false, error }`
+  envelope, logs unexpected failures) and `makeCrudRoute` (schemas + service in, configured handlers out). Routes
+  contain no `try/catch`.
+- `packages/ui/src/admin/` — `api/api-call.ts` (the only sanctioned `fetch('/api/*')` site), `forms/crud-form.tsx`,
+  `tables/data-table.tsx`, `feedback/*`.
+
+Data flow is hybrid: Server Components for reads; mutations and client-initiated reads go through `apiCall` to API
+routes. Do not add Server Actions. New reusable components: shadcn primitive → `ui/src/admin/` (via
+`npx shadcn@latest add`); generic pattern → `ui/src/admin/<category>/`; concept-specific →
+`ui/src/{admin,public}/<concept>/`; used by one page → colocate until a second page needs it.
+
 ## Conventions
 
 - **TypeScript:** strict mode, no `any` without a justifying comment, prefer explicit return types on exported functions.
@@ -71,7 +101,7 @@ The monorepo structure is in place (npm workspaces, `packages/{app,core,db,ui}`,
 
 Practical notes:
 
-- Run commands from the repo root: `npm run dev | build | lint | typecheck`. Root scripts delegate to `@easyrms/app`.
+- Run commands from the repo root: `npm run dev | build | lint | typecheck | audit`. `lint` (root `eslint.config.mjs`) covers all packages and enforces the dependency direction; `audit` (`scripts/audit.mjs`) fails on high+ advisories except those in `audit-allowlist.json` (each with a reason and expiry) and is part of the validation gate.
 - Internal packages ship TypeScript source (no build step); `packages/app/next.config.ts` lists them in `transpilePackages`. Add any new internal package there.
 - Add a dependency to the workspace that uses it (`npm install <pkg> -w @easyrms/<name>`), not the root.
 - If the shell sets `NODE_ENV=development`, `next build` fails prerendering `/_global-error`; run it as `NODE_ENV=production npm run build`.

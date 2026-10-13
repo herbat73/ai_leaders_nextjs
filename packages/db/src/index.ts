@@ -3,4 +3,4 @@ export * from "./config";
 export * from "./entities";
 export * from "./orm";
 export * from "./register";
-export * from "./repositories/return-repository";
+export * from "./repositories/returns/return.repository";

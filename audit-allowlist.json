@@ -1,0 +1,10 @@
+{
+  "advisories": [
+    {
+      "id": "GHSA-vfj7-8cjw-p6xm",
+      "package": "braces",
+      "expires": "2027-01-13",
+      "reason": "Stack exhaustion from deeply nested brace patterns; no patched version exists (<= 3.0.3 is the latest). braces is reached only via fast-glob from awilix (we never call loadModules) and @next/eslint-plugin-next (dev-time lint); neither passes untrusted input as a glob pattern. Remove this entry once braces ships a fix."
+    }
+  ]
+}
