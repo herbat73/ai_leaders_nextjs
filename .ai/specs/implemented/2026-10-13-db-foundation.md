@@ -1,7 +1,7 @@
 # Database foundation (MikroORM + PostgreSQL)
 
 - **Date:** 2026-10-13
-- **Status:** Implemented in the same change (move to `implemented/` once all three phases ship)
+- **Status:** Implemented
 - **Part of:** `2026-10-13-monorepo-migration.md`, phase 2
 
 ## Goal

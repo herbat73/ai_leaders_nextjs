@@ -67,7 +67,7 @@ core →  (nothing internal)
 
 ## Current state
 
-The monorepo structure is in place (npm workspaces, `packages/{app,core,db,ui}`, shared `tsconfig.base.json`). The Next.js app lives in `packages/app`; `core`, `db` and `ui` are empty skeletons. MikroORM, Awilix, Tailwind and shadcn/ui are not installed yet (see `.ai/specs/2026-10-13-monorepo-migration.md`, Phasing).
+The monorepo structure is in place (npm workspaces, `packages/{app,core,db,ui}`, shared `tsconfig.base.json`). The Next.js app lives in `packages/app`. MikroORM (`db`), Awilix (composition root in `packages/app/src/server/container.ts`), Tailwind and shadcn/ui (`ui`) are installed and wired; the first feature is return requests (public form at `/`, admin list at `/admin/returns`, API under `/api`). Local database: `npm run db:start`, then `npm run db:migrate` (see `.ai/specs/implemented/`).
 
 Practical notes:
 

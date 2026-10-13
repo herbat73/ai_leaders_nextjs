@@ -58,7 +58,7 @@ NODE_ENV=production npm run build
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-> **Status:** the monorepo structure is in place. `core`, `db` and `ui` are empty skeletons; MikroORM, Awilix, Tailwind and shadcn/ui are not installed yet. See `.ai/specs/`.
+> **Status:** the monorepo, database (MikroORM), DI (Awilix) and UI (Tailwind, shadcn/ui) foundations are in place, with a first return-request flow. Local setup: `npm install`, `npm run db:start`, `npm run db:migrate`, `npm run dev`. Set `DATABASE_URL` to use another PostgreSQL (default `postgres://easyrms:easyrms@localhost:5433/easyrms`; pool via `DATABASE_POOL_MIN`/`DATABASE_POOL_MAX`). See `.ai/specs/implemented/`.
 
 ## For AI coding agents
 

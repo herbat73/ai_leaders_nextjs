@@ -1,7 +1,7 @@
 # Monorepo migration
 
 - **Date:** 2026-10-13
-- **Status:** In progress (phase 1 implemented and verified; phases 2-4 pending)
+- **Status:** Implemented (all four phases)
 
 ## Goal
 
@@ -69,3 +69,4 @@ Root `dev`, `build`, `start`, `lint` run the `@easyrms/app` workspace; `typechec
 ## Changelog
 
 - 2026-10-13: Drafted; phase 1 implemented in the same change.
+- 2026-10-13: Phases 2-4 completed (app-side Awilix wiring, API routes, Tailwind, `ui` components, pages, root `db:*` scripts) and verified end to end.

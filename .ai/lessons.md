@@ -23,6 +23,10 @@ What happened / what was learned. Why it matters. Link to `.ai/lessons/...` for 
 
 ---
 
+## 2026-10-13 — Don't mark a spec "Implemented" until its app-side pieces exist
+
+Three phase specs claimed "Implemented" while `packages/app` had no container, routes, Tailwind or pages and `ui` was empty. Verify each spec's Design bullets against the tree (and run the flow against a real DB) before changing status or moving it to `implemented/`.
+
 ## 2026-10-13 — `next build` fails with `NODE_ENV=development`; rm of node_modules breaks the live dev server
 
 The sandbox shell sets `NODE_ENV=development`, which makes `next build` crash with `Cannot read properties of null (reading 'useContext')` on `/_global-error`. Build with `NODE_ENV=production`. Also, the preview dev server auto-restarts while `node_modules` is deleted for a reinstall and ends up wedged (500s); kill it and start `npm run dev` again afterwards. `mv`/`git mv` across top-level dirs fails here with "Invalid cross-device link" — use `cp -a` then `rm -rf`.
