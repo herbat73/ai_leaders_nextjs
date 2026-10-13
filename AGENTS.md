@@ -8,6 +8,67 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
+# EasyRMS — project overview and architectural assumptions
+
+**EasyRMS** (Easy Return Management System) is a web application for managing product returns. The assumptions below are decisions already made — follow them, and do not swap in alternatives without the user's explicit approval. If a task seems to conflict with them, stop and ask.
+
+## Tech stack
+
+| Concern | Choice |
+|---|---|
+| Framework | Latest Next.js (App Router) + React + TypeScript (strict mode) |
+| Database | PostgreSQL |
+| ORM / data layer | MikroORM — migrations, connection pooling, entity-manager-per-request |
+| Dependency injection | [Awilix](https://github.com/jeffijoe/awilix) container |
+| Public/customer-facing pages (frontend) | Tailwind CSS |
+| Admin/back-office pages (backend) | shadcn/ui (built on Tailwind) |
+
+Notes:
+
+- The DI container is **Awilix** (the request spelled it "Awillix"). Use the `awilix` npm package.
+- Next.js here has breaking changes versus common knowledge — see the Next.js block at the top of this file and read `node_modules/next/dist/docs/` before writing Next.js code.
+- "Frontend pages" means customer-facing pages (e.g. starting and tracking a return); "backend pages" means the admin/back-office UI (e.g. processing returns). Frontend pages use plain Tailwind; backend pages use shadcn/ui components.
+
+## Monorepo layout
+
+The repo is a monorepo. Sub-packages live in `packages/`. This is the **minimum** structure; add packages when needed, but do not collapse or rename these.
+
+```
+packages/
+  app/    # main application — Next.js app, routes, pages, API handlers, composition root
+  core/   # reusable, framework-agnostic business logic (domain models, services, DI registrations, shared types/utils)
+  db/     # data management — MikroORM config, entities, migrations, repositories, seeders, connection/pool helpers
+  ui/     # reusable UI components (shadcn/ui-based admin components, Tailwind-based public components)
+```
+
+Dependency direction (no cycles, enforce it in reviews):
+
+```
+app  →  ui, core, db
+ui   →  (nothing internal; no db, no app)
+db   →  core (for shared types only, if needed)
+core →  (nothing internal)
+```
+
+- `core` must not import from `db`, `ui`, `app`, React, or Next.js.
+- `ui` must not contain business logic or data access; components receive data via props.
+- `db` owns all persistence. Nothing outside `db` imports MikroORM entities' internals directly or writes raw SQL; go through repositories/services registered in the container.
+- `app` is the only place that wires everything together (the Awilix composition root) and the only package that contains Next.js routes.
+- Packages are referenced by workspace name (e.g. `@easyrms/core`), never by relative paths across package boundaries.
+
+## Conventions
+
+- **TypeScript:** strict mode, no `any` without a justifying comment, prefer explicit return types on exported functions.
+- **Dependency injection:** register services in Awilix and resolve them from the container (per-request scope for request-bound state such as the MikroORM `EntityManager` fork). Do not instantiate services with `new` inside route handlers or components, and do not import a global container into `core`.
+- **Database:** all schema changes go through MikroORM migrations in `packages/db` (never edit the schema by hand or rely on `schema:update` outside local experiments). Use a single shared connection pool configured in `db`; never create ad-hoc connections. Fork the `EntityManager` per request.
+- **UI:** use shadcn/ui components for admin pages and Tailwind utility classes for public pages; share reusable components via `packages/ui`. Do not add another component library or CSS framework.
+- **Next.js:** prefer Server Components; add `"use client"` only when needed. Keep route handlers thin — delegate to services resolved from the container.
+- **Config and secrets:** read configuration from environment variables (document new ones in the README); never commit secrets.
+
+## Current state
+
+The repo currently still contains the bootstrapped single-package Next.js app at the root. Migrating it to the `packages/` layout above (npm workspaces) is pending; when you touch this, follow the target layout rather than adding more code to the root `src/`.
+
 # Project memory and spec-driven development (SDD)
 
 This repo uses a `.ai/` folder as persistent, file-based memory and spec tracking for AI agents. Everything below is mandatory process, not optional bookkeeping — follow it on every task unless the user explicitly says otherwise.
