@@ -26,9 +26,9 @@ The restated default-URL constant can drift from `packages/db/src/config.ts`; `d
 
 ### Phase 1: Installer script and README
 
-- [ ] 1.1 Scaffold the script
-- [ ] 1.2 Preflight and install steps
-- [ ] 1.3 Database step
-- [ ] 1.4 Migration step
-- [ ] 1.5 README
+- [x] 1.1 Scaffold the script — 267ee16
+- [x] 1.2 Preflight and install steps — 267ee16
+- [x] 1.3 Database step — 267ee16
+- [x] 1.4 Migration step — 267ee16
+- [x] 1.5 README — 0731da2
 - [ ] 1.6 End-to-end verification and gate
