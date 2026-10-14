@@ -6,8 +6,9 @@ import { spawnSync } from "node:child_process";
 import { existsSync, readdirSync, statSync } from "node:fs";
 import net from "node:net";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const root = new URL("..", import.meta.url).pathname;
+const root = fileURLToPath(new URL("..", import.meta.url));
 
 // Next.js 16 requires Node >= 20.9 (its `engines` field); checked before node_modules exists.
 const MIN_NODE = [20, 9];
@@ -30,7 +31,8 @@ function runOrFail(command, args, hint) {
 
 function endpoint(url) {
   const { hostname, port } = new URL(url);
-  return { host: hostname, port: Number(port) || 5432 };
+  // URL keeps the brackets of an IPv6 host ("[::1]"); net.connect wants it bare.
+  return { host: hostname.replace(/^\[|\]$/g, ""), port: Number(port) || 5432 };
 }
 
 function isReachable({ host, port }) {
