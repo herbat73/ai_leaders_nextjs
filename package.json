@@ -15,6 +15,7 @@
     "db:stop": "bash scripts/db.sh stop",
     "db:migrate": "npm run db:migrate -w @easyrms/db",
     "db:migration:create": "npm run db:migration:create -w @easyrms/db",
-    "audit": "node scripts/audit.mjs"
+    "audit": "node scripts/audit.mjs",
+    "setup": "node scripts/setup.mjs"
   }
 }

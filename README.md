@@ -48,17 +48,45 @@ PostgreSQL is accessed through MikroORM with a single shared connection pool. Sc
 
 ## Getting started
 
+Requirements: Node.js 20.9+ and, for the local database, PostgreSQL binaries (Linux, macOS or WSL).
+
+```bash
+npm run setup      # installs dependencies, starts local PostgreSQL, runs migrations
+npm run dev        # starts @easyrms/app
+```
+
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+`npm run setup` is idempotent: re-running it skips every step that is already done (dependencies up to date, database reachable, no pending migrations) and prints which ones were skipped. It starts only the default local database; if you set `EASYRMS_DATABASE_URL` to another PostgreSQL, start that yourself and setup only runs the migrations.
+
+### Manual setup
+
+The same steps by hand, if you prefer or if `npm run setup` fails:
+
 ```bash
 npm install
-npm run dev        # starts @easyrms/app
+npm run db:start    # local PostgreSQL on localhost:5433 (needs PostgreSQL binaries; set PGBIN if not found)
+npm run db:migrate
+npm run dev
+```
+
+Other commands:
+
+```bash
 npm run lint
 npm run typecheck  # all workspaces
 NODE_ENV=production npm run build
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+### Configuration
 
-> **Status:** the monorepo, database (MikroORM), DI (Awilix) and UI (Tailwind, shadcn/ui) foundations are in place, with a first return-request flow. Local setup: `npm install`, `npm run db:start`, `npm run db:migrate`, `npm run dev`. Set `DATABASE_URL` to use another PostgreSQL (default `postgres://easyrms:easyrms@localhost:5433/easyrms`; pool via `DATABASE_POOL_MIN`/`DATABASE_POOL_MAX`). See `.ai/specs/implemented/`.
+| Variable | Default | Purpose |
+|---|---|---|
+| `EASYRMS_DATABASE_URL` | `postgres://easyrms:easyrms@localhost:5433/easyrms` | PostgreSQL connection string |
+| `EASYRMS_DB_POOL_MIN` / `EASYRMS_DB_POOL_MAX` | `2` / `10` | Connection pool size |
+| `EASYRMS_DB_DEBUG` | `false` | Set to `true` to log SQL |
+
+> **Status:** the monorepo, database (MikroORM), DI (Awilix) and UI (Tailwind, shadcn/ui) foundations are in place, with a first return-request flow. See `.ai/specs/implemented/`.
 
 ## For AI coding agents
 
