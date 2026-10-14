@@ -31,4 +31,4 @@ The restated default-URL constant can drift from `packages/db/src/config.ts`; `d
 - [x] 1.3 Database step — 267ee16
 - [x] 1.4 Migration step — 267ee16
 - [x] 1.5 README — 0731da2
-- [ ] 1.6 End-to-end verification and gate
+- [x] 1.6 End-to-end verification and gate — d34a977
