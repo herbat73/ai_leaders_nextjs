@@ -50,6 +50,7 @@ This skill only **creates** issues. To bring an issue that **already exists** up
    - For bugs: expected vs. actual behavior and the likely root-cause area.
    - Note the tests that will need to exist (unit; integration when flows cross boundaries).
    - Check `BACKWARD_COMPATIBILITY.md` (repo root) when present — if the task will touch a protected contract surface, the issue must say so and name the required migration/deprecation path.
+   - Try to etimate implementation complexity for development tasks (frontend and/or backend) by reading the actual codebase and applying multipliers calibrated for **AI coding agents**, not human developers (easy/medium/high/ultra).
 
    Reduce the analysis to numbered, testable steps a future implementer can follow without re-exploring the repo. Reference real file paths and function names.
 
