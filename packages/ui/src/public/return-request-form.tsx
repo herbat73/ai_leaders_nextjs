@@ -8,7 +8,7 @@ export interface ReturnRequestFormProps {
 }
 
 const fieldClass =
-  "w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200";
+  "w-full rounded-lg border border-input bg-background px-3 py-2 text-foreground shadow-sm focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/40";
 
 export function ReturnRequestForm({ onSubmit }: ReturnRequestFormProps): ReactElement {
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -53,17 +53,17 @@ export function ReturnRequestForm({ onSubmit }: ReturnRequestFormProps): ReactEl
   return (
     <form onSubmit={handleSubmit} className="space-y-5" noValidate>
       <div>
-        <label htmlFor="orderNumber" className="mb-1 block text-sm font-medium text-slate-700">Order number</label>
+        <label htmlFor="orderNumber" className="mb-1 block text-sm font-medium text-foreground">Order number</label>
         <input id="orderNumber" name="orderNumber" className={fieldClass} />
         {errors.orderNumber && <p className="mt-1 text-sm text-red-600">{errors.orderNumber}</p>}
       </div>
       <div>
-        <label htmlFor="customerEmail" className="mb-1 block text-sm font-medium text-slate-700">Email</label>
+        <label htmlFor="customerEmail" className="mb-1 block text-sm font-medium text-foreground">Email</label>
         <input id="customerEmail" name="customerEmail" type="email" className={fieldClass} />
         {errors.customerEmail && <p className="mt-1 text-sm text-red-600">{errors.customerEmail}</p>}
       </div>
       <div>
-        <label htmlFor="reason" className="mb-1 block text-sm font-medium text-slate-700">Reason for return</label>
+        <label htmlFor="reason" className="mb-1 block text-sm font-medium text-foreground">Reason for return</label>
         <textarea id="reason" name="reason" rows={4} className={fieldClass} />
         {errors.reason && <p className="mt-1 text-sm text-red-600">{errors.reason}</p>}
       </div>
@@ -71,7 +71,7 @@ export function ReturnRequestForm({ onSubmit }: ReturnRequestFormProps): ReactEl
       <button
         type="submit"
         disabled={pending}
-        className="w-full rounded-lg bg-indigo-600 px-4 py-2.5 font-semibold text-white hover:bg-indigo-500 disabled:opacity-60"
+        className="w-full rounded-lg bg-primary px-4 py-2.5 font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
       >
         {pending ? "Sending…" : "Request return"}
       </button>
