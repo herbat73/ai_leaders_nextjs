@@ -19,14 +19,18 @@ const managesLocalDatabase = databaseUrl === DEFAULT_DATABASE_URL;
 
 class SetupError extends Error {}
 
-/** Runs a command from the repo root. Output is shown unless `capture` is set. */
-function run(command, args, { capture = false } = {}) {
-  const result = spawnSync(command, args, { cwd: root, encoding: "utf8", stdio: capture ? "pipe" : "inherit" });
+/**
+ * Runs a shell command line from the repo root. Output is shown unless `capture` is set. Goes through the shell
+ * because on Windows `npm` is `npm.cmd`, which spawnSync cannot start directly (EINVAL/ENOENT). Command lines
+ * are fixed strings in this file, never user input.
+ */
+function run(commandLine, { capture = false } = {}) {
+  const result = spawnSync(commandLine, { cwd: root, encoding: "utf8", shell: true, stdio: capture ? "pipe" : "inherit" });
   return { ok: result.status === 0, output: `${result.stdout ?? ""}${result.stderr ?? ""}` };
 }
 
-function runOrFail(command, args, hint) {
-  if (!run(command, args).ok) throw new SetupError(`\`${[command, ...args].join(" ")}\` failed. ${hint}`);
+function runOrFail(commandLine, hint) {
+  if (!run(commandLine).ok) throw new SetupError(`\`${commandLine}\` failed. ${hint}`);
 }
 
 function endpoint(url) {
@@ -49,7 +53,12 @@ function postgresBinariesAvailable() {
   if (process.env.PGBIN) return existsSync(`${process.env.PGBIN}/pg_ctl`);
   const versions = existsSync("/usr/lib/postgresql") ? readdirSync("/usr/lib/postgresql") : [];
   if (versions.some((version) => existsSync(`/usr/lib/postgresql/${version}/bin/pg_ctl`))) return true;
-  return run("sh", ["-c", "command -v pg_ctl"], { capture: true }).ok;
+  return run(process.platform === "win32" ? "where pg_ctl" : "command -v pg_ctl", { capture: true }).ok;
+}
+
+/** Docker with the compose plugin and a running daemon (`docker info` fails when the daemon is down). */
+function dockerAvailable() {
+  return run("docker compose version", { capture: true }).ok && run("docker info", { capture: true }).ok;
 }
 
 function dependenciesUpToDate() {
@@ -73,7 +82,7 @@ const steps = [
     name: "install dependencies",
     async run() {
       if (dependenciesUpToDate()) return "node_modules is up to date with package-lock.json";
-      runOrFail("npm", ["install"], "Fix the error above, or run `npm install` manually.");
+      runOrFail("npm install", "Fix the error above, or run `npm install` manually.");
     },
   },
   {
@@ -87,18 +96,27 @@ const steps = [
             "setup only starts the default local database; start yours and re-run.",
         );
       }
-      if (!postgresBinariesAvailable()) {
-        throw new SetupError("PostgreSQL binaries not found. Install PostgreSQL, or set PGBIN to its bin directory (see scripts/db.sh).");
+      if (postgresBinariesAvailable()) {
+        runOrFail("npm run db:start", "Try `npm run db:start` manually and check .data/postgres.log.");
+        return;
       }
-      runOrFail("npm", ["run", "db:start"], "Try `npm run db:start` manually and check .data/postgres.log.");
+      if (dockerAvailable()) {
+        // --wait blocks until the compose healthcheck (pg_isready) passes.
+        runOrFail("docker compose up -d --wait postgres", "Try `docker compose up -d postgres` manually and check `docker compose logs postgres`.");
+        return;
+      }
+      throw new SetupError(
+        "Neither PostgreSQL binaries nor a running Docker were found. Install PostgreSQL (or set PGBIN to its bin " +
+          "directory, see scripts/db.sh), or start Docker Desktop so setup can use docker-compose.yml.",
+      );
     },
   },
   {
     name: "run migrations",
     async run() {
-      const pending = run("npm", ["run", "db:migration:pending", "-w", "@easyrms/db"], { capture: true });
+      const pending = run("npm run db:migration:pending -w @easyrms/db", { capture: true });
       if (pending.ok && /no pending migrations/i.test(pending.output)) return "no pending migrations";
-      runOrFail("npm", ["run", "db:migrate"], "Check the database connection and re-run, or try `npm run db:migrate` manually.");
+      runOrFail("npm run db:migrate", "Check the database connection and re-run, or try `npm run db:migrate` manually.");
     },
   },
 ];
