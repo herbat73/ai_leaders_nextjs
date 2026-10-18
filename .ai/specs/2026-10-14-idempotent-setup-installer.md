@@ -15,7 +15,7 @@ Add `scripts/setup.mjs` (Node ESM, no dependencies, same style as `scripts/audit
 
 Alternatives considered:
 - **Extend `scripts/db.sh`** — rejected: it is bash-only, scoped to Postgres, and has no concept of install or migrate steps.
-- **Docker Compose** — rejected: AGENTS.md and `scripts/db.sh` already settle on a local PostgreSQL; adding Docker is a new tool choice that needs explicit approval.
+- **Docker Compose** — originally rejected (new tool choice needing approval). **Amended 2026-10-18 (approved by the user):** `docker-compose.yml` is the fallback for step 3 when no PostgreSQL binaries are found (e.g. native Windows); it uses the same default URL (`easyrms` user/db, host port 5433). Native binaries via `scripts/db.sh` are still preferred.
 - **`npm run setup` chaining existing scripts with `&&`** — rejected: it cannot skip completed steps or give actionable errors.
 
 Non-goals: starting the dev server; installing Node or PostgreSQL; seeding data; production/CI provisioning; any change to `scripts/db.sh`, MikroORM config, migrations or app code.
@@ -53,7 +53,7 @@ README changes (same PR as the implementation): "Getting started" leads with `np
 - **`npm install` interrupted**: `node_modules/.package-lock.json` is written at the end of a successful install, so a partial install is re-run next time.
 - **`package-lock.json` changed after a `git pull`**: the lockfile is newer than the marker, so step 2 re-runs.
 - **Missing PostgreSQL binaries**: preflight message names the missing binary and the `PGBIN` override that `scripts/db.sh` already honors.
-- **Windows**: `scripts/db.sh` requires bash, so the local-database path works on Linux/macOS/WSL only. Stated in the README.
+- **Windows**: `scripts/db.sh` requires bash; on native Windows step 3 uses the Docker Compose fallback. Child commands run through the shell because `npm` is `npm.cmd` there, which `spawnSync` cannot start directly.
 - **Concurrent runs**: not guarded; two simultaneous runs are unsupported.
 
 ## 📝 Risks & Impact Review

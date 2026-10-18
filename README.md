@@ -48,7 +48,7 @@ PostgreSQL is accessed through MikroORM with a single shared connection pool. Sc
 
 ## Getting started
 
-Requirements: Node.js 20.9+ and, for the local database, PostgreSQL binaries (Linux, macOS or WSL).
+Requirements: Node.js 20.9+ and, for the local database, either PostgreSQL binaries (Linux, macOS or WSL) or Docker with the compose plugin (any OS, including native Windows).
 
 ```bash
 npm run setup      # installs dependencies, starts local PostgreSQL, runs migrations
@@ -57,7 +57,7 @@ npm run dev        # starts @easyrms/app
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-`npm run setup` is idempotent: re-running it skips every step that is already done (dependencies up to date, database reachable, no pending migrations) and prints which ones were skipped. It starts only the default local database; if you set `EASYRMS_DATABASE_URL` to another PostgreSQL, start that yourself and setup only runs the migrations.
+`npm run setup` is idempotent: re-running it skips every step that is already done (dependencies up to date, database reachable, no pending migrations) and prints which ones were skipped. It starts only the default local database: with `scripts/db.sh` when PostgreSQL binaries are found, otherwise with `docker compose up -d --wait postgres` (`docker-compose.yml`, same credentials and port 5433); if you set `EASYRMS_DATABASE_URL` to another PostgreSQL, start that yourself and setup only runs the migrations.
 
 ### Manual setup
 
@@ -66,6 +66,7 @@ The same steps by hand, if you prefer or if `npm run setup` fails:
 ```bash
 npm install
 npm run db:start    # local PostgreSQL on localhost:5433 (needs PostgreSQL binaries; set PGBIN if not found)
+# or: docker compose up -d --wait postgres
 npm run db:migrate
 npm run dev
 ```

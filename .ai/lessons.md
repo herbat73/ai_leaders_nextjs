@@ -23,6 +23,10 @@ What happened / what was learned. Why it matters. Link to `.ai/lessons/...` for 
 
 ---
 
+## 2026-10-18 — Stray npm in an ancestor `node_modules/.bin` hijacks nested `npm` calls
+
+npm puts every ancestor directory's `node_modules/.bin` on PATH while running a script. A home-folder `C:\Users\<user>\node_modules` that contained npm 6 (a transitive dependency) shadowed the real npm inside scripts. npm 6 ignores `-w`, so the root `db:migrate` (`npm run db:migrate -w @easyrms/db`) called itself recursively and spawned hundreds of processes. Symptom: `npm ERR! code ELIFECYCLE` (npm 6 output) and repeated `"@easyrms/db"` args. Fix: delete the stray shims (`node_modules/.bin/npm*`) above the repo. Also on Windows `spawnSync("npm", …)` fails without `shell: true` (`npm.cmd`).
+
 ## 2026-10-14 — `URL.pathname` is not a filesystem path; `gh label list` stops at 30
 
 In a plain Node script, `new URL("..", import.meta.url).pathname` keeps percent-encoding, so a checkout under a path with a space (`My%20Projects`) breaks `spawn` cwd and `fs` calls — use `fileURLToPath`. Also `gh label list` returns only 30 labels by default: a missing-label check against it gave a false "label does not exist" for `risk-low`; pass `--limit 200`. `gh pr review --approve` fails on your own PR; post the verdict as a `--comment` review instead.

@@ -1,0 +1,23 @@
+# Local PostgreSQL for development when native PostgreSQL binaries are not installed (e.g. Windows).
+# Matches DEFAULT_DATABASE_URL in packages/db/src/config.ts; `npm run setup` starts it automatically.
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: easyrms-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: easyrms
+      POSTGRES_PASSWORD: easyrms
+      POSTGRES_DB: easyrms
+    ports:
+      - "5433:5432"
+    volumes:
+      - easyrms_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U easyrms -d easyrms"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  easyrms_pgdata:
