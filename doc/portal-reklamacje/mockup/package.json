@@ -1,0 +1,16 @@
+{
+  "name": "portal-reklamacje-mockup",
+  "version": "0.1.0",
+  "description": "Klikalne mockupy portalu zwrotów i reklamacji e-commerce",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "watch": "tsc -p tsconfig.json --watch"
+  },
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "typescript": "^5.6.3"
+  },
+  "private": true
+}
