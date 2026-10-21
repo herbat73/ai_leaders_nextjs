@@ -50,9 +50,9 @@ The content already exists on the local `skills-update` branch (commits `6967ae2
 
 ### Phase 1: Skill
 
-- [ ] 1.1 Add the aa-product-brief skill files
-- [ ] 1.2 Link the skill into .claude and .grok
-- [ ] 1.3 Unit test count-coverage.mjs
+- [x] 1.1 Add the aa-product-brief skill files — d55ab8c
+- [x] 1.2 Link the skill into .claude and .grok — 5c14134
+- [x] 1.3 Unit test count-coverage.mjs — 90c453c
 
 ### Phase 2: Brief
 
