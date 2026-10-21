@@ -16,7 +16,16 @@ for (const entry of expired) console.error(`Allowlist entry ${entry.id} (${entry
 
 const active = new Set(advisories.filter((entry) => entry.expires >= today).map((entry) => entry.id));
 
-const run = spawnSync("npm", ["audit", "--json"], { cwd: root, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
+// Run npm's own CLI through Node: on Windows `npm` is `npm.cmd`, which spawnSync cannot start without a shell.
+// `npm_execpath` is set by `npm run`; the shell fallback covers invoking this script with plain `node`.
+const npmCli = process.env.npm_execpath;
+const run = npmCli
+  ? spawnSync(process.execPath, [npmCli, "audit", "--json"], { cwd: root, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 })
+  : spawnSync("npm audit --json", { cwd: root, encoding: "utf8", maxBuffer: 64 * 1024 * 1024, shell: true });
+if (!run.stdout) {
+  console.error(`npm audit did not run: ${run.error?.message ?? run.stderr ?? "no output"}`);
+  process.exit(1);
+}
 const report = JSON.parse(run.stdout);
 if (report.error) {
   console.error(`npm audit failed: ${report.error.summary ?? JSON.stringify(report.error)}`);

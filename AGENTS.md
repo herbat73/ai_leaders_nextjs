@@ -127,6 +127,8 @@ Lifecycle:
 - Once a spec has been fully implemented, move it to `.ai/specs/implemented/` (keep the same filename). This keeps `.ai/specs/` showing only what's pending or in progress.
 - If a spec is abandoned, superseded, or otherwise no longer relevant, move it to `.ai/specs/archive/` instead of deleting it.
 
+Exception: `.ai/specs/product-brief.md` is the product context (written by `om-discover` / `aa-product-brief`), not a spec. Keep its fixed name and location, because every `om-*` skill reads it from there; never date, move or archive it.
+
 Before starting work on a feature, check `.ai/specs/` for an existing spec covering it. For any non-trivial feature or change, write a spec there first and get it reviewed/approved before implementing, rather than jumping straight to code.
 
 ## `.ai/runs/` — autonomous run logs
@@ -163,6 +165,7 @@ Treat this file as a living document that you improve whenever you get corrected
 | `.ai/specs/` | Pending/active specs | `YYYY-MM-DD-slug.md` |
 | `.ai/specs/implemented/` | Completed specs | `YYYY-MM-DD-slug.md` |
 | `.ai/specs/archive/` | Abandoned/superseded specs | `YYYY-MM-DD-slug.md` |
+| `.ai/specs/product-brief.md` | Product context read by `om-*` skills | fixed name |
 | `.ai/runs/` | Autonomous run logs | `YYYY-MM-DD-slug.md` |
 | `.ai/lessons.md` | Index of lessons learned | — |
 | `.ai/lessons/` | Deep-dive lesson writeups | `YYYY-MM-DD-slug.md` |
