@@ -46,6 +46,8 @@ The content already exists on the local `skills-update` branch (commits `6967ae2
 
 ## Progress
 
+PR: #12
+
 > Convention: `- [ ]` pending, `- [x]` done. Append ` — <commit sha>` when a step lands. Do not rename step titles.
 
 ### Phase 1: Skill
