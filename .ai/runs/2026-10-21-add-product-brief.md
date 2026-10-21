@@ -56,5 +56,5 @@ The content already exists on the local `skills-update` branch (commits `6967ae2
 
 ### Phase 2: Brief
 
-- [ ] 2.1 Add the EasyRMS product brief
-- [ ] 2.2 Add the Windows symlink lesson
+- [x] 2.1 Add the EasyRMS product brief — 3a6b8e1
+- [x] 2.2 Add the Windows symlink lesson — 25f29bc
