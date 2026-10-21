@@ -13,6 +13,8 @@ For a lesson with enough depth to need code samples, longer explanations, or mul
 
 Keep entries short — a few lines each. Newest entries at the top.
 
+- **2026-10-21 — `spawnSync("npm", …)` silently fails on Windows.** `npm` is `npm.cmd` there, and Node won't start a `.cmd` without a shell, so `stdout` is `undefined` (`scripts/audit.mjs` then crashed in `JSON.parse`). In Node scripts, run npm as `spawnSync(process.execPath, [process.env.npm_execpath, …])` (set under `npm run`) and check `run.stdout`/`run.error` before parsing.
+
 - **2026-10-21 — Skills in `.claude/skills/` not found on Windows.** The `om-*` / `aa-*` entries in `.claude/skills/` and `.grok/skills/` are git symlinks to `.agents/skills/<name>`. With `core.symlinks=false` (Git for Windows default) they check out as tiny text files holding the target path, so Claude Code sees no `SKILL.md`. Fix: enable Windows Developer Mode, `git config core.symlinks true`, delete the placeholder files and `git checkout --` them again.
 
 ## Format
