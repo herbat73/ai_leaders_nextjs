@@ -58,3 +58,6 @@ The content already exists on the local `skills-update` branch (commits `6967ae2
 
 - [x] 2.1 Add the EasyRMS product brief — 3a6b8e1
 - [x] 2.2 Add the Windows symlink lesson — 25f29bc
+- [x] Post-review fix: run `npm audit` via `npm_execpath` so the gate works on Windows — 8f1e708
+- [x] Post-review fix: document `product-brief.md` as a fixed-name exception in `AGENTS.md` — f008ad9
+- [x] Post-review fix: record the Windows `spawnSync("npm")` lesson — 50a9ddc
