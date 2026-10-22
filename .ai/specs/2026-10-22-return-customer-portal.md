@@ -30,7 +30,7 @@ Customers do not know which order lines are returnable, what evidence or choices
 Alternatives that lost: client-side quote math in `ui` (`ui` cannot import `core`, amounts must be server-recomputed, so a quote endpoint is used); a per-claim reason instead of per-line reasons (does not match UC-02); a magic-link login now (Q5).
 
 ## 📝 Architecture
-Primary module: the `returns` concept. New in `core`: an `orders` concept folder holding only the `OrderLookup` port, plus a `mail` port. Reused: `apiHandler`, `makeCrudRoute`, `apiCall`, feedback components, Awilix request scope.
+Primary module: the `returns` concept. New in `core`: an `orders` concept folder holding only the `OrderLookup` port, plus a `mail` port. Reused: `apiHandler`, `makeCrudRoute`, `apiCall`, feedback components, Awilix request scope, and from `2026-10-22-case-sample-lab-and-platform-primitives.md`: `Money` (`core/src/domain/money.ts`) for every amount and `ClaimKind`/`ClaimFacts` (`core/src/domain/`) as the eligibility and quote input.
 
 ```mermaid
 flowchart LR
@@ -53,7 +53,7 @@ Takeaway: every rule lives in `core` behind `ReturnService`; both integrations a
 
 Mechanics unique to this feature:
 - **Eligibility** (pure): a line is returnable when the order is delivered, `returnable` is true (R06), delivery is within the window (R01: `RETURN_WINDOW_DAYS`, default 30, clamped to 14–365), and quantity is not already claimed by non-rejected requests for that order line.
-- **Quote** (pure, integer minor units): `refund = Σ qty × unitPrice − RETURN_SHIPPING_FEE`, floored at 0; `store_credit = Σ qty × unitPrice × 1.10`, no fee (R12); `exchange` has no amount, only an `exchangeNote` (for example a size). Recomputed on submit; client amounts are ignored.
+- **Quote** (pure, `Money` in integer minor units; this spec adds `addMoney` and a half-up `applyRate` for the +10%): `refund = Σ qty × unitPrice − RETURN_SHIPPING_FEE`, floored at 0; `store_credit = Σ qty × unitPrice × 1.10`, no fee (R12); `exchange` has no amount, only an `exchangeNote` (for example a size). Recomputed on submit; client amounts are ignored.
 - **Guest session:** `POST /api/returns/lookup` verifies order number + e-mail through `OrderLookup` and sets an `httpOnly`, `sameSite=lax`, `secure`-in-production cookie holding an HS256 JWT (`jose`, secret `GUEST_SESSION_SECRET` of at least 32 bytes, `exp` 2 h, claim = order number). A missing or short secret fails closed. Every customer read or write re-checks that the cookie's order matches the request's order; the customer e-mail always comes from the order, never from the request body.
 - **Concurrency:** submit runs in one transaction that first takes a parameterised `pg_advisory_xact_lock(hashtext(orderNumber))` (the single sanctioned raw statement, inside `db`, no string concatenation), re-checks remaining quantities, then inserts. A unique `idempotency_key` makes a retried submit return the original request.
 - **Rate limiting (R14):** one neutral error for any lookup failure, plus a per-IP in-memory fixed-window limiter (10 per minute) returning 429. CAPTCHA after five attempts is deferred (see Decisions in play).
@@ -121,7 +121,7 @@ Evidenced violations of repository rules: none found; `jose` is added to `core` 
 
 Product direction calls and accepted risks:
 - **Breaking API and schema** (`BACKWARD_COMPATIBILITY.md` §1, §2): the `POST /api/returns` shape and `reason` becoming nullable; expand-only migration with `down`, same-PR consumer update, rollback after new-format rows exist loses items and resolutions and the PR says so.
-- **Depends on the agent spec** (statuses, RMA, events); it must merge first.
+- **Depends on the agent spec** (statuses, RMA, events) and on the case-sample spec (`Money`, `ClaimFacts`); both must merge first.
 - **No agent authentication** (carried over from the agent spec): the customer data in `/admin` is reachable by anyone who can reach the admin routes.
 - **Fake order adapter** in production would let anyone "own" seeded orders: guarded by failing closed.
 - **In-memory rate limiter** is per process: ineffective across instances and reset on restart; acceptable for a single instance, replace before scaling out.
