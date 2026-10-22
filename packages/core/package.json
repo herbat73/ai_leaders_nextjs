@@ -10,7 +10,7 @@
   },
   "devDependencies": {
     "typescript": "^5",
-    "vitest": "^5.0.5"
+    "vitest": "^4.1.12"
   },
   "dependencies": {
     "awilix": "^13.0.5",

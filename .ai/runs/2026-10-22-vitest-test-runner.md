@@ -40,3 +40,7 @@ PR: #17
 - [x] 1.2 First real unit tests for ReturnService — 4926c4d
 - [x] 1.3 Wire npm test into the validation gate and docs — a551539
 - [x] 1.4 Full validation gate
+
+### Phase 2: Review fixes
+
+- [x] 2.1 Use Vitest 4 (Node 20 compatible) and document the Node 20.19 floor in the README
