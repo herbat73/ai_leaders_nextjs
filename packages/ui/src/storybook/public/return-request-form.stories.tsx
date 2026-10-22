@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { fn } from "storybook/test";
 
-import { ReturnRequestForm, type ReturnRequestFormProps } from "./return-request-form";
+import { ReturnRequestForm, type ReturnRequestFormProps } from "../../public/return-request-form";
 
 type Submit = ReturnRequestFormProps["onSubmit"];
 

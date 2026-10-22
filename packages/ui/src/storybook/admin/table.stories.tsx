@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../admin/table";
 
 const meta = {
   title: "Admin/Table",

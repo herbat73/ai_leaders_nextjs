@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 
-import { DataTable, type DataTableColumn } from "./data-table";
+import { DataTable, type DataTableColumn } from "../../../admin/tables/data-table";
 
 interface Row {
   id: number;

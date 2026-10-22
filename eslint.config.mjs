@@ -58,7 +58,7 @@ const eslintConfig = defineConfig([
   ...storybook.configs["flat/recommended"],
   {
     // ui must stay free of Next.js, so its stories type against the renderer instead of @storybook/nextjs-vite.
-    files: ["packages/ui/**/*.stories.{ts,tsx}"],
+    files: ["packages/ui/src/storybook/**/*.stories.{ts,tsx}"],
     rules: { "storybook/no-renderer-packages": "off" },
   },
   globalIgnores(["**/storybook-static/**", ".next/**", "**/.next/**", "out/**", "build/**", "next-env.d.ts", "**/next-env.d.ts", "node_modules/**"]),

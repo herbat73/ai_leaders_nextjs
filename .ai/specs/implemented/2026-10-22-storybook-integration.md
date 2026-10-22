@@ -16,7 +16,7 @@ Owner accepted all recommendations on 2026-10-22:
 | Id | Decision |
 |---|---|
 | Q1 | `@storybook/nextjs-vite` (Vite; mocks `next/navigation`, `next/image`, `next/font`; supports Next 16) |
-| Q2 | Config in `packages/app/.storybook/`; stories colocated in `packages/ui/src/**` and `packages/app/src/**`; scripts at the root |
+| Q2 | Config in `packages/app/.storybook/`; scripts at the root. Stories were first colocated; on 2026-10-22 the owner moved all of them to `packages/ui/src/storybook/`, mirroring component paths |
 | Q3 | `ui` stories import types from the renderer `@storybook/react` (keeps `ui` Next-free); `app` stories use `@storybook/nextjs-vite` |
 | Q4 | Built-ins + `@storybook/addon-docs` (autodocs) + `@storybook/addon-a11y` + `@storybook/addon-themes`; `addon-vitest` deferred |
 | Q5 | `npm run storybook:build` added to `validation.commands` |
@@ -28,13 +28,13 @@ Owner accepted all recommendations on 2026-10-22:
   GHSA-f2ph-cmg5-wxc8 (critical: missing origin validation in the preview), so 10.6.1 was rejected even though it is older.
 - **Packages:** `packages/app` devDependencies: `storybook`, `@storybook/nextjs-vite`, the three addons,
   `eslint-plugin-storybook`, `vite`. `packages/ui` devDependencies: `storybook`, `@storybook/react`.
-- **`.storybook/main.ts`:** stories globs for `app` and `ui`; addons; `staticDirs: ["../public"]`; telemetry disabled.
+- **`.storybook/main.ts`:** one stories glob, `ui/src/storybook/**`; addons; `staticDirs: ["../public"]`; telemetry disabled.
 - **`.storybook/preview.ts`:** imports `src/app/globals.css` (Tailwind 4 + `@easyrms/ui/styles.css` + `@source` for `ui`);
   `withThemeByClassName({ light: "", dark: "dark" })`, the same `dark` class `ThemeToggle` uses; `nextjs.appDirectory`;
   `autodocs` tag.
 - **Scripts:** root `storybook` (dev, port 6006) and `storybook:build` (to `packages/app/storybook-static/`, gitignored).
 - **ESLint:** `eslint-plugin-storybook` `flat/recommended`. `storybook/no-renderer-packages` is turned off for
-  `packages/ui/**/*.stories.*` only, because Q3 deliberately uses the renderer package there.
+  `packages/ui/src/storybook/**` only, because Q3 deliberately uses the renderer package there.
 - **TypeScript:** `packages/app/tsconfig.json` includes `.storybook/**/*.ts` (TypeScript wildcards skip dot-directories).
 - **Stories (13 files, 34 stories):** `Badge`, `Button`, `Card`, `Input`, `Label`, `Table`, `DataTable` (rows, empty,
   loading, error), `CrudForm` (default, client validation, server errors, no cancel), `EmptyState`, `ErrorMessage`,
@@ -46,8 +46,8 @@ Owner accepted all recommendations on 2026-10-22:
 ## 📝 Limits and follow-ups
 - Accessibility checks are interactive (panel) only. Failing the gate on violations needs `@storybook/addon-vitest` +
   Playwright (Q4b, deferred).
-- No `app` stories yet. Components that call `apiCall` should get a mocked `fetch` per story; add MSW only if that
-  becomes repetitive.
+- Stories cover `ui` components only (`ui` cannot import `app`). An `app` component gets a story once it moves to `ui`;
+  components that call `apiCall` then get a mocked `fetch` per story (MSW only if that becomes repetitive).
 
 ## 📋 Verification (2026-10-22)
 - `npm run typecheck` ✓, `npm test` ✓, `npm run lint` ✓ (0 errors; the 86 warnings are the same as on `main`, all in the

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 
-import { LoadingMessage } from "./loading-message";
+import { LoadingMessage } from "../../../admin/feedback/loading-message";
 
 const meta = {
   title: "Admin/Feedback/LoadingMessage",

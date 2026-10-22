@@ -49,7 +49,8 @@ Build a new shared piece only for a genuinely new pattern; never re-implement on
   locally because `ui` must not import `core`.
 - `forms/crud-form.tsx`, `tables/data-table.tsx`, `feedback/{loading-message,error-message,empty-state}.tsx`.
 - Public (Tailwind) pages reuse `apiCall`; they get their own presentational components in `ui/src/public/`.
-- Every reusable `ui` component ships a colocated `<name>.stories.tsx` with one story per meaningful state (empty,
+- Every reusable `ui` component ships a `<name>.stories.tsx` in `ui/src/storybook/`, mirroring its path (for example
+  `storybook/admin/button.stories.tsx`), with one story per meaningful state (empty,
   loading, error, disabled, dark via the toolbar). Stories pass props only; callbacks use `fn()` from `storybook/test`.
   A spec's UI acceptance names the stories that show each new state.
 

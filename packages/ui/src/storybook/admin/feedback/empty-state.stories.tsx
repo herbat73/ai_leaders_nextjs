@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 
-import { EmptyState } from "./empty-state";
+import { EmptyState } from "../../../admin/feedback/empty-state";
 
 const meta = {
   title: "Admin/Feedback/EmptyState",

@@ -398,7 +398,7 @@ Every step ends with the validation gate (`typecheck`, `test`, `lint`, `audit`, 
 
 ### Phase 3: UI primitives and the lab page
 1. **UI primitives.** Optional `caption` on `DataTable` (existing callers unchanged), then `FileImport`,
-   `StatTile`/`StatRow`, `BreakdownTable`, `RuleSummary`, exported from `@easyrms/ui/admin`, each with a colocated story
+   `StatTile`/`StatRow`, `BreakdownTable`, `RuleSummary`, exported from `@easyrms/ui/admin`, each with a story in `ui/src/storybook/`
    (`2026-10-22-storybook-integration.md`). Acceptance: stories for `FileImport` (idle, dragging, too large, wrong
    encoding, disabled), `StatTile` (with and without hint), `BreakdownTable` (rows, empty with caption) and
    `RuleSummary` (settling and non-settling rules), with no Accessibility-panel violations in light and dark; manual

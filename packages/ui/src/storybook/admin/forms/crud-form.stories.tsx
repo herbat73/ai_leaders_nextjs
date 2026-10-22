@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { fn } from "storybook/test";
 
-import { CrudForm, type CrudFormField, type CrudFormProps } from "./crud-form";
+import { CrudForm, type CrudFormField, type CrudFormProps } from "../../../admin/forms/crud-form";
 
 type Submit = CrudFormProps["onSubmit"];
 

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 
-import { ErrorMessage } from "./error-message";
+import { ErrorMessage } from "../../../admin/feedback/error-message";
 
 const meta = {
   title: "Admin/Feedback/ErrorMessage",
