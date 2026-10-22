@@ -26,7 +26,7 @@ Klient sklepu zgłasza zwrot lub reklamację samodzielnie w ok. 3 minuty, a zesp
 - User (uses): pracownik magazynu zwrotów (`WAREHOUSE`), tablet/skaner. `[DOCUMENT]` docs/01 §1.3 B3
 - User (uses): dostawca/producent (`SUPPLIER`) rozpatrujący reklamacje i wystawiający noty. `[DOCUMENT]` docs/01 §1.3 C1
 - Stakeholders: dział finansów (`FINANCE`, akceptacja zwrotów ponad próg, poza mockupem) i administrator (`ADMIN`, integracje, branding). `[DOCUMENT]` docs/01 §1.3 B4–B5
-- Decider for scope decisions: nieustalony → Q01
+- Decider for scope decisions: Adam Adamczyk (Q01, 2026-10-22); prawnik dla R01–R05, finanse dla R11
 
 ## Problems, with evidence
 
@@ -175,22 +175,22 @@ none
 
 ## Open questions
 
-| Id | Question | Blocking | Who can answer | Status |
-|---|---|---|---|---|
-| Q01 | Kto jest właścicielem produktu i decyduje o zakresie? Kto potwierdza D01–D06 i R01–R16? | yes — wszystkie decyzje pozostają `proposal` | sponsor projektu | open |
-| Q02 | Jaki jest dziś punkt wyjścia każdego KPI i skąd brać dane (helpdesk dla WISMR, % uzupełnień, % odpowiedzi w 14 dni)? | yes — kryteria sukcesu | obsługa klienta / BI | open |
-| Q03 | Koncepcja zakłada 3 aplikacje na subdomenach i `/api/v1/{portal,bo,supplier}`; repo ma jedną aplikację Next.js (`/`, `/admin`, `/api/<concept>`, AGENTS.md). Czy mapujemy powłoki na trasy jednej aplikacji? | yes — spec i implementacja | architekt / owner | open |
-| Q04 | Rozszerzyć istniejącą encję `ReturnRequest` (orderNumber, email, reason, status `requested`) do modelu `Claim` (4 typy, 9 statusów), czy zastąpić ją? | yes — migracja danych | tech lead | open |
-| Q05 | Kierownik to `AGENT` + `MANAGE_RULES` (docs/01) czy osobna rola `MANAGER` (docs/05)? Mockup nie rozróżnia. | yes — uprawnienia B-05/B-07 | owner | open |
-| Q06 | Czy agent ma widzieć K-05 (widok klienta)? Mapa: tak, mockup: nie. | no | owner / UX | open |
-| Q07 | Eskalacja reklamacji po 10 dniach: kto ją dostaje i jak wygląda w B-01? | no — tylko UC-03 | owner | open |
-| Q08 | Automatyczny zwrot pieniędzy po inspekcji A/B dla zwrotów — robimy w MVP? | no | owner + finance | open |
-| Q09 | Jak 9 statusów mapuje się na 5 etapów trackera klienta (gdzie AWAITING_CUSTOMER, REJECTED, CANCELLED)? | no | UX | open |
-| Q10 | Komunikat „odpowiemy w 2 dni robocze” to wewnętrzny cel dla wszystkich typów, obok ustawowych 14 dni dla reklamacji? | no | owner | open |
-| Q11 | Które integracje w MVP: platforma sklepu, przewoźnik, bramka płatności, bony, e-mail/SMS? | yes — implementacja UC-01, UC-02 | owner / IT | open |
-| Q12 | Rekomendacja w MVP: reguły czy model AI? Progi z mockupu (≥ 500 zł → naprawa, ≥ 6 zgłoszeń → nadużycie) do zatwierdzenia lub odrzucenia. | no | owner | open |
-| Q13 | Pierwszy wycinek zakresu: czy zwrot end-to-end (UC-01, 02, 06, 10) zamiast całego D06? | yes — spec | owner | open |
-| Q14 | Szkoda transportowa: 1 czy 2 zdjęcia minimum (produkt + opakowanie)? | no | owner | open |
+| Id | Question | Blocking | Who can answer | Status | Answer |
+|---|---|---|---|---|---|
+| Q01 | Kto jest właścicielem produktu i decyduje o zakresie? Kto potwierdza D01–D06 i R01–R16? | yes — wszystkie decyzje pozostają `proposal` | sponsor projektu | answered 2026-10-22 | Adam Adamczyk decyduje o zakresie i potwierdza D01–D06 oraz R06–R16; prawnik potwierdza R01–R05, finanse R11 (2026-10-22). |
+| Q02 | Jaki jest dziś punkt wyjścia każdego KPI i skąd brać dane (helpdesk dla WISMR, % uzupełnień, % odpowiedzi w 14 dni)? | yes — kryteria sukcesu | obsługa klienta / BI | answered 2026-10-22 | Zebrać punkty wyjścia KPI wg Collection plan przed specyfikacją; spec idzie równolegle i niesie KPI jako cele bez baseline; metrykę główną wybrać po zebraniu danych. |
+| Q03 | Koncepcja zakłada 3 aplikacje na subdomenach i `/api/v1/{portal,bo,supplier}`; repo ma jedną aplikację Next.js (`/`, `/admin`, `/api/<concept>`, AGENTS.md). Czy mapujemy powłoki na trasy jednej aplikacji? | yes — spec i implementacja | architekt / owner | answered 2026-10-22 | Jedna aplikacja Next.js, powłoki jako trasy: portal klienta `/`, panel `/admin`, dostawca `/supplier`; API `/api/<concept>`. Subdomeny ewentualnie później przez rewrite. |
+| Q04 | Rozszerzyć istniejącą encję `ReturnRequest` (orderNumber, email, reason, status `requested`) do modelu `Claim` (4 typy, 9 statusów), czy zastąpić ją? | yes — migracja danych | tech lead | answered 2026-10-22 | Rozszerzyć `ReturnRequest` migracją MikroORM: dodać `kind` (domyślnie RETURN) i nowe statusy, `requested` → SUBMITTED; pozycje i dowody później. |
+| Q05 | Kierownik to `AGENT` + `MANAGE_RULES` (docs/01) czy osobna rola `MANAGER` (docs/05)? Mockup nie rozróżnia. | yes — uprawnienia B-05/B-07 | owner | answered 2026-10-22 | Uprawnienie `MANAGE_RULES` na roli `AGENT`, bez osobnej roli `MANAGER`. |
+| Q06 | Czy agent ma widzieć K-05 (widok klienta)? Mapa: tak, mockup: nie. | no | owner / UX | answered 2026-10-22 | Tak — agent widzi K-05 tylko do odczytu (podgląd widoku klienta), bez akcji. |
+| Q07 | Eskalacja reklamacji po 10 dniach: kto ją dostaje i jak wygląda w B-01? | no — tylko UC-03 | owner | answered 2026-10-22 | Eskalacja po 10 dniach trafia do użytkowników z `MANAGE_RULES`; w B-01 czerwona plakietka SLA i wyższa pozycja na liście. Realizacja w wycinku reklamacji. |
+| Q08 | Automatyczny zwrot pieniędzy po inspekcji A/B dla zwrotów — robimy w MVP? | no | owner + finance | answered 2026-10-22 | Nie w MVP — zwrot pieniędzy ręcznie przez agenta po inspekcji; automatyzacja po integracji płatności i akceptacji finansów. |
+| Q09 | Jak 9 statusów mapuje się na 5 etapów trackera klienta (gdzie AWAITING_CUSTOMER, REJECTED, CANCELLED)? | no | UX | answered 2026-10-22 | 5 etapów na ścieżce podstawowej (IN_SERVICE pod „Odebrano”); AWAITING_CUSTOMER jako baner „wymagane działanie”; REJECTED/CANCELLED zastępują tracker stanem zamkniętym z powodem. |
+| Q10 | Komunikat „odpowiemy w 2 dni robocze” to wewnętrzny cel dla wszystkich typów, obok ustawowych 14 dni dla reklamacji? | no | owner | answered 2026-10-22 | Tak — „odpowiemy w 2 dni robocze” to wewnętrzny cel dla wszystkich typów; ustawowe 14 dni dla reklamacji śledzone osobno (R04) i nie obiecywane klientowi. Sformułowanie do sprawdzenia przez prawnika. |
+| Q11 | Które integracje w MVP: platforma sklepu, przewoźnik, bramka płatności, bony, e-mail/SMS? | yes — implementacja UC-01, UC-02 | owner / IT | answered 2026-10-22 | MVP: platforma sklepu (wyszukanie zamówienia) + e-mail transakcyjny. Etykiety, zwroty pieniędzy i bony ręcznie/atrapy za interfejsami serwisów w Awilix. |
+| Q12 | Rekomendacja w MVP: reguły czy model AI? Progi z mockupu (≥ 500 zł → naprawa, ≥ 6 zgłoszeń → nadużycie) do zatwierdzenia lub odrzucenia. | no | owner | answered 2026-10-22 | Tylko reguły, bez AI; progi z mockupu (≥ 500 zł, ≥ 6 zgłoszeń) poza pierwszym wycinkiem, wrócą jako konfigurowalne reguły po próbce (A04). |
+| Q13 | Pierwszy wycinek zakresu: czy zwrot end-to-end (UC-01, 02, 06, 10) zamiast całego D06? | yes — spec | owner | answered 2026-10-22 | Zwrot end-to-end: UC-01, UC-02, UC-06, UC-10. Reklamacje, szkody transportowe, silnik reguł, magazyn i dostawcy w kolejnych specyfikacjach. |
+| Q14 | Szkoda transportowa: 1 czy 2 zdjęcia minimum (produkt + opakowanie)? | no | owner | answered 2026-10-22 | Minimum 1 zdjęcie (zgodnie z walidatorem w docs); mockup (2 zdjęcia) do dostosowania. Dotyczy wycinka szkód transportowych. |
 
 ## Definition of Ready addendum (own)
 
