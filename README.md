@@ -76,6 +76,7 @@ Other commands:
 ```bash
 npm run lint
 npm run typecheck  # all workspaces
+npm test           # unit tests (Vitest, @easyrms/core)
 NODE_ENV=production npm run build
 ```
 

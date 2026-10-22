@@ -120,6 +120,7 @@ The `om-auto-*` skills run this process unattended and are chainable: each accep
 Every PR passes the full validation gate before review sign-off, in this order:
 
 - `npm run typecheck`
+- `npm test`
 - `npm run lint`
 - `npm run audit`
 - `NODE_ENV=production npm run build`
