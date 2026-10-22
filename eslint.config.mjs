@@ -1,6 +1,7 @@
 import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
+import storybook from "eslint-plugin-storybook";
 
 /** Enforces the AGENTS.md dependency direction and the shared API/UI layer rules. */
 const internalPackages = ["@easyrms/app", "@easyrms/core", "@easyrms/db", "@easyrms/ui"];
@@ -54,7 +55,13 @@ const eslintConfig = defineConfig([
       ],
     },
   },
-  globalIgnores([".next/**", "**/.next/**", "out/**", "build/**", "next-env.d.ts", "**/next-env.d.ts", "node_modules/**"]),
+  ...storybook.configs["flat/recommended"],
+  {
+    // ui must stay free of Next.js, so its stories type against the renderer instead of @storybook/nextjs-vite.
+    files: ["packages/ui/**/*.stories.{ts,tsx}"],
+    rules: { "storybook/no-renderer-packages": "off" },
+  },
+  globalIgnores(["**/storybook-static/**", ".next/**", "**/.next/**", "out/**", "build/**", "next-env.d.ts", "**/next-env.d.ts", "node_modules/**"]),
 ]);
 
 export default eslintConfig;

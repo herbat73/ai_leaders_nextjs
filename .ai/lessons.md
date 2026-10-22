@@ -13,6 +13,12 @@ For a lesson with enough depth to need code samples, longer explanations, or mul
 
 Keep entries short — a few lines each. Newest entries at the top.
 
+- **2026-10-22 — Storybook in this monorepo.**
+  - Pin Storybook ≥ 10.6.2: older versions have critical GHSA-f2ph-cmg5-wxc8, so "pick an older, settled release" picked a vulnerable one. Run `npm run audit` right after installing.
+  - `eslint-plugin-storybook`'s `no-renderer-packages` rule fights the "ui is Next-free" rule. It is off for `packages/ui/**/*.stories.*` only.
+  - TypeScript `**/*.ts` skips dot-directories, so `.storybook/` must be listed in `tsconfig` `include`.
+  - Next 16.4.0's `next build` itself aborts (`SecurityFatalError`) when a critical advisory exists for the installed version. A red build can appear with no code change, so check `npm run audit` first.
+
 - **2026-10-21 — `spawnSync("npm", …)` silently fails on Windows.** `npm` is `npm.cmd` there, and Node won't start a `.cmd` without a shell, so `stdout` is `undefined` (`scripts/audit.mjs` then crashed in `JSON.parse`). In Node scripts, run npm as `spawnSync(process.execPath, [process.env.npm_execpath, …])` (set under `npm run`) and check `run.stdout`/`run.error` before parsing.
 
 - **2026-10-21 — Skills in `.claude/skills/` not found on Windows.** The `om-*` / `aa-*` entries in `.claude/skills/` and `.grok/skills/` are git symlinks to `.agents/skills/<name>`. With `core.symlinks=false` (Git for Windows default) they check out as tiny text files holding the target path, so Claude Code sees no `SKILL.md`. Fix: enable Windows Developer Mode, `git config core.symlinks true`, delete the placeholder files and `git checkout --` them again.
