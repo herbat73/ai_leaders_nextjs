@@ -30,11 +30,13 @@ Add a unit-test runner so every later code change can ship with tests: Vitest in
 
 ## Progress
 
+PR: #17
+
 > Convention: `- [ ]` pending, `- [x]` done. Append ` — <commit sha>` when a step lands. Do not rename step titles.
 
 ### Phase 1: Test runner
 
-- [ ] 1.1 Add Vitest to @easyrms/core and root npm test
-- [ ] 1.2 First real unit tests for ReturnService
-- [ ] 1.3 Wire npm test into the validation gate and docs
-- [ ] 1.4 Full validation gate
+- [x] 1.1 Add Vitest to @easyrms/core and root npm test — 5875c7e
+- [x] 1.2 First real unit tests for ReturnService — 4926c4d
+- [x] 1.3 Wire npm test into the validation gate and docs — a551539
+- [x] 1.4 Full validation gate
