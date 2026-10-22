@@ -11,6 +11,7 @@
     "start": "npm run start -w @easyrms/app --",
     "lint": "eslint .",
     "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
     "db:start": "bash scripts/db.sh start",
     "db:stop": "bash scripts/db.sh stop",
     "db:migrate": "npm run db:migrate -w @easyrms/db",
