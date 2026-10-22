@@ -48,7 +48,7 @@ PostgreSQL is accessed through MikroORM with a single shared connection pool. Sc
 
 ## Getting started
 
-Requirements: Node.js 20.9+ and, for the local database, either PostgreSQL binaries (Linux, macOS or WSL) or Docker with the compose plugin (any OS, including native Windows).
+Requirements: Node.js 20.19+ (Next.js needs 20.9+, but the test runner's Vite needs 20.19+) and, for the local database, either PostgreSQL binaries (Linux, macOS or WSL) or Docker with the compose plugin (any OS, including native Windows).
 
 ```bash
 npm run setup      # installs dependencies, starts local PostgreSQL, runs migrations
@@ -76,6 +76,7 @@ Other commands:
 ```bash
 npm run lint
 npm run typecheck  # all workspaces
+npm test           # unit tests (Vitest, @easyrms/core)
 NODE_ENV=production npm run build
 ```
 

@@ -11,7 +11,7 @@ Standards: `doc/engineering-standards.md`. Severity in parentheses.
 - No Server Actions for mutations. (major)
 - Services are registered explicitly in Awilix; none instantiated with `new` in routes or components. (major)
 - Schema changes ship as a MikroORM migration. (blocker)
-- `npm run lint`, `typecheck`, `audit`, and `NODE_ENV=production npm run build` pass. (blocker)
+- `npm run lint`, `typecheck`, `test`, `audit`, and `NODE_ENV=production npm run build` pass. (blocker)
 
 ## Security
 
