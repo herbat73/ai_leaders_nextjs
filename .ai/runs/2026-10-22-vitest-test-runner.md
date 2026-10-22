@@ -43,4 +43,4 @@ PR: #17
 
 ### Phase 2: Review fixes
 
-- [x] 2.1 Use Vitest 4 (Node 20 compatible) and document the Node 20.19 floor in the README
+- [x] 2.1 Use Vitest 4 (Node 20 compatible) and document the Node 20.19 floor in the README — fa560e0
