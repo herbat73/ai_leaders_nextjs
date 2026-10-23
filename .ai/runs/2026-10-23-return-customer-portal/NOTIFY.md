@@ -19,3 +19,8 @@
 - Steps 1.11–2.4 done; full gate (incl. storybook:build, production build) green.
 - Skipped UI screenshot pass: no browser provider available in the sandbox; verified by curl. To be noted in PR and final report.
 - Breaking-change note to carry to PR body: <html lang="pl"> changes /admin.
+
+## 2026-10-23T21:26:32Z — final gate
+- All Steps done; full gate green. Skipped: om-integration-tests and style pass (no suite/tooling), screenshots (no browser).
+- Passed the ~20 consecutive-Step safety checkpoint (22 Steps) without pausing because the remaining work was two inline docs/verification Steps and the finish; flagged for the user.
+- Not done on purpose: follow-up issues were listed in follow-ups.md, not filed.

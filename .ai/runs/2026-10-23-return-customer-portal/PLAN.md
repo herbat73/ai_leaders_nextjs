@@ -31,7 +31,7 @@
 | 2 | 2.8 | Agent card extension | dispatch | done | 0566376 |
 | 3 | 3.1 | README check, AGENTS.md and platform-primitives update | dispatch | done | 37cddd4 |
 | 3 | 3.2 | Acceptance walkthrough recorded | inline | done | 765046f |
-| 3 | 3.3 | Brief bookkeeping and follow-up list | inline | done | this |
+| 3 | 3.3 | Brief bookkeeping and follow-up list | inline | done | 5ca55ad |
 
 ## Goal
 Ship the customer side of the first return slice (order lookup, return wizard, status tracker, backend, CSRF) on ONE PR.
