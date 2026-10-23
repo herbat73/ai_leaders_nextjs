@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { checkWizardStep, firstInvalidStep, type WizardLine, type WizardState } from "./wizard-steps";
+import { checkWizardStep, firstInvalidStep, needsNewIdempotencyKey, refusedLinesFromFieldErrors, submitSignature, type WizardLine, type WizardState } from "./wizard-steps";
 
 const lines: WizardLine[] = [
   { lineRef: "L1", remainingQuantity: 3, eligible: true },
@@ -69,5 +69,20 @@ describe("checkWizardStep", () => {
 
   it("firstInvalidStep reports the earliest broken step", () => {
     expect(firstInvalidStep(state({ returnMethod: null, acknowledged: false }), lines)).toBe("method");
+  });
+
+  it("refusedLinesFromFieldErrors keeps only items.* entries", () => {
+    expect(refusedLinesFromFieldErrors({ "items.L1": "already_returned", idempotencyKey: "x" })).toEqual({ L1: "already_returned" });
+    expect(refusedLinesFromFieldErrors({ idempotencyKey: "x" })).toEqual({});
+  });
+
+  it("idempotency key is regenerated only when the request changed after a failure", () => {
+    const base = state({ resolution: "exchange", exchangeNote: "M" });
+    const sig = submitSignature(base);
+    expect(needsNewIdempotencyKey(null, sig)).toBe(false);
+    expect(needsNewIdempotencyKey(sig, submitSignature(base))).toBe(false);
+    expect(needsNewIdempotencyKey(sig, submitSignature({ ...base, exchangeNote: "L" }))).toBe(true);
+    expect(needsNewIdempotencyKey(sig, submitSignature({ ...base, returnMethod: "courier" }))).toBe(true);
+    expect(needsNewIdempotencyKey(sig, submitSignature({ ...base, acknowledged: !base.acknowledged }))).toBe(false);
   });
 });

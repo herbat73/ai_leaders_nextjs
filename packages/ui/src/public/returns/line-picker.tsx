@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, type ReactElement } from "react";
+import { useId, useState, type ReactElement } from "react";
 
 export interface LinePickerLine {
   id: string;
@@ -28,6 +28,39 @@ export interface LinePickerProps {
   onToggle: (lineId: string, selected: boolean) => void;
   onQuantityChange: (lineId: string, quantity: number) => void;
   error?: string;
+}
+
+/** Quantity input with a local draft: it may be emptied while typing and is clamped to 1..cap on blur. */
+function QuantityInput({ quantity, max, label, describedBy, onCommit }: { quantity: number; max: number; label: string; describedBy?: string; onCommit: (quantity: number) => void }): ReactElement {
+  const [draft, setDraft] = useState<string | null>(null);
+  const clamp = (raw: string): number | null => {
+    if (raw.trim() === "") return null;
+    const n = Math.trunc(Number(raw));
+    return Number.isFinite(n) ? Math.min(max, Math.max(1, n)) : null;
+  };
+  return (
+    <input
+      type="number"
+      inputMode="numeric"
+      min={1}
+      max={max}
+      value={draft ?? quantity}
+      aria-label={label}
+      aria-describedby={describedBy}
+      onChange={(e) => {
+        setDraft(e.target.value);
+        const n = Math.trunc(Number(e.target.value));
+        // Emit only valid in-range numbers while typing; the rest is clamped on blur.
+        if (e.target.value.trim() !== "" && Number.isFinite(n) && n >= 1 && n <= max) onCommit(n);
+      }}
+      onBlur={(e) => {
+        const n = clamp(e.target.value);
+        if (n !== null) onCommit(n);
+        setDraft(null);
+      }}
+      className="h-10 w-16 rounded-lg border border-input bg-background px-2 text-center text-foreground focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none"
+    />
+  );
 }
 
 /** Order lines with a checkbox and a quantity stepper capped at the remaining quantity. */
@@ -81,19 +114,12 @@ export function LinePicker({ legend, lines, decreaseLabel, increaseLabel, onTogg
                 >
                   <span aria-hidden="true">−</span>
                 </button>
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  min={1}
+                <QuantityInput
+                  quantity={line.quantity}
                   max={line.remainingQuantity}
-                  value={line.quantity}
-                  aria-label={line.quantityLabel}
-                  aria-describedby={atCap && line.capText ? capId : undefined}
-                  onChange={(e) => {
-                    const n = Math.trunc(Number(e.target.value));
-                    if (Number.isFinite(n)) onQuantityChange(line.id, Math.min(line.remainingQuantity, Math.max(1, n)));
-                  }}
-                  className="h-10 w-16 rounded-lg border border-input bg-background px-2 text-center text-foreground focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none"
+                  label={line.quantityLabel}
+                  describedBy={atCap && line.capText ? capId : undefined}
+                  onCommit={(n) => onQuantityChange(line.id, n)}
                 />
                 <button
                   type="button"

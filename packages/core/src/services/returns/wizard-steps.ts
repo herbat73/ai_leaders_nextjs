@@ -81,3 +81,27 @@ export function checkWizardStep(step: WizardStep, state: WizardState, lines: rea
 export function firstInvalidStep(state: WizardState, lines: readonly WizardLine[]): WizardStep | null {
   return WIZARD_STEPS.find((step) => !checkWizardStep(step, state, lines).ok) ?? null;
 }
+
+/** Refused lines (`items.<lineRef>` -> reason) taken from API field errors; empty when none concern items. */
+export function refusedLinesFromFieldErrors(fieldErrors: Record<string, string>): Record<string, string> {
+  const refused: Record<string, string> = {};
+  for (const [field, reason] of Object.entries(fieldErrors)) {
+    if (field.startsWith("items.")) refused[field.slice("items.".length)] = reason;
+  }
+  return refused;
+}
+
+/** Everything that goes into the submit request (except the key) as a stable string. */
+export function submitSignature(state: WizardState): string {
+  return JSON.stringify([
+    state.items.map((item) => [item.lineRef, item.quantity, item.reasonCode, item.comment.trim()]),
+    state.returnMethod,
+    state.resolution,
+    state.resolution === "exchange" ? state.exchangeNote.trim() : "",
+  ]);
+}
+
+/** A failed submit may be replayed with the same key only while the request is unchanged. */
+export function needsNewIdempotencyKey(failedSignature: string | null, current: string): boolean {
+  return failedSignature !== null && failedSignature !== current;
+}

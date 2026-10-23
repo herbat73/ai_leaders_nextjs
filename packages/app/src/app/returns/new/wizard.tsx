@@ -10,6 +10,10 @@ import {
   MAX_ITEM_COMMENT_LENGTH,
   WIZARD_STEPS,
   checkWizardStep,
+  firstInvalidStep,
+  needsNewIdempotencyKey,
+  refusedLinesFromFieldErrors,
+  submitSignature,
   type LookupLineView,
   type ReturnMethod,
   type ReturnQuoteView,
@@ -48,7 +52,9 @@ interface SubmitFailure {
 /** Client island: five steps, server-computed quote, one idempotency key per mount (retries reuse it). */
 export function Wizard({ lines }: { lines: LookupLineView[] }): ReactElement {
   const router = useRouter();
-  const [idempotencyKey] = useState(() => crypto.randomUUID());
+  const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
+  /** Signature of the request that last failed; the key is replaced when the request changes afterwards. */
+  const [failedSignature, setFailedSignature] = useState<string | null>(null);
   const [step, setStep] = useState<WizardStep>("items");
   const [items, setItems] = useState<WizardItemState[]>([]);
   const [returnMethod, setReturnMethod] = useState<ReturnMethod | null>(null);
@@ -95,14 +101,12 @@ export function Wizard({ lines }: { lines: LookupLineView[] }): ReactElement {
   }, [step, resolution, returnMethod, itemRefsKey]);
 
   function applyRefused(fieldErrors: Record<string, string>): boolean {
-    const next: Record<string, string> = {};
-    for (const [field, reason] of Object.entries(fieldErrors)) {
-      if (field.startsWith("items.")) next[field.slice("items.".length)] = reason;
-    }
-    const refs = Object.keys(next);
-    if (refs.length === 0) return false;
+    const next = refusedLinesFromFieldErrors(fieldErrors);
+    if (Object.keys(next).length === 0) return false;
     setRefused((current) => ({ ...current, ...next }));
     setItems((current) => current.filter((item) => !next[item.lineRef]));
+    setShowProblems(false);
+    setStep("items");
     return true;
   }
 
@@ -126,8 +130,19 @@ export function Wizard({ lines }: { lines: LookupLineView[] }): ReactElement {
 
   async function submit(): Promise<void> {
     if (submitting) return;
-    if (!check.ok) return setShowProblems(true);
+    const invalid = firstInvalidStep(state, wizardLines);
+    if (invalid !== null) {
+      setStep(invalid);
+      return setShowProblems(true);
+    }
     if (resolution === null || returnMethod === null) return;
+    const signature = submitSignature(state);
+    let key = idempotencyKey;
+    if (needsNewIdempotencyKey(failedSignature, signature)) {
+      key = crypto.randomUUID();
+      setIdempotencyKey(key);
+    }
+    setFailedSignature(signature);
     setSubmitting(true);
     setFailure(null);
     const result = await apiCall<SubmitResponse>("/api/returns", {
@@ -142,7 +157,7 @@ export function Wizard({ lines }: { lines: LookupLineView[] }): ReactElement {
         ...(resolution === "exchange" ? { exchangeNote: exchangeNote.trim() } : {}),
         returnMethod,
         acknowledged: true,
-        idempotencyKey,
+        idempotencyKey: key,
       },
     });
     if (result.ok) {
@@ -150,14 +165,15 @@ export function Wizard({ lines }: { lines: LookupLineView[] }): ReactElement {
       return;
     }
     setSubmitting(false);
-    if (result.error.code === "conflict") return setFailure({ text: copy.conflict, link: { href: "/returns", label: copy.conflictLink } });
-    const { key, message } = errorMessage(result.error, result.status);
-    if (key === "unauthorized") return setFailure({ text: message, link: { href: "/", label: copy.sessionLink } });
-    if (key === "validation_error" && result.error.fieldErrors) {
-      if (applyRefused(result.error.fieldErrors)) {
-        setStep("items");
-        return setFailure({ text: copy.linesChanged });
-      }
+    if (result.error.code === "conflict") {
+      // Quantity taken between check and lock carries items.* errors; the idempotency-key conflict does not.
+      if (result.error.fieldErrors && applyRefused(result.error.fieldErrors)) return setFailure({ text: copy.linesChanged });
+      return setFailure({ text: copy.conflict, link: { href: "/returns", label: copy.conflictLink } });
+    }
+    const { key: errorKey, message } = errorMessage(result.error, result.status);
+    if (errorKey === "unauthorized") return setFailure({ text: message, link: { href: "/", label: copy.sessionLink } });
+    if (errorKey === "validation_error" && result.error.fieldErrors) {
+      if (applyRefused(result.error.fieldErrors)) return setFailure({ text: copy.linesChanged });
       return setFailure({ text: copy.fieldErrors });
     }
     setFailure({ text: message });
