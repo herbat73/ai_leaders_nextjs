@@ -1,6 +1,7 @@
 // Reusable, framework-agnostic business logic for EasyRMS.
 // Must not import React, Next.js, or the database.
 export * from "./calendar";
+export * from "./domain";
 export * from "./errors";
 export * from "./http";
 export * from "./register";

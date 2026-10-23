@@ -23,7 +23,7 @@ Persistence, CLI, real order/mail ports, anything from the customer-portal spec,
 
 ### Phase 1: Core primitives
 
-- [ ] 1.1 Domain types and Money
+- [x] 1.1 Domain types and Money
 - [ ] 1.2 Rules engine
 - [ ] 1.3 Metrics
 - [ ] 1.4 Tabular import
