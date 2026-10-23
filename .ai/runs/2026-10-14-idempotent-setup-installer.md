@@ -1,6 +1,6 @@
 # Execution plan: idempotent `npm run setup` installer
 
-Source doc: .ai/specs/2026-10-14-idempotent-setup-installer.md
+Source doc: .ai/specs/implemented/2026-10-14-idempotent-setup-installer.md
 Issue: #3 · Spec PR: #4
 
 ## Goal
