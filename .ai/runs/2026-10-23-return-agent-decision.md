@@ -20,8 +20,8 @@ Replace the unconstrained status select on `/admin/returns` with a nine-status w
 ### Phase 1: Status model and timeline
 
 - [x] 1.1 core: `defineStateMachine` with tests — 66c984d
-- [ ] 1.2 core: `addBusinessDays`/`dueAt`/`overdue` with tests
-- [ ] 1.3 core: `formatRma`, `toReturnStatus`, `formatEventTime` with tests
+- [x] 1.2 core: `addBusinessDays`/`dueAt`/`overdue` with tests — b9ad226
+- [x] 1.3 core: `formatRma`, `toReturnStatus`, `formatEventTime` with tests — b9ad226
 - [ ] 1.4 core: `ConflictError` fields and `apiHandler` 500-path logging (P8) with tests
 - [ ] 1.5 core: nine-status model, transition table, schema, port, service, fake and tests
 - [ ] 1.6 db: entities and the hand-written migration with `down` and snapshot
