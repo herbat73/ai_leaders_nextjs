@@ -33,6 +33,6 @@ Replace the unconstrained status select on `/admin/returns` with a nine-status w
 ### Phase 2: Inbox and card
 
 - [x] 2.1 ui: `Textarea` and `Timeline` with stories — 76825be
-- [ ] 2.2 app: inbox with RMA, due marker and status filter
+- [x] 2.2 app: inbox with RMA, due marker and status filter — ae96f77
 - [ ] 2.3 app: decision card with timeline and reject note
 - [ ] 2.4 close-out: blocker in product brief, README, lessons, spec to `implemented/`
