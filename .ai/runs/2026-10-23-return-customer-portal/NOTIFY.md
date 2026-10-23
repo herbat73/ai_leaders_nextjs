@@ -14,3 +14,8 @@
 ## 2026-10-23T20:49:54Z — checkpoint 2
 - Steps 1.6–1.10 done; gate green. Decision (executor 1.10): extra read-only idempotency lookup before the pre-lock eligibility check so a retry of an inserted submit is not 400; in-lock lookup still settles races.
 - Note for 2.3: `getByRma` returns the agent decision note; tracker must show it (S4: customer-visible) and nothing else internal.
+
+## 2026-10-23T21:03:37Z — checkpoint 3
+- Steps 1.11–2.4 done; full gate (incl. storybook:build, production build) green.
+- Skipped UI screenshot pass: no browser provider available in the sandbox; verified by curl. To be noted in PR and final report.
+- Breaking-change note to carry to PR body: <html lang="pl"> changes /admin.
