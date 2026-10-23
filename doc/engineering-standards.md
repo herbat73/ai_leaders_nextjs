@@ -61,6 +61,8 @@ client-initiated reads go through `apiCall` to API routes. No Server Actions.
 (2) generic panel pattern → `ui/src/admin/<category>/`; (3) tied to one concept → `ui/src/admin/<concept>/` or
 `ui/src/public/<concept>/`; (4) used by one page → colocate next to its `page.tsx` until a second page needs it.
 
+**Cross-cutting primitives:** `doc/platform-primitives.md` is the map of platform primitives (built ones, the spec that builds each, and non-binding design sketches). Check it before adding a rules, money, state-machine, port/adapter, limiter, import or stat component, reuse what exists, and update the row when a spec lands. It does not approve a sketch; the first spec that needs one still does.
+
 ## 3. Architecture
 
 - Dependency direction (enforced by ESLint): `app → ui, core, db`; `db → core` (types only); `ui` and `core`

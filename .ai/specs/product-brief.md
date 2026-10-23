@@ -5,12 +5,12 @@
 - Evidence basis: wyłącznie koncepcja zespołu (5 dokumentów, v0.1 z 13.10.2026) i klikalny mockup. Koncepcja nie cytuje wywiadów, danych ze zgłoszeń ani pomiarów; KPI mają tylko wartości docelowe („propozycja”) bez punktu wyjścia. Najważniejsze nieprzetestowane przekonanie: że wielokrotne dopytywanie klientów o dane jest głównym kosztem obsługi (A01).
 - Coverage: 63 claims — 51 sourced (interview 0, data 0, document 49, product 2, benchmark 0), 0 synthetic, 12 assumed; 3 entries on the collection plan
 - Synthetic hypotheses outside Coverage: 0
-- Definition of Ready signed by: not yet signed — brak właściciela decyzji (Q01), brak dowodów problemu (A01) i rozbieżność architektury (Q03); ready for: research + spec writing of a first slice
+- Definition of Ready signed by: signed (Adam Adamczyk, 2026-10-23) — decyzje potwierdzone, Q01, Q03, Q04 i Q13 odpowiedziane; brak dowodów problemu (A01) pozostaje otwarty; ready for: research + spec writing and implementation of the first slice (return end to end)
 - Sources: doc/portal-reklamacje/README.md, doc/portal-reklamacje/docs/01…05, doc/portal-reklamacje/mockup/src/
 
 ## Decision summary
 
-Koncepcja proponuje samoobsługowy portal zwrotów, reklamacji, szkód transportowych i braków w przesyłce, z panelem obsługi (agent, kierownik, magazyn) i portalem dostawcy — 15 use case'ów MVP, 24 ekrany, wszystkie obecne w mockupie. Żadna decyzja nie ma jeszcze potwierdzonego właściciela, więc D01–D06 są `proposal`. Problem (ręczna obsługa mailowo-telefoniczna z dopytywaniem) i wszystkie KPI są opisane przez zespół, bez danych — Problems i Goals stoją na założeniach A01–A05. Największe rozbieżności to architektura (trzy aplikacje na subdomenach i `/api/v1/*` vs monorepo z jedną aplikacją Next.js, Q03) oraz model danych (istniejąca encja `ReturnRequest` vs model `Claim` z 4 typami i 9 statusami, Q04). Następny krok: właściciel wybiera pierwszy wycinek zakresu (Q13) i zbiera punkt wyjścia dla KPI (Collection plan), potem `om-spec-writing` dla tego wycinka.
+Koncepcja proponuje samoobsługowy portal zwrotów, reklamacji, szkód transportowych i braków w przesyłce, z panelem obsługi (agent, kierownik, magazyn) i portalem dostawcy — 15 use case'ów MVP, 24 ekrany, wszystkie obecne w mockupie. Właściciel (Adam Adamczyk) potwierdził w sesji 2026-10-23 wszystkie reguły, non-goale i decyzje (R01–R16, N01–N04, D01–D07) jako `active`; R14 i D05 zastąpiły R17 i D08 (limity zamiast CAPTCHA; sesja gościa zamiast linku e-mail), obie z przeglądem security przed publicznym wdrożeniem. Potwierdzenie dotyczy decyzji, nie dowodów: problem i KPI nadal stoją na założeniach. Problem (ręczna obsługa mailowo-telefoniczna z dopytywaniem) i wszystkie KPI są opisane przez zespół, bez danych — Problems i Goals stoją na założeniach A01–A05. Największe rozbieżności to architektura (trzy aplikacje na subdomenach i `/api/v1/*` vs monorepo z jedną aplikacją Next.js, Q03) oraz model danych (istniejąca encja `ReturnRequest` vs model `Claim` z 4 typami i 9 statusami, Q04). Następny krok: właściciel wybiera pierwszy wycinek zakresu (Q13) i zbiera punkt wyjścia dla KPI (Collection plan), potem `om-spec-writing` dla tego wycinka.
 
 ## Vision
 
@@ -114,22 +114,23 @@ Benchmark odłożony: Claimlane wskazano jako wzorzec, ale nie sprawdzono go na 
 
 | Id | Rule | Applies to | Source | Status | Review by | Required path to change | Owner | Supersedes |
 |---|---|---|---|---|---|---|---|---|
-| R01 | Okno zwrotu od dostawy: domyślnie 30 dni, konfigurowalne 14–365, nigdy < 14 (ustawa) | Zwrot | `[DOCUMENT]` docs/01 §1.2, docs/04 B-07 | proposal | unknown | owner + legal | pending | none |
-| R02 | Reklamacja do 24 mies. od dostawy | Reklamacja | `[DOCUMENT]` docs/02 §2.2 | proposal | unknown | owner + legal | pending | none |
-| R03 | Szkoda transportowa i brak elementu do 14 dni od dostawy (konfig. 1–30) | Transport, Brak | `[DOCUMENT]` docs/02 §2.2, docs/04 B-07 | proposal | unknown | owner | pending | none |
-| R04 | Odpowiedź na reklamację w 14 dni (brak = uznanie); eskalacja po 10 dniach | Reklamacja | `[DOCUMENT]` docs/01 §1.2, docs/02 §2.5 | proposal | unknown | owner + legal | pending | none |
-| R05 | W reklamacji najpierw naprawa/wymiana; obniżenie ceny/zwrot, gdy niemożliwe | Reklamacja | `[DOCUMENT]` docs/02 §2.5 | proposal | unknown | owner + legal | pending | none |
-| R06 | Produkty `returnable=false` (higieniczne po otwarciu, na zamówienie) wyłączone ze zwrotu, nadal reklamowalne | Zwrot | `[DOCUMENT]` docs/01 §1.2 | proposal | unknown | owner | pending | none |
-| R07 | Wymagane dowody łączą wymagania produktu, dostawcy i reguł (zdjęcia, wideo, nr seryjny) | Reklamacja, Transport, Brak | `[DOCUMENT]` docs/02 §2.5, docs/05 §5.2 | proposal | unknown | owner | pending | none |
-| R08 | Reguła koncepcji R1: zwrot ≤ 150 zł → auto-akceptacja + etykieta | Zwrot | `[DOCUMENT]` docs/02 §2.8 | proposal | unknown | kierownik (B-05) | pending | none |
-| R09 | Reguła koncepcji R2: reklamacja/transport ≤ 60 zł → auto-akceptacja bez odsyłania | Reklamacja, Transport | `[DOCUMENT]` docs/02 §2.8 | proposal | unknown | kierownik (B-05) | pending | none |
-| R10 | Reguły koncepcji R3–R5: transport → priorytet wysoki; elektronika/AGD → wideo; ≥ 2000 zł → kierownik | wg reguły | `[DOCUMENT]` docs/02 §2.8 | proposal | unknown | kierownik (B-05) | pending | none |
-| R11 | Agent zwraca pieniądze do 2000 zł; wyżej akceptacja kierownika/finansów; kwota ≤ wartość zgłoszenia | Zwrot pieniędzy | `[DOCUMENT]` docs/04 B-02, docs/05 §5.9 | proposal | unknown | owner + finance | pending | none |
-| R12 | Bon +10% z darmowym odesłaniem; zwrot pieniędzy pomniejszony o koszt odesłania | Zwrot | `[DOCUMENT]` docs/02 §2.4 | proposal | unknown | owner | pending | none |
-| R13 | Jedno zgłoszenie = jeden typ + jedno zamówienie, wiele pozycji; rozwiązanie na całe zgłoszenie | wszystkie | `[DOCUMENT]` docs/01 §1.5 | proposal | unknown | owner | pending | none |
-| R14 | Wyszukanie zamówienia/statusu: neutralny komunikat błędu, CAPTCHA po 5 próbach, 10/min/IP | K-01, K-04 | `[DOCUMENT]` docs/02 §2.3, docs/05 §5.1 | proposal | unknown | security | pending | none |
-| R15 | Odrzucenie wymaga uzasadnienia ≥ 30 znaków; anulowanie przez klienta do nadania paczki | B-02, K-05 | `[DOCUMENT]` docs/02 §2.7, §2.9 | proposal | unknown | owner | pending | none |
-| R16 | Retencja zdjęć i danych 3 lata, potem anonimizacja; WCAG 2.1 AA | wszystkie | `[DOCUMENT]` docs/01 §1.5, docs/05 §5.9 | proposal | unknown | owner + legal | pending | none |
+| R01 | Okno zwrotu od dostawy: domyślnie 30 dni, konfigurowalne 14–365, nigdy < 14 (ustawa) | Zwrot | `[DOCUMENT]` docs/01 §1.2, docs/04 B-07 | active | unknown | owner + legal | Adam Adamczyk | none |
+| R02 | Reklamacja do 24 mies. od dostawy | Reklamacja | `[DOCUMENT]` docs/02 §2.2 | active | unknown | owner + legal | Adam Adamczyk | none |
+| R03 | Szkoda transportowa i brak elementu do 14 dni od dostawy (konfig. 1–30) | Transport, Brak | `[DOCUMENT]` docs/02 §2.2, docs/04 B-07 | active | unknown | owner | Adam Adamczyk | none |
+| R04 | Odpowiedź na reklamację w 14 dni (brak = uznanie); eskalacja po 10 dniach | Reklamacja | `[DOCUMENT]` docs/01 §1.2, docs/02 §2.5 | active | unknown | owner + legal | Adam Adamczyk | none |
+| R05 | W reklamacji najpierw naprawa/wymiana; obniżenie ceny/zwrot, gdy niemożliwe | Reklamacja | `[DOCUMENT]` docs/02 §2.5 | active | unknown | owner + legal | Adam Adamczyk | none |
+| R06 | Produkty `returnable=false` (higieniczne po otwarciu, na zamówienie) wyłączone ze zwrotu, nadal reklamowalne | Zwrot | `[DOCUMENT]` docs/01 §1.2 | active | unknown | owner | Adam Adamczyk | none |
+| R07 | Wymagane dowody łączą wymagania produktu, dostawcy i reguł (zdjęcia, wideo, nr seryjny) | Reklamacja, Transport, Brak | `[DOCUMENT]` docs/02 §2.5, docs/05 §5.2 | active | unknown | owner | Adam Adamczyk | none |
+| R08 | Reguła koncepcji R1: zwrot ≤ 150 zł → auto-akceptacja + etykieta | Zwrot | `[DOCUMENT]` docs/02 §2.8 | active | unknown | kierownik (B-05) | Adam Adamczyk | none |
+| R09 | Reguła koncepcji R2: reklamacja/transport ≤ 60 zł → auto-akceptacja bez odsyłania | Reklamacja, Transport | `[DOCUMENT]` docs/02 §2.8 | active | unknown | kierownik (B-05) | Adam Adamczyk | none |
+| R10 | Reguły koncepcji R3–R5: transport → priorytet wysoki; elektronika/AGD → wideo; ≥ 2000 zł → kierownik | wg reguły | `[DOCUMENT]` docs/02 §2.8 | active | unknown | kierownik (B-05) | Adam Adamczyk | none |
+| R11 | Agent zwraca pieniądze do 2000 zł; wyżej akceptacja kierownika/finansów; kwota ≤ wartość zgłoszenia | Zwrot pieniędzy | `[DOCUMENT]` docs/04 B-02, docs/05 §5.9 | active | unknown | owner + finance | Adam Adamczyk | none |
+| R12 | Bon +10% z darmowym odesłaniem; zwrot pieniędzy pomniejszony o koszt odesłania | Zwrot | `[DOCUMENT]` docs/02 §2.4 | active | unknown | owner | Adam Adamczyk | none |
+| R13 | Jedno zgłoszenie = jeden typ + jedno zamówienie, wiele pozycji; rozwiązanie na całe zgłoszenie | wszystkie | `[DOCUMENT]` docs/01 §1.5 | active | unknown | owner | Adam Adamczyk | none |
+| R14 | Wyszukanie zamówienia/statusu: neutralny komunikat błędu, CAPTCHA po 5 próbach, 10/min/IP | K-01, K-04 | `[DOCUMENT]` docs/02 §2.3, docs/05 §5.1 | superseded | unknown | security | Adam Adamczyk | none |
+| R15 | Odrzucenie wymaga uzasadnienia ≥ 30 znaków; anulowanie przez klienta do nadania paczki | B-02, K-05 | `[DOCUMENT]` docs/02 §2.7, §2.9 | active | unknown | owner | Adam Adamczyk | none |
+| R16 | Retencja zdjęć i danych 3 lata, potem anonimizacja; WCAG 2.1 AA | wszystkie | `[DOCUMENT]` docs/01 §1.5, docs/05 §5.9 | active | unknown | owner + legal | Adam Adamczyk | none |
+| R17 | Wyszukanie zamówienia/statusu: neutralny komunikat błędu; zamiast CAPTCHA dwa twarde limity: 10/min/IP oraz 5 nieudanych prób na 10 min dla pary (zamówienie, IP) | K-01, K-04 | decyzja w sesji 2026-10-23, spec return-customer-portal | active | security (przegląd przed publicznym wdrożeniem) | owner + security | Adam Adamczyk | R14 |
 
 Wartości R01, R03, R08–R10 i R12 są zaimplementowane w mockupie tak samo jak w docs. `[PRODUCT]` mockup/src/data.ts:231–244
 
@@ -137,22 +138,24 @@ Wartości R01, R03, R08–R10 i R12 są zaimplementowane w mockupie tak samo jak
 
 | Id | We are not building | Why | Owner | Status | Review by | Required path to change | Source | Supersedes |
 |---|---|---|---|---|---|---|---|---|
-| N01 | Zgłoszenia B2B / zbiorcze (UC-16) w MVP | inne zasady prawne, faza 2 | pending | proposal | unknown | owner | `[DOCUMENT]` docs/01 §1.3 A3 | none |
-| N02 | Portal serwisu zewnętrznego | faza 2 | pending | proposal | unknown | owner | `[DOCUMENT]` docs/01 §1.3 C2 | none |
-| N03 | Rozwiązanie wybierane per pozycja | faza 2 | pending | proposal | unknown | owner | `[DOCUMENT]` docs/01 §1.5 | none |
-| N04 | Wersja językowa EN | faza 2 | pending | proposal | unknown | owner | `[DOCUMENT]` docs/01 §1.5 | none |
+| N01 | Zgłoszenia B2B / zbiorcze (UC-16) w MVP | inne zasady prawne, faza 2 | Adam Adamczyk | active | unknown | owner | `[DOCUMENT]` docs/01 §1.3 A3 | none |
+| N02 | Portal serwisu zewnętrznego | faza 2 | Adam Adamczyk | active | unknown | owner | `[DOCUMENT]` docs/01 §1.3 C2 | none |
+| N03 | Rozwiązanie wybierane per pozycja | faza 2 | Adam Adamczyk | active | unknown | owner | `[DOCUMENT]` docs/01 §1.5 | none |
+| N04 | Wersja językowa EN | faza 2 | Adam Adamczyk | active | unknown | owner | `[DOCUMENT]` docs/01 §1.5 | none |
 
 ## Decisions
 
 | Id | Date | Decision | Why | Owner | Status | Review by | Required path to change | Source | Supersedes |
 |---|---|---|---|---|---|---|---|---|---|
-| D01 | 2026-10-13 | Claimlane jako wzorzec funkcji i UX; identyfikacja, treści i kod własne | gotowe wzorce samoobsługi i automatyzacji | pending | proposal | unknown | owner | `[DOCUMENT]` README.md | none |
-| D02 | 2026-10-13 | Portal klienta white-label, mobile-first | osadzenie w sklepie; założenie o telefonach (A02) | pending | proposal | unknown | owner | `[DOCUMENT]` docs/01 §1.5 | none |
-| D03 | 2026-10-13 | Platforma sklepu jest źródłem prawdy o zamówieniach; portal przechowuje zgłoszenia i załączniki | brak duplikacji danych zamówień | pending | proposal | unknown | owner | `[DOCUMENT]` docs/01 §1.5 | none |
-| D04 | 2026-10-13 | Trzy aplikacje z osobnymi powłokami i subdomenami | różni użytkownicy i urządzenia | pending | proposal | unknown | owner + architektura | `[DOCUMENT]` docs/03 | none |
-| D05 | 2026-10-13 | Klient loguje się linkiem e-mail (bez hasła); pracownicy przez SSO/OIDC | mniej tarcia, bez haseł | pending | proposal | unknown | owner + security | `[DOCUMENT]` docs/05 §5.1 | none |
-| D06 | 2026-10-13 | MVP = UC-01…UC-15 | zakres koncepcji | pending | proposal | unknown | owner | `[DOCUMENT]` docs/02 §2.1 | none |
+| D01 | 2026-10-13 | Claimlane jako wzorzec funkcji i UX; identyfikacja, treści i kod własne | gotowe wzorce samoobsługi i automatyzacji | Adam Adamczyk | active | unknown | owner | `[DOCUMENT]` README.md | none |
+| D02 | 2026-10-13 | Portal klienta white-label, mobile-first | osadzenie w sklepie; założenie o telefonach (A02) | Adam Adamczyk | active | unknown | owner | `[DOCUMENT]` docs/01 §1.5 | none |
+| D03 | 2026-10-13 | Platforma sklepu jest źródłem prawdy o zamówieniach; portal przechowuje zgłoszenia i załączniki | brak duplikacji danych zamówień | Adam Adamczyk | active | unknown | owner | `[DOCUMENT]` docs/01 §1.5 | none |
+| D04 | 2026-10-13 | Trzy aplikacje z osobnymi powłokami i subdomenami | różni użytkownicy i urządzenia | Adam Adamczyk | superseded | unknown | owner + architektura | `[DOCUMENT]` docs/03 | none |
+| D05 | 2026-10-13 | Klient loguje się linkiem e-mail (bez hasła); pracownicy przez SSO/OIDC | mniej tarcia, bez haseł | Adam Adamczyk | superseded | unknown | owner + security | `[DOCUMENT]` docs/05 §5.1 | none |
+| D06 | 2026-10-13 | MVP = UC-01…UC-15 | zakres koncepcji | Adam Adamczyk | active | unknown | owner | `[DOCUMENT]` docs/02 §2.1 | none |
 | D07 | 2026-10-23 | Cała aplikacja (portal klienta, `/admin`, Storybook, komunikaty walidacji, szablony e-mail) jest tylko po polsku; wartości przechowywane (statusy, rozwiązania) pozostają neutralne językowo | rynek docelowy jest polski; jedna wersja językowa upraszcza MVP, a wersja EN to N04 | Adam Adamczyk | confirmed | unknown | owner | decyzja w sesji 2026-10-23 | none |
+| D08 | 2026-10-23 | Pierwszy wycinek: klient identyfikuje się numerem zamówienia + e-mailem i dostaje sesję gościa (2 h, zakres 1 zamówienia); logowanie linkiem e-mail odroczone | MVP bez wysyłki e-maili i bez kont klientów | Adam Adamczyk | active | security (przegląd przed publicznym wdrożeniem) | owner + security | decyzja w sesji 2026-10-23, spec return-customer-portal (Q5) | D05 |
+| D09 | 2026-10-23 | Jedna aplikacja Next.js z powłokami jako trasy (portal klienta `/` i `/returns`, panel `/admin`, API `/api/<concept>`); subdomeny ewentualnie później przez rewrite | zgodność z monorepo i AGENTS.md; prostszy pierwszy wycinek (Q03) | Adam Adamczyk | active | architektura | owner + architektura | decyzja w sesji 2026-10-23; odpowiedź na Q03 z 2026-10-22 | D04 |
 
 ## Riskiest assumptions
 
@@ -195,7 +198,7 @@ none
 
 ## Definition of Ready addendum (own)
 
-Problems i Target group opierają się tylko na opisie zespołu — brak wywiadów i danych (A01, A02), więc produkt nie jest gotowy do planowania pełnej implementacji. Gotowe są: research (A01, A04, Q02) oraz pisanie specyfikacji pierwszego wycinka, gdy właściciel odpowie na Q01, Q03, Q04 i Q13. Reguły R01–R05 wynikają z prawa konsumenckiego i wymagają tylko potwierdzenia przez osobę od spraw prawnych.
+Problems i Target group opierają się tylko na opisie zespołu — brak wywiadów i danych (A01, A02), więc pełna implementacja poza pierwszym wycinkiem nie jest uzasadniona dowodami. Właściciel podpisał gotowość 2026-10-23 (Q01, Q03, Q04 i Q13 odpowiedziane): można pisać i implementować pierwszy wycinek, a research (A01, A04, Q02) trwa równolegle. Reguły R01–R05 wynikają z prawa konsumenckiego i wymagają tylko potwierdzenia przez osobę od spraw prawnych.
 
 ## Collection plan
 
