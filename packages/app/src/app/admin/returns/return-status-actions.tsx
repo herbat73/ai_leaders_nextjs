@@ -2,11 +2,14 @@
 
 import { useState, useTransition, type ReactElement } from "react";
 import { useRouter } from "next/navigation";
-import { RETURN_STATUSES, type ReturnStatus } from "@easyrms/core";
+import type { ReturnStatus } from "@easyrms/core";
 import { apiCall, Button, ErrorMessage } from "@easyrms/ui/admin";
 
-/** Client island: changes a return's status through the API, then re-renders the server-fetched list. */
-export function ReturnStatusActions({ id, current }: { id: number; current: ReturnStatus }): ReactElement {
+/**
+ * Client island: moves a return along its allowed transitions through the API, then re-renders the server-fetched
+ * list. Rejecting needs a note, whose field arrives with the decision card, so this offers every other move.
+ */
+export function ReturnStatusActions({ id, allowed }: { id: number; allowed: ReturnStatus[] }): ReactElement {
   const router = useRouter();
   const [isRefreshing, startTransition] = useTransition();
   const [pendingStatus, setPendingStatus] = useState<ReturnStatus | null>(null);
@@ -28,7 +31,7 @@ export function ReturnStatusActions({ id, current }: { id: number; current: Retu
   return (
     <div className="space-y-1">
       <div className="flex flex-wrap gap-1">
-        {RETURN_STATUSES.filter((status) => status !== current).map((status) => (
+        {allowed.filter((status) => status !== "rejected").map((status) => (
           <Button key={status} size="sm" variant="outline" disabled={isBusy} onClick={() => void changeStatus(status)}>
             {status}
           </Button>
