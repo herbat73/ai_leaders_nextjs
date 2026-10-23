@@ -59,15 +59,15 @@ export default async function ReturnCardPage({ params }: { params: Promise<{ id:
           <Badge variant={statusBadgeVariant[request.status]}>{returnsCopy.statusLabels[request.status]}</Badge>
         </CardHeader>
         <CardContent>
-          <dl className="grid grid-cols-[max-content_1fr] gap-x-6 gap-y-2 text-sm">
+          <dl className="grid grid-cols-1 gap-x-6 gap-y-1 text-sm sm:grid-cols-[max-content_minmax(0,1fr)] sm:gap-y-2">
             <dt className="text-muted-foreground">{copy.order}</dt>
-            <dd>{request.orderNumber}</dd>
+            <dd className="break-words">{request.orderNumber}</dd>
             <dt className="text-muted-foreground">{copy.customer}</dt>
-            <dd>{request.customerEmail}</dd>
+            <dd className="break-words">{request.customerEmail}</dd>
             {request.reason && (
               <>
                 <dt className="text-muted-foreground">{copy.reason}</dt>
-                <dd className="whitespace-pre-wrap">{request.reason}</dd>
+                <dd className="whitespace-pre-wrap break-words">{request.reason}</dd>
               </>
             )}
             <dt className="text-muted-foreground">{copy.due}</dt>
@@ -76,7 +76,7 @@ export default async function ReturnCardPage({ params }: { params: Promise<{ id:
               {request.overdue && <Badge variant="destructive">{copy.overdue}</Badge>}
             </dd>
             <dt className="text-muted-foreground">{copy.decisionNote}</dt>
-            <dd className="whitespace-pre-wrap">{decisionNote ?? copy.noDecisionNote}</dd>
+            <dd className="whitespace-pre-wrap break-words">{decisionNote ?? copy.noDecisionNote}</dd>
           </dl>
         </CardContent>
       </Card>
