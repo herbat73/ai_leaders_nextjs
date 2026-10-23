@@ -53,7 +53,6 @@ export function ChoiceGroup({ legend, options, value, onChange, error }: ChoiceG
               disabled={option.disabled}
               onChange={() => onChange(option.value)}
               aria-describedby={[describedBy, error ? errorId : null].filter(Boolean).join(" ") || undefined}
-              aria-invalid={error ? true : undefined}
               className="mt-1 size-4 accent-primary"
             />
             <span className="block">
