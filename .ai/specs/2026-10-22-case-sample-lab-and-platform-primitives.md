@@ -1,6 +1,6 @@
 # Case sample lab (E00-T01) and the platform primitives under it
 
-Status: Confirmed by the owner in session on 2026-10-23 (revised after review the same day, and again after the second architectural review: catalog moved to `doc/platform-primitives.md`, only Phase 1 step 1 gates the return specs, `multiplyMoney`, a DB-free lab and a sampling caveat in the note). The metric definitions and the R10b complaint restriction were accepted as written by the owner on 2026-10-23 (defaults taken as accepted; the note still records them under "Method and limits"). Source issue: #14 (E00-T01, epic #13). Design authority: `.ai/specs/product-brief.md`.
+Status: Approved: confirmed by the owner in session on 2026-10-23 (revised after review the same day, and again after the second architectural review: catalog moved to `doc/platform-primitives.md`, only Phase 1 step 1 gates the return specs, `multiplyMoney`, a DB-free lab and a sampling caveat in the note). The metric definitions and the R10b complaint restriction were accepted as written by the owner on 2026-10-23 (defaults taken as accepted; the note still records them under "Method and limits"). Source issue: #14 (E00-T01, epic #13). Design authority: `.ai/specs/product-brief.md`.
 
 ## 📝 TLDR
 The product owner and the head of customer service need to test A01 (follow-ups are the main service cost) and A04
@@ -80,7 +80,7 @@ not follow the per-concept folder rule). The feature is a new `discovery` concep
 a page, and no `db` part. "Stateless" means nothing is stored, and the route does not need Postgres: `app/src/server/container.ts` gains `getCoreContainer()`, a container with `registerCore` only (no `getOrm()`), memoized on `globalThis` like the root container, and `resolveCaseSampleService()` uses it. The existing root container and request scope are unchanged; the composition root stays in `app`. Discovery is the tool you want before the product has a database.
 
 `core` exports added to `core/src/index.ts` (needed by `app`): `CaseSampleService`, `caseSampleAnalyzeSchema`,
-`PayloadTooLargeError`, `describeRule`, `BRIEF_RULES`, and the domain types, `Money` helpers (including `multiplyMoney`) and `Rule` types.
+`describeRule`, `BRIEF_RULES`, and the domain types, `Money` helpers (including `multiplyMoney`) and `Rule` types.
 
 ```mermaid
 flowchart LR
@@ -181,7 +181,7 @@ Limits: ≤ 512 KB (524 288 UTF-8 bytes, measured on the encoded text, not chara
   metric or rule reads it (data minimisation).
 - Second guard: `parseTable`'s `cellGuard` runs over every raw cell, including dropped columns, **before** they are
   discarded. Any cell matching an e-mail pattern, or a phone pattern after stripping spaces, dashes, dots, brackets and a
-  leading `+48`/`0048` (9 digits), fails the whole upload with "wiersz N wygląda na dane osobowe" (row, never the value); the message adds a hint: "usuń tę kolumnę z pliku i wczytaj go ponownie" (for example when an internal id of nine digits sits in a dropped column).
+  leading `+48`/`0048` (exactly 9 digits, and only when the raw cell contains no decimal point or comma, so a `value_pln` such as `1000000.00` is never taken for a phone number), fails the whole upload with "wiersz N wygląda na dane osobowe" (row, never the value); the message adds a hint: "usuń tę kolumnę z pliku i wczytaj go ponownie" (for example when an internal id of nine digits sits in a dropped column).
 - Error messages from `parseTable`, the schemas and the service name rows and columns, never cell values, so the
   `apiHandler` error log cannot carry them.
 - The committed note is **pseudonymised, not anonymous**: someone with order-system access could try to match cases.
@@ -244,7 +244,7 @@ All visible copy is Polish (D07); the strings below are the Polish source text a
 4. **What-if:** two text inputs (zł, for example `200,00`) for R08 and R09 thresholds plus "Przelicz ponownie". The CSV stays
    in memory, so it re-posts with `thresholds` as typed; the server parses them, so the page has no money logic. The what-if column is empty until used.
 5. **Note:** "Pobierz notatkę" (Blob, `YYYY-MM-DD-case-sample.md`) and "Kopiuj". A line tells the user to commit it to
-   `.ai/specs/research/`.
+   `.ai/specs/research/` (the user creates the folder when committing the first note; it does not exist yet).
 
 States: idle (intro), parsing/calculating (`LoadingMessage`), errors (`ErrorMessage` plus the row list), results.
 Leaving the page discards everything, and the page says so.
@@ -351,12 +351,23 @@ Expected report (baseline thresholds): `sampleSize` 12, period `2026-07`–`2026
 - What-if R08 = 200 zł: R08 matches 5 (S04 joins), rule-settled 8 of 12 = 0.67, interval 0.39–0.86, `agrees` 6, `falseApprovals` 1, `other` 1; nothing else changes.
 Phase 3 manual acceptance uses the same numbers: tiles "Liczba spraw 12", follow-up 75% (47–91%), median messages 4, rule-settled 58% (32–81%).
 
+## 📝 Migration & Backward Compatibility
+All surfaces of `BACKWARD_COMPATIBILITY.md` were checked; no protected surface is broken.
+
+| # | Surface | Phase/step | Change | Path |
+|---|---------|-----------|--------|------|
+| 1 | §1 HTTP API | Phase 2 step 4 | New route `POST /api/discovery/case-sample`; new error code `payload_too_large` (413) | Additive; the route falls under the customer portal's later CSRF 403, which this spec acknowledges |
+| 2 | §3 Internal packages (`core`) | Phase 1, Phase 2 step 1 | New exports (`Money`, rules, metrics, tabular, `CaseSampleService`, schemas); `parseJsonBody` gains an optional `maxBytes` (`PayloadTooLargeError` is already exported through `export * from "./errors"`) | Additive; a test proves callers without `maxBytes` behave as before |
+| 3 | §3 Internal packages (`ui/admin`) | Phase 3 step 1 | `DataTable` gains an optional `caption`; with a caption and no rows it renders the caption table before the `EmptyState`, without it the output is unchanged | Low; checked by stories of an existing caller's props (the admin returns table) beside the captioned variants |
+| 4 | §4 Config / scripts | all | No variable or script changed; `papaparse` is a dependency only | None |
+| 5 | §2 Database, §5 Process | all | No schema change; specs and run logs follow the naming convention | Compliant |
+
 ## 📋 Phasing
 - **Phase 1: core primitives.** Domain types, money, rules engine, metrics, tabular import. Pure and unit-tested; nothing
   consumes them yet, so the app is unchanged. No dependencies. Step 1 (domain types and `Money`) merges first as its own PR and is the only part the return specs depend on (Q7); steps 2–4 follow in their own PR. Exit: `npm test`, `typecheck`, `lint`, `audit` green (including the `papaparse` audit).
 - **Phase 2: case sample backend.** Schemas, `CaseSampleService`, note renderer, container wiring, route. Needs Phase 1 merged. Exit: `npm test` green including the fixture values and every metric-definition test; the `curl` check recorded in `.ai/runs/`.
 - **Phase 3: UI primitives and the lab page.** Needs Phase 2 merged. Exit: `storybook:build` green and the manual walkthrough against the fixture recorded in `.ai/runs/`.
-- **Phase 4: close-out.** Catalog promoted to `doc/`, docs, lessons, spec moved.
+- **Phase 4: close-out.** Needs Phase 3 merged. Docs, lessons, spec moved. Exit: `doc/platform-primitives.md` rows final and linked, the issue #14 comment posted, and the spec in `.ai/specs/implemented/`.
 
 ## 📋 Implementation Plan
 Every step ends with the validation gate (`typecheck`, `test`, `lint`, `audit`, production build). Tests are Vitest in
@@ -379,7 +390,7 @@ Every step ends with the validation gate (`typecheck`, `test`, `lint`, `audit`, 
 4. **Tabular import.** Add `papaparse` and `@types/papaparse` to `@easyrms/core`. `parseTable` handles header
    normalization, `,`/`;`, BOM, U+FFFD rejection, dropped columns, per-row Zod errors keyed by line, the max row count, and
    `cellGuard` over raw cells before columns are dropped. Tests use small inline CSVs for each case, including PII present
-   only in a dropped column, and assert that no error message contains a cell value.
+   only in a dropped column, the boundary `value_pln` `1000000.00` and `1000000,00` (accepted, not flagged), and assert that no error message contains a cell value.
 
 ### Phase 2: Case sample backend
 1. **Body cap and schemas.** `PayloadTooLargeError` (413) in `core/src/errors.ts` and an optional `maxBytes` on
