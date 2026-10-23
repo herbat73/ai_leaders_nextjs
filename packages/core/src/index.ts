@@ -5,6 +5,7 @@ export * from "./domain";
 export * from "./errors";
 export * from "./http";
 export * from "./register";
+export * from "./rules";
 export * from "./services/returns/decision-note";
 export * from "./services/returns/return.service";
 export * from "./services/returns/rma";
