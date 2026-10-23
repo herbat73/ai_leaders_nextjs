@@ -14,6 +14,7 @@ export * from "./services/returns/transitions";
 export * from "./services/returns/types";
 export * from "./state-machine";
 export * from "./tabular";
+export * from "./validators/discovery";
 export * from "./validators/returns/return-list-query.schema";
 export * from "./validators/returns/return-request-create.schema";
 export * from "./validators/returns/return-status-update.schema";
