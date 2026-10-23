@@ -25,7 +25,7 @@ Replace the unconstrained status select on `/admin/returns` with a nine-status w
 - [x] 1.4 core: `ConflictError` fields and `apiHandler` 500-path logging (P8) with tests — e18ecc3
 - [x] 1.5 core: nine-status model, transition table, schema, port, service, fake and tests — 0043f5d
 - [x] 1.6 db: entities and the hand-written migration with `down` and snapshot — afcb1ff
-- [ ] 1.7 db: repository (`transition`, `findDetail`, `findStatus`, `list`, create) and logger wiring
+- [x] 1.7 db: repository (`transition`, `findDetail`, `findStatus`, `list`, create) and logger wiring — 3301e84
 - [ ] 1.8 app: routes, admin page, badge map and restricted status actions
 - [ ] 1.9 db: `test:db` runner and Postgres tests (P5), AGENTS.md and README entries
 - [ ] 1.10 scripted Postgres run and run log (merge gate)
