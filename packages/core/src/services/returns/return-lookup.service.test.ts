@@ -74,6 +74,10 @@ function setup(options: { port?: OrderLookup; rows?: ReturnRequest[]; claimed?: 
     clock,
     mailPort: { send: () => undefined },
     logger: { error: () => undefined },
+    orderLookup: options.port ?? createFakeOrderLookup({ clock }),
+    rateLimiter: new RateLimiter({ clock }),
+    eligibilityConfig: { windowDays: 30 },
+    quoteConfig: { shippingFee: money(1000) },
   });
   return { service, guest, returns };
 }

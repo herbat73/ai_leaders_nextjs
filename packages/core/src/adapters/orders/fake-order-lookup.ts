@@ -7,7 +7,7 @@ interface SeedOrder {
   email: string;
   /** Days before the injected clock; `null` = not delivered. */
   deliveredDaysAgo: number | null;
-  order: Omit<ReturnOrder, "deliveredAt">;
+  order: Omit<ReturnOrder, "deliveredAt" | "customerEmail">;
 }
 
 /** Seeded Polish-shop orders. Order numbers are canonical (upper case); e-mails are matched case-insensitively. */
@@ -82,6 +82,7 @@ const NO_EMAIL = "\u0000no-such-order";
 function snapshot(seed: SeedOrder, now: Date): ReturnOrder {
   return {
     ...seed.order,
+    customerEmail: seed.email,
     deliveredAt: seed.deliveredDaysAgo === null ? null : new Date(now.getTime() - seed.deliveredDaysAgo * DAY_MS),
     lines: seed.order.lines.map((line) => ({ ...line, unitPrice: { ...line.unitPrice } })),
   };

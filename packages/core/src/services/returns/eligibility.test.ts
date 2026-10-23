@@ -9,6 +9,7 @@ const CONFIG = { windowDays: 30 };
 function order(deliveredAt: Date | null, extra: Partial<ReturnOrder> = {}): ReturnOrder {
   return {
     orderNumber: "AB-1",
+    customerEmail: "buyer@example.pl",
     deliveredAt,
     lines: [
       { lineRef: "L1", sku: "S1", name: "Shoe", quantity: 3, unitPrice: money(10000), returnable: true },

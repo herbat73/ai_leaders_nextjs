@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { createFakeOrderLookup } from "../../adapters/orders/fake-order-lookup";
+import { money } from "../../domain/money";
+import { RateLimiter } from "../../security/rate-limiter";
 import { ConflictError, NotFoundError, ValidationError } from "../../errors";
 import type { ApiLogger } from "../../http/types";
 import { returnListQuerySchema } from "../../validators/returns/return-list-query.schema";
@@ -109,7 +112,16 @@ function makeService(
   mailPort: MailPort = makeMailPort(),
   logger: ApiLogger = { error: vi.fn() },
 ): ReturnService {
-  return new ReturnService({ returnRepository: repository, clock: () => now, mailPort, logger });
+  return new ReturnService({
+    returnRepository: repository,
+    clock: () => now,
+    mailPort,
+    logger,
+    orderLookup: createFakeOrderLookup({ clock: () => now }),
+    rateLimiter: new RateLimiter({ clock: () => now }),
+    eligibilityConfig: { windowDays: 30 },
+    quoteConfig: { shippingFee: money(1000) },
+  });
 }
 
 async function errorOf(promise: Promise<unknown>): Promise<unknown> {

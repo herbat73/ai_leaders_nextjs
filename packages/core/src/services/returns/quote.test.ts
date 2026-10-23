@@ -8,6 +8,7 @@ import { calculateQuote, parseShippingFee, toQuoteView, validateQuoteLines, type
 
 const ORDER: ReturnOrder = {
   orderNumber: "AB-1",
+  customerEmail: "buyer@example.pl",
   deliveredAt: new Date("2026-03-10T12:00:00Z"),
   lines: [
     { lineRef: "L1", sku: "S1", name: "Shoe", quantity: 3, unitPrice: money(10000), returnable: true },

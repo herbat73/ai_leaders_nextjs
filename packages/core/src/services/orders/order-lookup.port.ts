@@ -12,6 +12,8 @@ export interface OrderLine {
 export interface ReturnOrder {
   /** The canonical number as the order platform spells it; the only form that is stored, signed or locked on (S8). */
   orderNumber: string;
+  /** The customer's e-mail on the order, verified at lookup. Submit stores this value and never one from the request. */
+  customerEmail: string;
   /** `null` while the order is not delivered yet. */
   deliveredAt: Date | null;
   trackingUrl?: string;
