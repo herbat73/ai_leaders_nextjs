@@ -108,6 +108,12 @@ Practical notes:
 - Add a dependency to the workspace that uses it (`npm install <pkg> -w @easyrms/<name>`), not the root.
 - If the shell sets `NODE_ENV=development`, `next build` fails prerendering `/_global-error`; run it as `NODE_ENV=production npm run build`.
 
+## QA PR evidence
+
+Store all QA evidence for a PR (screenshots and any QA report files) in `doc/previdences/pr-<number>/`, with
+numbered, descriptive filenames (e.g. `01-inbox-default.png`). Never put evidence in the repo root or elsewhere. Commit
+it with the PR and reference these paths from the PR description or QA comment.
+
 # Project memory and spec-driven development (SDD)
 
 This repo uses a `.ai/` folder as persistent, file-based memory and spec tracking for AI agents. Everything below is mandatory process, not optional bookkeeping — follow it on every task unless the user explicitly says otherwise.
