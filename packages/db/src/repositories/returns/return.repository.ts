@@ -25,8 +25,12 @@ import {
   type ReturnRequestEventEntity,
 } from "../../entities";
 
-/** Joins the caller's transaction when there is one, otherwise opens its own (the default, NESTED, is a savepoint). */
-const JOIN_OR_OPEN = { propagation: TransactionPropagation.REQUIRED } as const;
+/**
+ * Joins the caller's transaction when there is one, otherwise opens its own (the default, NESTED, is a savepoint).
+ * A fresh object per call: `em.transactional` writes `ctx` into the options it is given, so a shared constant would
+ * carry the first caller's transaction into every later call.
+ */
+const joinOrOpen = (): { propagation: TransactionPropagation } => ({ propagation: TransactionPropagation.REQUIRED });
 
 function toDomain(entity: ReturnRequestEntity): ReturnRequest {
   return {
@@ -120,7 +124,7 @@ export class MikroOrmReturnRepository implements ReturnRepository {
       });
       await tx.flush();
       return toDomain(row);
-    }, JOIN_OR_OPEN);
+    }, joinOrOpen());
   }
 
   transition(id: number, from: ReturnStatus, to: ReturnStatus, note: string | null): Promise<TransitionOutcome> {
@@ -151,6 +155,6 @@ export class MikroOrmReturnRepository implements ReturnRepository {
       await tx.flush();
       const row = await tx.findOneOrFail(ReturnRequestSchema, { id }, { refresh: true });
       return { result: "moved", request: toDomain(row) };
-    }, JOIN_OR_OPEN);
+    }, joinOrOpen());
   }
 }

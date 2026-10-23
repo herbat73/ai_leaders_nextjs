@@ -77,10 +77,15 @@ Other commands:
 npm run lint
 npm run typecheck  # all workspaces
 npm test           # unit tests (Vitest, @easyrms/core)
+npm run test:db    # database tests (Vitest, @easyrms/db): migration and repository against the local Postgres
 npm run storybook  # component catalog on http://localhost:6006
 npm run storybook:build  # static Storybook in packages/app/storybook-static (part of the validation gate)
 NODE_ENV=production npm run build
 ```
+
+### Database tests
+
+`npm run test:db` runs Vitest in `@easyrms/db` against the local PostgreSQL from `npm run db:start` (or the database in `EASYRMS_DATABASE_URL`). Every test file creates a throwaway schema (selected through `search_path`) and drops it afterwards, so your data is untouched. It covers the migration (status mapping, RMA backfill order, `down` refusal) and the repository (compare-and-set transitions, events). It is not part of `npm test` or the CI gate until CI has a Postgres service, so record its result in `.ai/runs/` for each PR that touches `packages/db`.
 
 ### Storybook
 

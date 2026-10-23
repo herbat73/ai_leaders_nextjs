@@ -1,5 +1,12 @@
 import { Migration } from '@mikro-orm/migrations';
 
+const BACKFILL_CHUNK = 5000;
+
+/** Frozen copy of `formatRma` from `core`: `RMA-YYYY-NNNNN`, growing past five digits. */
+function formatRmaFrozen(sequence: number, year: number): string {
+  return `RMA-${year}-${String(sequence).padStart(5, '0')}`;
+}
+
 /**
  * Agent decision workflow: nine statuses, RMA numbers and a per-request timeline.
  *
@@ -10,10 +17,6 @@ import { Migration } from '@mikro-orm/migrations';
  * `down` is forward-only after first agent use: it refuses to run once any move was recorded, because it would lose
  * the timeline and decision notes.
  */
-function formatRmaFrozen(sequence: number, year: number): string {
-  return `RMA-${year}-${String(sequence).padStart(5, '0')}`;
-}
-
 export class Migration20261023183126 extends Migration {
 
   override name = 'Migration20261023183126';
@@ -28,10 +31,18 @@ export class Migration20261023183126 extends Migration {
     await this.execute(`alter table "return_requests" alter column "status" set default 'submitted';`);
 
     // One nextval per row, in creation order (ties by id), so the sequence continues after the last backfilled value.
+    // Numbers are formatted here (never SQL `lpad`, which would truncate `100000` to `10000`) and written in chunks.
     const rows = await this.execute(`select "id", extract(year from "created_at" at time zone 'Europe/Warsaw')::int as "year" from "return_requests" order by "created_at", "id";`);
-    for (const row of rows) {
-      const [next] = await this.execute(`select nextval('return_rma_seq') as "seq";`);
-      await this.execute(`update "return_requests" set "rma" = ? where "id" = ?;`, [formatRmaFrozen(Number(next.seq), Number(row.year)), row.id]);
+    if (rows.length > 0) {
+      const reserved = await this.execute(`select nextval('return_rma_seq') as "seq" from (select generate_series(1, ?) as "n" order by "n") as "numbers";`, [rows.length]);
+      const sequences = reserved.map((row) => Number(row.seq)).sort((a, b) => a - b);
+      for (let start = 0; start < rows.length; start += BACKFILL_CHUNK) {
+        const chunk = rows.slice(start, start + BACKFILL_CHUNK).map((row, index) => ({
+          id: Number(row.id),
+          rma: formatRmaFrozen(sequences[start + index], Number(row.year)),
+        }));
+        await this.execute(`update "return_requests" as "r" set "rma" = "v"."rma" from jsonb_to_recordset(?::jsonb) as "v"("id" int, "rma" text) where "r"."id" = "v"."id";`, [JSON.stringify(chunk)]);
+      }
     }
 
     await this.execute(`update "return_requests" set "status" = 'submitted' where "status" = 'requested';`);
