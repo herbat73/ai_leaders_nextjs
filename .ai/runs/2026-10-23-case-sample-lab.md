@@ -31,8 +31,8 @@ Persistence, CLI, real order/mail ports, anything from the customer-portal spec,
 ### Phase 2: Case sample backend
 
 - [x] 2.1 Body cap and schemas
-- [ ] 2.2 CaseSampleService.analyze
-- [ ] 2.3 Note renderer
+- [x] 2.2 CaseSampleService.analyze
+- [x] 2.3 Note renderer
 - [ ] 2.4 Wiring and route
 
 ### Phase 3: UI primitives and the lab page
