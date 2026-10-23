@@ -38,7 +38,7 @@ Persistence, CLI, real order/mail ports, anything from the customer-portal spec,
 ### Phase 3: UI primitives and the lab page
 
 - [x] 3.1 UI primitives
-- [ ] 3.2 Lab page
+- [x] 3.2 Lab page
 
 ### Phase 4: Close-out
 

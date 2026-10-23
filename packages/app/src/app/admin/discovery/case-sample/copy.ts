@@ -1,0 +1,90 @@
+import type { CaseSampleChannel, CaseSampleOutcome, ClaimKind } from "@easyrms/core";
+
+/** Polish copy for the case sample lab (D07): one constant, colocated; `ui` components get every text through props. */
+export const labCopy = {
+  title: "Próba przypadków",
+  description:
+    "Wczytaj anonimową próbę ok. 50 ostatnich spraw (e-mail i telefon), aby sprawdzić, jak często potrzebne są dopytania (A01) i ile spraw da się rozstrzygnąć prostymi regułami (A04).",
+  collect: [
+    "Jeden wiersz to jedna sprawa. Numeruj sprawy samodzielnie (S01, S02…), nie używaj numerów zamówień ani zgłoszeń.",
+    "Nie wpisuj imion, adresów e-mail, telefonów ani komentarzy. Nieznane kolumny są pomijane, a plik z danymi osobowymi zostanie odrzucony.",
+    "Szablon zawiera jeden przykładowy wiersz. Usuń go przed wczytaniem własnych danych.",
+  ],
+  templateLink: "Pobierz szablon CSV",
+  rulesTitle: "Reguły użyte w symulacji",
+  ruleLabels: { settles: "Rozstrzyga", routes: "Kieruje", disabled: "Wyłączona", when: "Gdy", then: "Wtedy" },
+  discard: "Nic nie jest zapisywane. Po opuszczeniu strony wyniki znikają, więc pobierz notatkę przed wyjściem.",
+  import: {
+    label: "Wybierz plik CSV lub upuść go tutaj",
+    hint: "Do 512 KB, kodowanie UTF-8",
+    messages: {
+      tooLarge: "Plik jest zbyt duży (limit 512 KB)",
+      wrongEncoding: "Zapisz plik jako CSV UTF-8 i spróbuj ponownie",
+      readFailed: "Nie udało się odczytać pliku",
+    },
+  },
+  loading: "Liczenie…",
+  errors: {
+    validation_error: "Plik zawiera błędy. Popraw je i wczytaj plik ponownie.",
+    payload_too_large: "Plik jest zbyt duży (limit 512 KB)",
+    internal_error: "Wystąpił błąd serwera. Spróbuj ponownie.",
+    network_error: "Brak połączenia z serwerem. Spróbuj ponownie.",
+    unexpected_response: "Nieoczekiwana odpowiedź serwera. Spróbuj ponownie.",
+    fallback: "Nie udało się policzyć wyników. Spróbuj ponownie.",
+  } as Record<string, string>,
+  rowErrors: { title: "Błędy w pliku", line: "Wiersz", column: "Kolumna", message: "Opis", file: "Plik" },
+  droppedColumns: (names: string[]) => `Pominięto kolumny spoza szablonu: ${names.join(", ")}.`,
+  tiles: { sample: "Liczba spraw", followUp: "Sprawy z dopytaniem", messages: "Mediana wiadomości", settled: "Rozstrzygnięte regułą" },
+  interval: (low: string, high: string) => `przedział 95%: ${low}–${high}`,
+  dash: "—",
+  breakdowns: {
+    kind: { caption: "Sprawy według rodzaju", label: "Rodzaj" },
+    channel: { caption: "Sprawy według kanału", label: "Kanał" },
+    outcome: { caption: "Sprawy według wyniku", label: "Wynik" },
+    count: "Liczba",
+    share: "Udział",
+    empty: "Brak danych.",
+  },
+  rulesTable: {
+    caption: "Reguły: dopasowania w próbie",
+    columns: { rule: "Reguła", settles: "Rozstrzyga", baseline: "Dopasowania (progi bazowe)", whatIf: "Dopasowania (scenariusz)" },
+    yes: "tak",
+    no: "nie",
+    empty: "Brak reguł.",
+  },
+  agreement: (agrees: number, falseApprovals: number, other: number) =>
+    `Zgodność z realnym wynikiem (sprawy rozstrzygnięte regułą): zgodne ${agrees}, fałszywe akceptacje ${falseApprovals}, inne ${other}.`,
+  settledLine: (label: string, all: string, resolved: string) => `${label}: wszystkie sprawy ${all}, tylko zamknięte ${resolved}.`,
+  baselineLabel: "Progi bazowe",
+  whatIfLabel: "Scenariusz",
+  whatIf: {
+    title: "Scenariusz z innymi progami",
+    description: "Wpisz progi w zł (np. 200,00) i przelicz ponownie. Puste pole oznacza próg bazowy.",
+    r08: "Próg R08 (zwrot, zł)",
+    r09: "Próg R09 (reklamacja lub szkoda, zł)",
+    submit: "Przelicz ponownie",
+  },
+  cases: {
+    title: "Sprawy",
+    caption: "Sprawy z próby (bez numerów źródłowych)",
+    columns: { id: "Id", kind: "Rodzaj", channel: "Kanał", value: "Wartość", followUps: "Dopytania", messages: "Wiadomości", days: "Dni", outcome: "Wynik", rules: "Reguły" },
+    empty: "Brak spraw.",
+  },
+  note: {
+    title: "Notatka [DATA]",
+    description: "Zatwierdź pobraną notatkę w .ai/specs/research/ (utwórz folder przy pierwszej notatce).",
+    download: "Pobierz notatkę",
+    copy: "Kopiuj",
+    copied: "Skopiowano",
+    copyFailed: "Nie udało się skopiować",
+  },
+  kinds: { return: "Zwrot", complaint: "Reklamacja", transport: "Szkoda transportowa", missing: "Brak w przesyłce" } satisfies Record<ClaimKind, string>,
+  channels: { mail: "E-mail", phone: "Telefon" } satisfies Record<CaseSampleChannel, string>,
+  outcomes: {
+    approved: "Zaakceptowane",
+    rejected: "Odrzucone",
+    partial: "Częściowo",
+    cancelled: "Anulowane",
+    open: "Otwarte",
+  } satisfies Record<CaseSampleOutcome, string>,
+};
