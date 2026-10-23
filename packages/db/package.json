@@ -9,7 +9,8 @@
     "db:migration:create": "tsx ../../node_modules/@mikro-orm/cli/cli.js migration:create",
     "db:migrate": "tsx ../../node_modules/@mikro-orm/cli/cli.js migration:up",
     "db:migration:pending": "tsx ../../node_modules/@mikro-orm/cli/cli.js migration:pending",
-    "db:migration:down": "tsx ../../node_modules/@mikro-orm/cli/cli.js migration:down"
+    "db:migration:down": "tsx ../../node_modules/@mikro-orm/cli/cli.js migration:down",
+    "test:db": "vitest run"
   },
   "dependencies": {
     "@easyrms/core": "*",
@@ -21,6 +22,7 @@
   },
   "devDependencies": {
     "tsx": "^4.23.15",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.12"
   }
 }

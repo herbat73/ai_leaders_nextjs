@@ -13,6 +13,13 @@ For a lesson with enough depth to need code samples, longer explanations, or mul
 
 Keep entries short — a few lines each. Newest entries at the top.
 
+- **2026-10-23 — Agent decision workflow (DB tests, MikroORM, Next, shadcn).**
+  - `em.transactional(cb, options)` writes `ctx` (and `propagation`) into the `options` object it receives. A shared constant such as `const JOIN = { propagation: REQUIRED }` carries the first caller's transaction into every later call, and later calls fail with "Transaction is already rolled back". Build the options object fresh per call.
+  - The MikroORM CLI loads every `.ts` in `packages/db/src/migrations` (`glob: "!(*.d).{js,ts}"`): a `*.test.ts` there made `npm run db:migrate` crash on `import "vitest"`. Keep tests outside that folder (`src/tests/`). The migrator also rewrites `.snapshot-<database>.json` for whatever database it runs against, so test harnesses must set `migrations.snapshot: false` (a first run overwrote the committed snapshot with a throwaway schema).
+  - A per-test Postgres schema: `clientUrl` query parameters are ignored; pass `driverOptions: { options: "-c search_path=<schema>" }` (merged into the `pg` pool options) plus `schema` so unqualified names in raw SQL and migrations resolve inside it.
+  - Next bundles `@easyrms/core` once per layer, so `error instanceof NotFoundError` is false for an error thrown through the container into a page. Match on `error.code` (see `admin/returns/[id]/page.tsx`).
+  - `npx shadcn@latest add` resolves the `@easyrms/ui/lib/utils` alias wrongly: it writes `import { cn } from "cn"` and adds the npm package `cn` to `packages/ui`. After adding a component, point the import at `../lib/utils` and run `npm uninstall cn -w @easyrms/ui`.
+
 - **2026-10-22 — Storybook in this monorepo.**
   - Pin Storybook ≥ 10.6.2: older versions have critical GHSA-f2ph-cmg5-wxc8, so "pick an older, settled release" picked a vulnerable one. Run `npm run audit` right after installing.
   - `eslint-plugin-storybook`'s `no-renderer-packages` rule fights the "ui is Next-free" rule. It is off for `packages/ui/src/storybook/**` only.

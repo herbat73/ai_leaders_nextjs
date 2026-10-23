@@ -24,8 +24,8 @@ export class NotFoundError extends AppError {
 }
 
 export class ConflictError extends AppError {
-  constructor(message: string) {
-    super(message, 409, "conflict");
+  constructor(message: string, readonly fields?: Record<string, string>) {
+    super(message, 409, "conflict", fields);
   }
 }
 

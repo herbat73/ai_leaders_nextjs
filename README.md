@@ -42,6 +42,12 @@ core ->  (no internal packages)
 3. The handler resolves services from the container; services in `core` use repositories from `db`.
 4. Data is rendered with components from `ui`.
 
+### Returns workflow
+
+A return request moves through a fixed path, enforced by a state machine in `@easyrms/core`: `submitted` → `approved` → `in_transit` → `received` → `resolved`, or `submitted` → `rejected` (a rejection needs a reason of at least 30 characters). Other statuses (`awaiting_customer`, `in_service`, `cancelled`) exist for later work and have no moves yet. Every request gets an RMA number (`RMA-YYYY-NNNNN`, from a Postgres sequence, year in `Europe/Warsaw`) and a timeline of events. `/admin/returns` is the inbox (status filter, due marker for requests still `submitted` after two business days) and `/admin/returns/[id]` is the decision card.
+
+> **Do not expose the app publicly yet.** Agents are anonymous: `/admin` and `PATCH /api/returns/[id]` have no authentication, so anyone who can reach them can approve or reject returns. An agent login spec is a recorded blocker (product brief, Q15).
+
 ### Database
 
 PostgreSQL is accessed through MikroORM with a single shared connection pool. Schema changes are versioned migrations in `packages/db`.
@@ -77,10 +83,15 @@ Other commands:
 npm run lint
 npm run typecheck  # all workspaces
 npm test           # unit tests (Vitest, @easyrms/core)
+npm run test:db    # database tests (Vitest, @easyrms/db): migration and repository against the local Postgres
 npm run storybook  # component catalog on http://localhost:6006
 npm run storybook:build  # static Storybook in packages/app/storybook-static (part of the validation gate)
 NODE_ENV=production npm run build
 ```
+
+### Database tests
+
+`npm run test:db` runs Vitest in `@easyrms/db` against the local PostgreSQL from `npm run db:start` (or the database in `EASYRMS_DATABASE_URL`). Every test file creates a throwaway schema (selected through `search_path`) and drops it afterwards, so your data is untouched. It covers the migration (status mapping, RMA backfill order, `down` refusal) and the repository (compare-and-set transitions, events). It is not part of `npm test` or the CI gate until CI has a Postgres service, so record its result in `.ai/runs/` for each PR that touches `packages/db`.
 
 ### Storybook
 

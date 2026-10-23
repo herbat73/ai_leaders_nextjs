@@ -35,7 +35,7 @@ Primitives marked **design** are **non-binding proposals**: a sketch of the cont
 | `RuleSummary` | `ui/src/admin/rules/` | the lab, B-05 list, B-02 "applied rules" | built by the case-sample lab spec |
 | `Stepper`, `StageList` (the tracker; flat in `ui/src/public/`) | `ui/src/public/` | Z-01…Z-06, Z-00, K-05 | planned in the customer portal spec (Phase 2) |
 | Public Tailwind primitives (`Field`, `TextInput`, `Textarea`, `ChoiceGroup`, `Banner`) | `ui/src/public/` | the portal wizard and tracker; later Z-03, K-04 | planned in the customer portal spec (Phase 2) |
-| `Timeline` | `ui/src/admin/timeline/` (public variant in `ui/src/public/`) | B-02, K-05 | planned in the agent decision spec (Phase 2) and the portal spec |
+| `Timeline` | `ui/src/admin/timeline/` (public variant in `ui/src/public/`) | B-02, K-05 | admin variant built by the agent decision spec (Phase 2 step 1); the public variant is planned in the portal spec |
 | `Inbox` filters + SLA badge | `ui/src/admin/inbox/` | B-01, B-03, B-04, D-01 | design (the agent spec builds a simple inbox in `app`) |
 | `RuleBuilder` (drawer) | `ui/src/admin/rules/` | B-05 | design |
 | `EvidenceUpload` | `ui/src/public/evidence/` | Z-03, K-05 | design |
