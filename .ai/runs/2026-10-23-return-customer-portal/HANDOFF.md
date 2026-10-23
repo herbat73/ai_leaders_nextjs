@@ -1,24 +1,24 @@
 # Handoff — 2026-10-23-return-customer-portal
 
-**Last updated:** 2026-10-23T20:30:00Z
+**Last updated:** 2026-10-23T20:37:20Z
 **Branch:** feat/return-customer-portal
-**PR:** not yet opened
-**Current phase/step:** Phase 1 Step 1.1
-**Last commit:** none
+**PR:** https://github.com/herbat73/ai_leaders_nextjs/pull/27
+**Current phase/step:** Phase 1 Step 1.6
+**Last commit:** d08d4db — feat(returns): addMoney, applyRate, eligibility and quote
 
 ## What just happened
-- Run folder created from the spec; plan has 22 Steps.
+- Steps 1.1–1.5 landed (CSRF/HTTP layer, items migration, repository support, OrderLookup + fake, eligibility + quote); checkpoint 1 green.
 
 ## Next concrete action
-- Step 1.1: CSRF check, trustProxy, passthrough.
+- Step 1.6: rate limiter and clientIp (core), then 1.7 guest session.
 
 ## Blockers / open questions
-- none
+- none. Executor steps use /tmp/executor-rules.md (outside the repo); recreate from the PLAN if lost.
 
 ## Environment caveats
-- Dev runtime runnable: unknown
-- Browser / UI checks: unknown
-- Database/migration state: clean
+- Dev runtime runnable: yes (production build passes)
+- Browser / UI checks: none needed yet
+- Database/migration state: local Postgres on :5433 (pg_ctl, data in /tmp/pgdata); migrations are applied per throwaway schema in tests
 
 ## Worktree
 - Path: /workspace/.ai/tmp/om-auto-create-pr-loop/return-customer-portal-20261023-202510
