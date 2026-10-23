@@ -1,5 +1,6 @@
 import { apiHandler, caseSampleAnalyzeSchema, MAX_BODY_BYTES, parseJsonBody, TOO_LARGE_MESSAGE } from "@easyrms/core";
 
+import { httpOptions } from "@/server/http-options";
 import { resolveCaseSampleService } from "@/server/container";
 
 export const dynamic = "force-dynamic";
@@ -11,4 +12,4 @@ export const POST = apiHandler(async (request) => {
     tooLargeMessage: TOO_LARGE_MESSAGE,
   });
   return resolveCaseSampleService().analyze(input);
-});
+}, httpOptions);

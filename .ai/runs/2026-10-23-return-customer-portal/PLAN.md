@@ -10,7 +10,7 @@
 
 | Phase | Step | Title | Exec | Status | Commit |
 |-------|------|-------|------|--------|--------|
-| 1 | 1.1 | CSRF check, trustProxy, response passthrough, new AppErrors | dispatch | todo | — |
+| 1 | 1.1 | CSRF check, trustProxy, response passthrough, new AppErrors | dispatch | done | 6a38dcd |
 | 1 | 1.2 | Items table: entity, expand-only migration, snapshot, migration tests | dispatch | todo | — |
 | 1 | 1.3 | Domain types and repository support for items, resolution and order lock | dispatch | todo | — |
 | 1 | 1.4 | OrderLookup port and fake adapter | dispatch | todo | — |
