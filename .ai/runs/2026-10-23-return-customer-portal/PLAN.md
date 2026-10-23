@@ -23,8 +23,8 @@
 | 1 | 1.11 | Real-database checks and scripted end-to-end run | dispatch | done | 04bf90c |
 | 2 | 2.1 | Public primitives with stories | dispatch | done | 9a7d227 |
 | 2 | 2.2 | formatDatePl, pluralPl and stage mapping | dispatch | done | e63eaa6 |
-| 2 | 2.3 | Tracker page /returns/[rma] | dispatch | done | this |
-| 2 | 2.4 | Lookup page, overview and html lang pl | dispatch | todo | — |
+| 2 | 2.3 | Tracker page /returns/[rma] | dispatch | done | 907ef54 |
+| 2 | 2.4 | Lookup page, overview and html lang pl | dispatch | done | this |
 | 2 | 2.5 | Wizard components with stories | dispatch | todo | — |
 | 2 | 2.6 | Wizard page /returns/new | dispatch | todo | — |
 | 2 | 2.7 | Submit switch and legacy form removal | dispatch | todo | — |

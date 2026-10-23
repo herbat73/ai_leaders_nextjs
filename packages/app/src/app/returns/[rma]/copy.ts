@@ -1,4 +1,6 @@
-import type { ReturnMethod, ReturnResolution, StoredReturnStatus, TrackerEventKey, TrackerStageId, WhatNowKey } from "@easyrms/core";
+import type { ReturnMethod, ReturnResolution, TrackerEventKey, TrackerStageId, WhatNowKey } from "@easyrms/core";
+
+import { statusLabels } from "../_lib/status-labels";
 
 /** Polish copy for the customer tracker (N3, N5): one constant, colocated; stored values stay language-neutral. */
 export const trackerCopy = {
@@ -59,17 +61,6 @@ export const trackerCopy = {
     event_cancelled: "Zgłoszenie anulowane",
     event_unknown: "Zmiana statusu",
   } satisfies Record<TrackerEventKey, string>,
-  statusLabels: {
-    submitted: "Zgłoszone",
-    awaiting_customer: "Oczekuje na Twoją odpowiedź",
-    approved: "Zatwierdzone",
-    in_transit: "W drodze",
-    received: "Odebrane",
-    in_service: "W sprawdzaniu",
-    resolved: "Zakończone",
-    rejected: "Odrzucone",
-    cancelled: "Anulowane",
-    unknown: "Nieznany",
-  } satisfies Record<StoredReturnStatus, string>,
+  statusLabels,
   currentStatus: "Aktualny status",
 } as const;

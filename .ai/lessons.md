@@ -13,6 +13,8 @@ For a lesson with enough depth to need code samples, longer explanations, or mul
 
 Keep entries short — a few lines each. Newest entries at the top.
 
+- **2026-10-23 — Customer pages and error codes.** `apiCall` yields `network_error` (status 0) and `unexpected_response` itself, so a customer page must map codes (`customerErrorKey` in core, Polish copy in `returns/_lib/error-copy.ts`) rather than show `error.message`, which is English. A guest-session page redirects with `redirect()` after `await cookies()`; the lookup 404 is one neutral message for wrong order and wrong e-mail alike.
+
 - **2026-10-23 — Racing submits in real Postgres.** Eight concurrent portal submits for one line answer 201 plus a mix of 409 (lost the lock, in-lock re-check) and 400 `already_claimed` (arrived after the winner committed, caught by the pre-lock check), so an end-to-end race check must accept both and assert exactly one row; the deterministic 409 proof is the `db` test that pauses inside the lock. `pg_locks` shows the key as `objid = hashtext(key) & 0xffffffff` with `objsubid = 1`, which lets a test prove the lock key is the canonical order number.
 
 - **2026-10-23 — Submit replay vs eligibility.** A retry of an already-inserted submit would fail the pre-lock eligibility check (its own request consumed the quantity, or the window closed since), so `ReturnService.submit` does a read-only `findByIdempotencyKey` before that check and only then relies on the in-lock lookup for racing retries. In flow tests, simulate "another request slips in between the pre-lock check and the lock" with an awaited hook at the start of the fake `withOrderLock`, not a fire-and-forget submit (that one races the lock and flips the winner).
