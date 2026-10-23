@@ -34,3 +34,9 @@ export class ServiceUnavailableError extends AppError {
     super(message, 503, "service_unavailable");
   }
 }
+
+export class PayloadTooLargeError extends AppError {
+  constructor(message = "Payload too large") {
+    super(message, 413, "payload_too_large");
+  }
+}

@@ -1,6 +1,6 @@
 # Case sample lab (E00-T01) and the platform primitives under it
 
-Status: Approved: confirmed by the owner in session on 2026-10-23 (revised after review the same day, and again after the second architectural review: catalog moved to `doc/platform-primitives.md`, only Phase 1 step 1 gates the return specs, `multiplyMoney`, a DB-free lab and a sampling caveat in the note). The metric definitions and the R10b complaint restriction were accepted as written by the owner on 2026-10-23 (defaults taken as accepted; the note still records them under "Method and limits"). Source issue: #14 (E00-T01, epic #13). Design authority: `.ai/specs/product-brief.md`.
+Status: Implemented in PR #26 (2026-10-23; the issue #14 comment is posted after merge). Approved: confirmed by the owner in session on 2026-10-23 (revised after review the same day, and again after the second architectural review: catalog moved to `doc/platform-primitives.md`, only Phase 1 step 1 gates the return specs, `multiplyMoney`, a DB-free lab and a sampling caveat in the note). The metric definitions and the R10b complaint restriction were accepted as written by the owner on 2026-10-23 (defaults taken as accepted; the note still records them under "Method and limits"). Source issue: #14 (E00-T01, epic #13). Design authority: `.ai/specs/product-brief.md`.
 
 ## 📝 TLDR
 The product owner and the head of customer service need to test A01 (follow-ups are the main service cost) and A04

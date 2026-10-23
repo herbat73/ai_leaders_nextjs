@@ -13,6 +13,12 @@ For a lesson with enough depth to need code samples, longer explanations, or mul
 
 Keep entries short — a few lines each. Newest entries at the top.
 
+- **2026-10-23 — Case sample lab (Zod 4, formatting, tests).**
+  - `ZodObject.shape[key]` is typed as the bare `$ZodType` in Zod 4, which has no `.safeParse`; use the top-level `safeParse(field, value)` import (here to test whether a column is optional).
+  - `Intl` `pl-PL` skips grouping for four-digit numbers (`1299,00 zł`), so `formatMoney` groups by hand with U+00A0 (also before `zł`) and needs no ICU data. Tests must write the non-breaking space as `\u00a0`; a plain space in an expected string fails silently-looking comparisons.
+  - Wilson interval checks: assert hand-computed values with the precision the spec states (two digits), not three; 9 of 12 is 0.4677, not 0.467.
+  - A stateless feature that must work without Postgres resolves its service from a core-only container (`getCoreContainer()`), not the root one that calls `getOrm()`; verified by running the route with Postgres stopped.
+
 - **2026-10-23 — Agent decision workflow (DB tests, MikroORM, Next, shadcn).**
   - `em.transactional(cb, options)` writes `ctx` (and `propagation`) into the `options` object it receives. A shared constant such as `const JOIN = { propagation: REQUIRED }` carries the first caller's transaction into every later call, and later calls fail with "Transaction is already rolled back". Build the options object fresh per call.
   - The MikroORM CLI loads every `.ts` in `packages/db/src/migrations` (`glob: "!(*.d).{js,ts}"`): a `*.test.ts` there made `npm run db:migrate` crash on `import "vitest"`. Keep tests outside that folder (`src/tests/`). The migrator also rewrites `.snapshot-<database>.json` for whatever database it runs against, so test harnesses must set `migrations.snapshot: false` (a first run overwrote the committed snapshot with a throwaway schema).

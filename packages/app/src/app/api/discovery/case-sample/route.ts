@@ -1,0 +1,14 @@
+import { apiHandler, caseSampleAnalyzeSchema, MAX_BODY_BYTES, parseJsonBody, TOO_LARGE_MESSAGE } from "@easyrms/core";
+
+import { resolveCaseSampleService } from "@/server/container";
+
+export const dynamic = "force-dynamic";
+
+// Stateless: the CSV lives only in this request. A workflow endpoint, not CRUD, so `apiHandler` rather than `makeCrudRoute`.
+export const POST = apiHandler(async (request) => {
+  const input = await parseJsonBody(request, caseSampleAnalyzeSchema, {
+    maxBytes: MAX_BODY_BYTES,
+    tooLargeMessage: TOO_LARGE_MESSAGE,
+  });
+  return resolveCaseSampleService().analyze(input);
+});
