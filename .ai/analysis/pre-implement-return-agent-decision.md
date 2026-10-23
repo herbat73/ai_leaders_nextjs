@@ -1,6 +1,8 @@
 # 🔍 Pre-implementation analysis: Return agent decision: status model, timeline, inbox and decision card
 
 **Readiness: go** — All ten gaps from the previous audit (G-1..G-10) are resolved in the spec text, no Critical or Important finding remains, and the BC story is complete. Three Nice-to-have wording items are left. They do not block implementation.
+
+> **Re-audit 2026-10-23 (third run).** N-1 (BC row 6 now says `test:db` is additive), N-2 (P8 caps `x-request-id` at 64 chars of `[A-Za-z0-9._-]`) and N-3 (step 2 names `audit`; the primitives doc says "planned") are now in the spec text. Grounding re-checked: `apiHandler` still logs `{ error }`, `ConflictError` has no `fields` yet, repository `list()`/`findById`/`updateStatus` and the `"requested"` fallback exist as the spec describes, root `test` runs workspaces with `--if-present`, and `@easyrms/db` has no test script. No open findings. Readiness: go.
 Spec: `.ai/specs/2026-10-22-return-agent-decision.md` (Status: Approved; P1-P8 confirmed in session 2026-10-23) · audited 2026-10-23 against `BACKWARD_COMPATIBILITY.md` (all 5 surfaces), template: built-in section set (no `paths.specTemplate`, no template file), review rules `doc/code-review-checklist.md` + `CODE_REVIEW.md`, `doc/engineering-standards.md`, `.ai/specs/product-brief.md`. This is a second re-audit after the spec was revised for G-1..G-10; it replaces the earlier report at this path (git history keeps it).
 
 ## ⚠️ Decisions for the spec owner
