@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, type FormEvent, type ReactElement } from "react";
+import { useEffect, useRef, useState, useTransition, type FormEvent, type ReactElement } from "react";
 import { useRouter } from "next/navigation";
 import { checkDecisionNote, REJECT_NOTE_MIN_LENGTH, type ReturnStatus } from "@easyrms/core";
 import { apiCall, Button, ErrorMessage, Label, Textarea } from "@easyrms/ui/admin";
@@ -8,6 +8,7 @@ import { apiCall, Button, ErrorMessage, Label, Textarea } from "@easyrms/ui/admi
 import { returnsCopy } from "../copy";
 
 const copy = returnsCopy.card;
+const REJECT_BUTTON_ID = "reject-open";
 const NOTE_FIELD_ID = "reject-note";
 const NOTE_HINT_ID = "reject-note-hint";
 const NOTE_COUNTER_ID = "reject-note-counter";
@@ -29,6 +30,16 @@ export function DecisionActions({ id, allowed }: { id: number; allowed: ReturnSt
   const [rejecting, setRejecting] = useState(false);
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
+
+  const noteRef = useRef<HTMLTextAreaElement>(null);
+  const wasRejecting = useRef(false);
+
+  // The reject button disappears when the form opens: move focus into the form, and back to the button on cancel.
+  useEffect(() => {
+    if (rejecting) noteRef.current?.focus();
+    else if (wasRejecting.current) document.getElementById(REJECT_BUTTON_ID)?.focus();
+    wasRejecting.current = rejecting;
+  }, [rejecting]);
 
   const isBusy = pendingStatus !== null || isRefreshing;
   const typed = note.trim().length;
@@ -78,7 +89,7 @@ export function DecisionActions({ id, allowed }: { id: number; allowed: ReturnSt
           </Button>
         ))}
         {canReject && !rejecting && (
-          <Button variant="destructive" disabled={isBusy} onClick={() => setRejecting(true)}>
+          <Button id={REJECT_BUTTON_ID} variant="destructive" disabled={isBusy} onClick={() => setRejecting(true)}>
             {returnsCopy.actionLabels.rejected}
           </Button>
         )}
@@ -92,6 +103,7 @@ export function DecisionActions({ id, allowed }: { id: number; allowed: ReturnSt
           <div className="space-y-1">
             <Label htmlFor={NOTE_FIELD_ID}>{copy.rejectNoteLabel}</Label>
             <Textarea
+              ref={noteRef}
               id={NOTE_FIELD_ID}
               value={note}
               onChange={(event) => setNote(event.target.value)}

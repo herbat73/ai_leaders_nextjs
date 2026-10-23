@@ -27,6 +27,8 @@ export class Migration20261023183126 extends Migration {
     await this.execute(`create table "return_request_events" ("id" serial primary key, "return_request_id" int not null, "type" varchar(32) not null, "from_status" varchar(32) null, "to_status" varchar(32) not null, "note" text null, "actor" varchar(16) not null, "created_at" timestamptz not null);`);
     await this.execute(`alter table "return_request_events" add constraint "return_request_events_return_request_id_foreign" foreign key ("return_request_id") references "return_requests" ("id") on delete restrict;`);
 
+    // This `alter table` takes an ACCESS EXCLUSIVE lock held until commit: no writer can insert a row without an RMA
+    // between the backfill below and the `set not null` at the end.
     await this.execute(`alter table "return_requests" add "rma" varchar(32) null, add "kind" varchar(16) not null default 'return', add "decision_note" text null;`);
     await this.execute(`alter table "return_requests" alter column "status" set default 'submitted';`);
 

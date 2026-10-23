@@ -85,7 +85,8 @@ export class MikroOrmReturnRepository implements ReturnRepository {
   }
 
   async findDetail(id: number): Promise<ReturnDetail | null> {
-    const row = await this.em.findOne(ReturnRequestSchema, { id });
+    // `refresh`: `findStatus` may have loaded a partial entity into this scope's identity map.
+    const row = await this.em.findOne(ReturnRequestSchema, { id }, { refresh: true });
     if (!row) return null;
     const events = await this.em.find(
       ReturnRequestEventSchema,
