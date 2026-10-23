@@ -21,8 +21,8 @@
 | 1 | 1.9 | Lookup and quote services, routes and flow tests | dispatch | done | 0bc215e |
 | 1 | 1.10 | Submit service, route and flow tests | dispatch | done | 148acec |
 | 1 | 1.11 | Real-database checks and scripted end-to-end run | dispatch | done | 04bf90c |
-| 2 | 2.1 | Public primitives with stories | dispatch | done | this |
-| 2 | 2.2 | formatDatePl, pluralPl and stage mapping | dispatch | todo | — |
+| 2 | 2.1 | Public primitives with stories | dispatch | done | 9a7d227 |
+| 2 | 2.2 | formatDatePl, pluralPl and stage mapping | dispatch | done | this |
 | 2 | 2.3 | Tracker page /returns/[rma] | dispatch | todo | — |
 | 2 | 2.4 | Lookup page, overview and html lang pl | dispatch | todo | — |
 | 2 | 2.5 | Wizard components with stories | dispatch | todo | — |
