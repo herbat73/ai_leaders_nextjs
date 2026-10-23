@@ -48,6 +48,10 @@ A return request moves through a fixed path, enforced by a state machine in `@ea
 
 > **Do not expose the app publicly yet.** Agents are anonymous: `/admin` and `PATCH /api/returns/[id]` have no authentication, so anyone who can reach them can approve or reject returns. An agent login spec is a recorded blocker (product brief, Q15).
 
+### Customer portal
+
+Customer routes: `/` (order number and e-mail lookup), `/returns` (overview of the order's requests), `/returns/new` (return wizard) and `/returns/[rma]` (status tracker). They rely on a signed guest session cookie and the `OrderLookup` port. **Production has no working customer flow yet:** the fake order adapter fails closed in production, the real platform adapter is unscheduled, and agents have no authentication. Customer flows run under `next dev` until a real adapter exists.
+
 ### Case sample lab
 
 `/admin/discovery/case-sample` takes an anonymised CSV of ~50 recent mail/phone cases (template at `/case-sample-template.csv`), computes the follow-up share, message counts and time to resolution, dry-runs rules R08–R10 (with what-if thresholds for R08/R09) and produces the `[DATA]` research note to commit under `.ai/specs/research/`. Nothing is stored and it needs no database. API: `POST /api/discovery/case-sample`. Needs no new configuration.
@@ -95,7 +99,7 @@ NODE_ENV=production npm run build
 
 ### Database tests
 
-`npm run test:db` runs Vitest in `@easyrms/db` against the local PostgreSQL from `npm run db:start` (or the database in `EASYRMS_DATABASE_URL`). Every test file creates a throwaway schema (selected through `search_path`) and drops it afterwards, so your data is untouched. It covers the migration (status mapping, RMA backfill order, `down` refusal) and the repository (compare-and-set transitions, events). It is not part of `npm test` or the CI gate until CI has a Postgres service, so record its result in `.ai/runs/` for each PR that touches `packages/db`.
+`npm run test:db` runs Vitest in `@easyrms/db` against the local PostgreSQL from `npm run db:start` (or the database in `EASYRMS_DATABASE_URL`). Every test file creates a throwaway schema (selected through `search_path`) and drops it afterwards, so your data is untouched. It covers the migrations (status mapping, RMA backfill order, `down` refusal, the items table) and the repository (compare-and-set transitions, events, concurrent submits under the order lock). It is not part of `npm test` or the CI gate until CI has a Postgres service, so record its result in `.ai/runs/` for each PR that touches `packages/db`.
 
 ### Storybook
 

@@ -28,8 +28,8 @@
 | 2 | 2.5 | Wizard components with stories | dispatch | done | 3e81e25 |
 | 2 | 2.6 | Wizard page /returns/new | dispatch | done | d8c1322 |
 | 2 | 2.7 | Submit switch and legacy form removal | dispatch | done | 71e8777 |
-| 2 | 2.8 | Agent card extension | dispatch | done | this |
-| 3 | 3.1 | README check, AGENTS.md and platform-primitives update | dispatch | todo | — |
+| 2 | 2.8 | Agent card extension | dispatch | done | 0566376 |
+| 3 | 3.1 | README check, AGENTS.md and platform-primitives update | dispatch | done | this |
 | 3 | 3.2 | Acceptance walkthrough recorded | inline | todo | — |
 | 3 | 3.3 | Brief bookkeeping and follow-up list | inline | todo | — |
 
