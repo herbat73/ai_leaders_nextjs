@@ -17,7 +17,7 @@ Where this file and `AGENTS.md` disagree, `AGENTS.md` wins. Sections marked **(w
 | Service | `<Name>Service`, file `core/src/services/<concept>/<name>.service.ts` | `ReturnService` |
 | Port (external integration) | `<Name>Gateway`/`Port`, file `<name>.port.ts`; adapters under `adapters/` | **(when needed)** |
 | DI cradle key | camelCase, one explicit registration per dependency (no `loadModules`) | `returnService` |
-| Zod schema | camelCase + `Schema`, file `core/src/validators/<concept>/<name>-<action>.schema.ts`, shared client/server | `returnRequestCreateSchema` |
+| Zod schema | camelCase + `Schema`, file `core/src/validators/<concept>/<name>-<action>.schema.ts`, shared client/server | `returnSubmitSchema` |
 | Event ID | `concept.entity.action`, past tense | `returns.return.created` **(when needed)** |
 | API route | one `route.ts` per resource under `app/src/app/api/<concept>/` | `api/returns/route.ts` |
 | Domain error | `<Name>Error` extending `AppError`, in `core/src/errors.ts` | `NotFoundError` |

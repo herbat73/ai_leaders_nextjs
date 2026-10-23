@@ -121,7 +121,7 @@ Benchmark odłożony: Claimlane wskazano jako wzorzec, ale nie sprawdzono go na 
 | R05 | W reklamacji najpierw naprawa/wymiana; obniżenie ceny/zwrot, gdy niemożliwe | Reklamacja | `[DOCUMENT]` docs/02 §2.5 | active | unknown | owner + legal | Adam Adamczyk | none |
 | R06 | Produkty `returnable=false` (higieniczne po otwarciu, na zamówienie) wyłączone ze zwrotu, nadal reklamowalne | Zwrot | `[DOCUMENT]` docs/01 §1.2 | active | unknown | owner | Adam Adamczyk | none |
 | R07 | Wymagane dowody łączą wymagania produktu, dostawcy i reguł (zdjęcia, wideo, nr seryjny) | Reklamacja, Transport, Brak | `[DOCUMENT]` docs/02 §2.5, docs/05 §5.2 | active | unknown | owner | Adam Adamczyk | none |
-| R08 | Reguła koncepcji R1: zwrot ≤ 150 zł → auto-akceptacja + etykieta | Zwrot | `[DOCUMENT]` docs/02 §2.8 | active | unknown | kierownik (B-05) | Adam Adamczyk | none |
+| R08 | Reguła koncepcji R1: zwrot ≤ 150 zł → auto-akceptacja + etykieta. **Odroczone:** nie wdrożona w wycinku portalu klienta (Q6, każdy zwrot trafia do agenta) | Zwrot | `[DOCUMENT]` docs/02 §2.8 | active | unknown | kierownik (B-05) | Adam Adamczyk | none |
 | R09 | Reguła koncepcji R2: reklamacja/transport ≤ 60 zł → auto-akceptacja bez odsyłania | Reklamacja, Transport | `[DOCUMENT]` docs/02 §2.8 | active | unknown | kierownik (B-05) | Adam Adamczyk | none |
 | R10 | Reguły koncepcji R3–R5: transport → priorytet wysoki; elektronika/AGD → wideo; ≥ 2000 zł → kierownik | wg reguły | `[DOCUMENT]` docs/02 §2.8 | active | unknown | kierownik (B-05) | Adam Adamczyk | none |
 | R11 | Agent zwraca pieniądze do 2000 zł; wyżej akceptacja kierownika/finansów; kwota ≤ wartość zgłoszenia | Zwrot pieniędzy | `[DOCUMENT]` docs/04 B-02, docs/05 §5.9 | active | unknown | owner + finance | Adam Adamczyk | none |
@@ -129,7 +129,7 @@ Benchmark odłożony: Claimlane wskazano jako wzorzec, ale nie sprawdzono go na 
 | R13 | Jedno zgłoszenie = jeden typ + jedno zamówienie, wiele pozycji; rozwiązanie na całe zgłoszenie | wszystkie | `[DOCUMENT]` docs/01 §1.5 | active | unknown | owner | Adam Adamczyk | none |
 | R14 | Wyszukanie zamówienia/statusu: neutralny komunikat błędu, CAPTCHA po 5 próbach, 10/min/IP | K-01, K-04 | `[DOCUMENT]` docs/02 §2.3, docs/05 §5.1 | superseded | unknown | security | Adam Adamczyk | none |
 | R15 | Odrzucenie wymaga uzasadnienia ≥ 30 znaków; anulowanie przez klienta do nadania paczki | B-02, K-05 | `[DOCUMENT]` docs/02 §2.7, §2.9 | active | unknown | owner | Adam Adamczyk | none |
-| R16 | Retencja zdjęć i danych 3 lata, potem anonimizacja; WCAG 2.1 AA | wszystkie | `[DOCUMENT]` docs/01 §1.5, docs/05 §5.9 | active | unknown | owner + legal | Adam Adamczyk | none |
+| R16 | Retencja zdjęć i danych 3 lata, potem anonimizacja; WCAG 2.1 AA. **Odroczone:** retencja i anonimizacja nie są wdrożone w wycinku portalu klienta (e-mail i komentarze pozycji są przechowywane bez limitu do czasu decyzji prawnej); WCAG jest celem | wszystkie | `[DOCUMENT]` docs/01 §1.5, docs/05 §5.9 | active | unknown | owner + legal | Adam Adamczyk | none |
 | R17 | Wyszukanie zamówienia/statusu: neutralny komunikat błędu; zamiast CAPTCHA dwa twarde limity: 10/min/IP oraz 5 nieudanych prób na 10 min dla pary (zamówienie, IP) | K-01, K-04 | decyzja w sesji 2026-10-23, spec return-customer-portal | active | security (przegląd przed publicznym wdrożeniem) | owner + security | Adam Adamczyk | R14 |
 
 Wartości R01, R03, R08–R10 i R12 są zaimplementowane w mockupie tak samo jak w docs. `[PRODUCT]` mockup/src/data.ts:231–244

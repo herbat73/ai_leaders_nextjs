@@ -1,6 +1,6 @@
 # Execution plan — return customer portal (one PR)
 
-**Source spec:** `.ai/specs/2026-10-22-return-customer-portal.md`
+**Source spec:** `.ai/specs/implemented/2026-10-22-return-customer-portal.md` (moved there in Step 3.3)
 **Branch:** `feat/return-customer-portal`
 **Engine:** om-auto-create-pr-loop (`--loop`)
 
@@ -30,8 +30,8 @@
 | 2 | 2.7 | Submit switch and legacy form removal | dispatch | done | 71e8777 |
 | 2 | 2.8 | Agent card extension | dispatch | done | 0566376 |
 | 3 | 3.1 | README check, AGENTS.md and platform-primitives update | dispatch | done | 37cddd4 |
-| 3 | 3.2 | Acceptance walkthrough recorded | inline | done | this |
-| 3 | 3.3 | Brief bookkeeping and follow-up list | inline | todo | — |
+| 3 | 3.2 | Acceptance walkthrough recorded | inline | done | 765046f |
+| 3 | 3.3 | Brief bookkeeping and follow-up list | inline | done | this |
 
 ## Goal
 Ship the customer side of the first return slice (order lookup, return wizard, status tracker, backend, CSRF) on ONE PR.
