@@ -19,6 +19,8 @@ Persistence, CLI, real order/mail ports, anything from the customer-portal spec,
 
 ## Progress
 
+PR: #26
+
 > Convention: `- [ ]` pending, `- [x]` done. Append ` — <commit sha>` when a step lands. Do not rename step titles.
 
 ### Phase 1: Core primitives

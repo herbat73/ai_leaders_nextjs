@@ -12,5 +12,9 @@ Spec: `.ai/specs/2026-10-22-case-sample-lab-and-platform-primitives.md` (issue #
 - `curl` against `next dev` with Postgres stopped (`pg_isready`: no response): 200 with the fixture and `thresholds.R08 = "200,00"` (matches above); 400 with `row.2.case_ref` and `row.2.value_pln`; 400 guard `row.2`; 413 `payload_too_large` at ~1.1 MB; 400 `thresholds.R10c`. No `x-requested-with` header was needed: the CSRF check from the customer-portal spec does not exist yet.
 - Gate per step: `typecheck`, `npm test` (core), `lint` (0 errors), `audit`, `storybook:build`.
 
+## UI verification
+Browser walkthrough against the fixture (agent-browser, `next dev`, Postgres stopped) passed: tiles 12 / 75% (47–91%) / 4 / 58% (32–81%), what-if R08 = 200 zł changes only the scenario column, bad threshold keeps the results, bad rows and a personal-data file are rejected by row. Evidence: `doc/previdences/pr-26/`.
+
 ## Not done here
-- The browser walkthrough of the lab page (Phase 3 step 2 manual acceptance) and issue #14 comment: left to the UI-verify step and to after merge.
+- Issue #14 comment (after merge); note download, clipboard copy, keyboard-only selection and dark theme were not exercised.
+- Review follow-ups accepted as minor: papaparse quote errors are ignored and line numbers drift for multi-line quoted cells.

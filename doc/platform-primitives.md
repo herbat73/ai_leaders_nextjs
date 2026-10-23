@@ -1,6 +1,6 @@
 # Platform primitives (map, non-binding)
 
-Source: `.ai/specs/2026-10-22-case-sample-lab-and-platform-primitives.md` (written there, moved here after its architectural review of 2026-10-23). Taken from UC-01…UC-15, screens K/Z/B/D/X and the API catalog (`docs/05`) via the product brief.
+Source: `.ai/specs/implemented/2026-10-22-case-sample-lab-and-platform-primitives.md` (written there, moved here after its architectural review of 2026-10-23). Taken from UC-01…UC-15, screens K/Z/B/D/X and the API catalog (`docs/05`) via the product brief.
 
 Primitives marked **design** are **non-binding proposals**: a sketch of the contract, built and approved by the first spec that needs it (YAGNI, `doc/engineering-standards.md` §4). Listing one here does not approve it. The spec that needs it starts from the sketch and may change it, but should not build a parallel mechanism. "Built by" rows are kept in step with the specs that build them; when a spec lands, update its row.
 
