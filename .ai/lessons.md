@@ -13,6 +13,8 @@ For a lesson with enough depth to need code samples, longer explanations, or mul
 
 Keep entries short — a few lines each. Newest entries at the top.
 
+- **2026-10-23 — Idempotency unique violation.** MikroORM's `UniqueConstraintViolationException` has no `constraint` property in this version; match the constraint name in `error.message` (pg: `duplicate key value violates unique constraint "<name>"`), so an RMA collision is not mislabelled as an idempotency conflict.
+
 - **2026-10-23 — Case sample lab (Zod 4, formatting, tests).**
   - `ZodObject.shape[key]` is typed as the bare `$ZodType` in Zod 4, which has no `.safeParse`; use the top-level `safeParse(field, value)` import (here to test whether a column is optional).
   - `Intl` `pl-PL` skips grouping for four-digit numbers (`1299,00 zł`), so `formatMoney` groups by hand with U+00A0 (also before `zł`) and needs no ICU data. Tests must write the non-breaking space as `\u00a0`; a plain space in an expected string fails silently-looking comparisons.

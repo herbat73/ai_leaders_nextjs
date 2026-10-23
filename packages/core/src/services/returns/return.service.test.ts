@@ -7,7 +7,7 @@ import { isReturnStatus, ReturnService, toReturnStatus } from "./return.service"
 import { returnStateMachine } from "./transitions";
 import {
   RETURN_STATUSES,
-  type NewReturnRequest,
+  type LegacyNewReturnRequest,
   type ReturnDetail,
   type ReturnEvent,
   type ReturnRepository,
@@ -43,6 +43,11 @@ interface Fake extends ReturnRepository {
   beforeTransition?: () => void;
 }
 
+/** The portal methods are exercised by later flow tests; this fake only covers the agent workflow. */
+const unsupported = (): never => {
+  throw new Error("not implemented in this fake");
+};
+
 /** In-memory stand-in for the `db` repository port, with the same compare-and-set and note semantics. */
 function makeRepository(initial: ReturnRequest[] = []): Fake {
   const fake: Fake = {
@@ -53,9 +58,15 @@ function makeRepository(initial: ReturnRequest[] = []): Fake {
     findStatus: async (id) => fake.rows.find((row) => row.id === id)?.status ?? null,
     findDetail: async (id): Promise<ReturnDetail | null> => {
       const request = fake.rows.find((row) => row.id === id);
-      return request ? { request, decisionNote: fake.notes.get(id) ?? null, events: [...fake.events] } : null;
+      return request ? { request, decisionNote: fake.notes.get(id) ?? null, items: [], events: [...fake.events] } : null;
     },
-    create: async (input: NewReturnRequest) => {
+    createWithItems: unsupported,
+    listByOrder: unsupported,
+    findByRma: unsupported,
+    findByIdempotencyKey: unsupported,
+    claimedQuantities: unsupported,
+    withOrderLock: unsupported,
+    create: async (input: LegacyNewReturnRequest) => {
       const row = makeRequest({ ...input, id: fake.rows.length + 1, rma: `RMA-2026-${fake.rows.length + 1}` });
       fake.rows.push(row);
       return row;

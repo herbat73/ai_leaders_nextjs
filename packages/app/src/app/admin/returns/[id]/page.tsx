@@ -64,12 +64,8 @@ export default async function ReturnCardPage({ params }: { params: Promise<{ id:
             <dd className="break-words">{request.orderNumber}</dd>
             <dt className="text-muted-foreground">{copy.customer}</dt>
             <dd className="break-words">{request.customerEmail}</dd>
-            {request.reason && (
-              <>
-                <dt className="text-muted-foreground">{copy.reason}</dt>
-                <dd className="whitespace-pre-wrap break-words">{request.reason}</dd>
-              </>
-            )}
+            <dt className="text-muted-foreground">{copy.reason}</dt>
+            <dd className="whitespace-pre-wrap break-words">{request.reason ?? "—"}</dd>
             <dt className="text-muted-foreground">{copy.due}</dt>
             <dd className="flex flex-wrap items-center gap-2">
               {formatEventTime(request.dueAt)}

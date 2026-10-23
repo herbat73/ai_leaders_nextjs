@@ -4,7 +4,7 @@ import { checkDecisionNote } from "./decision-note";
 import { returnStateMachine } from "./transitions";
 import {
   RETURN_STATUSES,
-  type NewReturnRequest,
+  type LegacyNewReturnRequest,
   type ReturnDetailView,
   type ReturnListFilter,
   type ReturnListItem,
@@ -38,7 +38,7 @@ export class ReturnService {
     return rows.map((row) => this.toListItem(row, now));
   }
 
-  create(input: NewReturnRequest): Promise<ReturnRequest> {
+  create(input: LegacyNewReturnRequest): Promise<ReturnRequest> {
     return this.returnRepository.create(input);
   }
 

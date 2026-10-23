@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-import { formatRma, type ApiLogger } from "@easyrms/core";
+import { randomUUID } from "node:crypto";
+import { ConflictError, formatRma, money, type ApiLogger, type NewReturnRequest } from "@easyrms/core";
 
 import { createTestDatabase, insertLegacyRequest, type TestDatabase } from "../../test-support/postgres";
 import { MikroOrmReturnRepository } from "./return.repository";
@@ -252,5 +253,162 @@ describe("after the migration", () => {
     } finally {
       await fresh.close();
     }
+  });
+});
+
+const KEY = "11111111-1111-4111-8111-111111111111";
+
+function portalInput(order: string, overrides: Partial<NewReturnRequest> = {}): NewReturnRequest {
+  return {
+    orderNumber: order,
+    customerEmail: "c@example.com",
+    items: [
+      { lineRef: "L1", sku: "SKU-1", name: "Shoe", quantity: 2, unitPrice: money(19990), reasonCode: "size", comment: "Too small" },
+      { lineRef: "L2", sku: "SKU-2", name: "Sock", quantity: 1, unitPrice: money(1999), reasonCode: "mistake" },
+    ],
+    resolution: "refund",
+    resolutionAmount: money(41969),
+    returnMethod: "parcel_locker",
+    idempotencyKey: randomUUID(),
+    ...overrides,
+  };
+}
+
+describe("createWithItems", () => {
+  it("writes the request, its items, the RMA and the submitted event in one go", async () => {
+    const created = await repository().createWithItems(portalInput("P-1", { idempotencyKey: KEY }));
+
+    expect(created).toMatchObject({
+      status: "submitted",
+      reason: null,
+      resolution: "refund",
+      resolutionAmount: money(41969),
+      returnMethod: "parcel_locker",
+      exchangeNote: null,
+    });
+    expect(created.rma).toBe(formatRma(Number(created.rma.split("-")[2]), created.createdAt));
+    expect(await events(created.id)).toEqual([
+      { type: "submitted", from_status: null, to_status: "submitted", note: null, actor: "system" },
+    ]);
+    const rows = await db.query<{ line_ref: string; quantity: number; unit_price: string; reason_code: string; comment: string | null }>(
+      `select "line_ref", "quantity", "unit_price", "reason_code", "comment" from "return_request_items" where "return_request_id" = ? order by "id"`,
+      [created.id],
+    );
+    expect(rows).toEqual([
+      { line_ref: "L1", quantity: 2, unit_price: "199.90", reason_code: "size", comment: "Too small" },
+      { line_ref: "L2", quantity: 1, unit_price: "19.99", reason_code: "mistake", comment: null },
+    ]);
+  });
+
+  it("stores a null amount and the note for an exchange", async () => {
+    const created = await repository().createWithItems(
+      portalInput("P-2", { resolution: "exchange", resolutionAmount: null, exchangeNote: "Size 42" }),
+    );
+    expect(created).toMatchObject({ resolution: "exchange", resolutionAmount: null, exchangeNote: "Size 42" });
+  });
+
+  it("maps a reused idempotency key (even from another order) to ConflictError and leaves no second row", async () => {
+    const key = randomUUID();
+    await repository().createWithItems(portalInput("P-3", { idempotencyKey: key }));
+
+    await expect(repository().createWithItems(portalInput("P-3-other", { idempotencyKey: key }))).rejects.toBeInstanceOf(ConflictError);
+    const rows = await db.query(`select 1 from "return_requests" where "idempotency_key" = ?`, [key]);
+    expect(rows).toHaveLength(1);
+    expect(await db.query(`select 1 from "return_requests" where "order_number" = 'P-3-other'`)).toHaveLength(0);
+  });
+});
+
+describe("findByIdempotencyKey, findByRma, findDetail", () => {
+  it("find the request by key and by RMA, with items and events", async () => {
+    const key = randomUUID();
+    const created = await repository().createWithItems(portalInput("P-4", { idempotencyKey: key }));
+
+    expect(await repository().findByIdempotencyKey(key)).toMatchObject({ id: created.id, rma: created.rma });
+    expect(await repository().findByIdempotencyKey(randomUUID())).toBeNull();
+
+    for (const detail of [await repository().findByRma(created.rma), await repository().findDetail(created.id)]) {
+      expect(detail?.request.id).toBe(created.id);
+      expect(detail?.items.map((item) => item.lineRef)).toEqual(["L1", "L2"]);
+      expect(detail?.items[0]).toEqual({
+        lineRef: "L1",
+        sku: "SKU-1",
+        name: "Shoe",
+        quantity: 2,
+        unitPrice: money(19990),
+        reasonCode: "size",
+        comment: "Too small",
+      });
+      expect(detail?.events.map((event) => event.type)).toEqual(["submitted"]);
+    }
+    expect(await repository().findByRma("RMA-0000-00000")).toBeNull();
+  });
+
+  it("returns no items for a legacy request", async () => {
+    const id = await createRequest("P-5");
+    expect((await repository().findDetail(id))?.items).toEqual([]);
+  });
+});
+
+describe("listByOrder", () => {
+  it("lists only that order's requests, newest first", async () => {
+    const first = await repository().createWithItems(portalInput("P-6"));
+    const second = await repository().createWithItems(portalInput("P-6"));
+    await repository().createWithItems(portalInput("P-6-other"));
+
+    const listed = await repository().listByOrder("P-6");
+    expect(listed.map((request) => request.id)).toEqual([second.id, first.id]);
+    expect(await repository().listByOrder("P-none")).toEqual([]);
+  });
+});
+
+describe("claimedQuantities", () => {
+  it("sums per line, and cancelled or rejected requests release their quantity", async () => {
+    const kept = await repository().createWithItems(portalInput("Q-1"));
+    const cancelled = await repository().createWithItems(portalInput("Q-1"));
+    const rejected = await repository().createWithItems(portalInput("Q-1"));
+    await repository().createWithItems(portalInput("Q-1-other"));
+    expect(await repository().claimedQuantities("Q-1")).toEqual({ L1: 6, L2: 3 });
+
+    await repository().transition(cancelled.id, "submitted", "cancelled", null);
+    await repository().transition(rejected.id, "submitted", "rejected", "Not eligible for return here");
+    expect(await repository().claimedQuantities("Q-1")).toEqual({ L1: 2, L2: 1 });
+
+    await repository().transition(kept.id, "submitted", "approved", null);
+    expect(await repository().claimedQuantities("Q-1")).toEqual({ L1: 2, L2: 1 });
+    expect(await repository().claimedQuantities("Q-empty")).toEqual({});
+  });
+});
+
+describe("withOrderLock", () => {
+  it("hands a transaction-scoped repository to the callback and commits on success", async () => {
+    const result = await repository().withOrderLock("W-1", async (tx) => {
+      const created = await tx.createWithItems(portalInput("W-1"));
+      return (await tx.listByOrder("W-1")).map((request) => request.id === created.id);
+    });
+
+    expect(result).toEqual([true]);
+    expect(await db.query(`select 1 from "return_requests" where "order_number" = 'W-1'`)).toHaveLength(1);
+  });
+
+  it("rolls everything back when the callback throws", async () => {
+    await expect(
+      repository().withOrderLock("W-2", async (tx) => {
+        await tx.createWithItems(portalInput("W-2"));
+        await tx.create({ orderNumber: "W-2", customerEmail: "c@example.com", reason: "r" });
+        throw new Error("abort");
+      }),
+    ).rejects.toThrow("abort");
+
+    expect(await db.query(`select 1 from "return_requests" where "order_number" = 'W-2'`)).toHaveLength(0);
+    expect(await db.query(`select 1 from "return_request_items" where "line_ref" = 'L1' and "return_request_id" not in (select "id" from "return_requests")`)).toHaveLength(0);
+  });
+
+  it("runs the callback inside one transaction that holds the advisory lock", async () => {
+    const held = await repository().withOrderLock("W-3", async (tx) => {
+      await tx.createWithItems(portalInput("W-3"));
+      return db.query(`select 1 from "pg_locks" where "locktype" = 'advisory' and "granted" and "database" = (select "oid" from "pg_database" where "datname" = current_database())`);
+    });
+    expect(held.length).toBeGreaterThan(0);
+    expect(await db.query(`select 1 from "pg_locks" where "locktype" = 'advisory' and "granted" and "database" = (select "oid" from "pg_database" where "datname" = current_database())`)).toHaveLength(0);
   });
 });
