@@ -195,6 +195,28 @@ describe("ReturnLookupService.lookup", () => {
   });
 });
 
+describe("ReturnLookupService.describeOrder", () => {
+  it("returns the lookup view for the session order without issuing anything or consuming budget", async () => {
+    const { service } = setup({ claimed: { "PL-10001": { L2: 1 } } });
+    const view = await service.describeOrder("PL-10001");
+    expect(view.orderNumber).toBe("PL-10001");
+    expect(view.lines[0]).toMatchObject({ lineRef: "L1", eligible: true, remainingQuantity: 1 });
+    expect(view.lines[1]).toMatchObject({ lineRef: "L2", eligible: false, ineligibleReason: "already_claimed" });
+    for (let i = 0; i < 40; i += 1) await service.describeOrder("PL-10001");
+  });
+
+  it("returns no lines for an undelivered order", async () => {
+    const view = await setup().service.describeOrder("PL-10004");
+    expect(view.deliveredAt).toBeNull();
+    expect(view.lines).toEqual([]);
+  });
+
+  it("maps unavailable to 503 and an unknown order to 404", async () => {
+    expect((await failure(setup({ port: unavailablePort() }).service.describeOrder("PL-10001"))).status).toBe(503);
+    expect((await failure(setup().service.describeOrder("PL-99999"))).status).toBe(404);
+  });
+});
+
 describe("ReturnLookupService.quote", () => {
   const base = { sessionOrderNumber: "PL-10001", returnMethod: "courier", resolution: "refund" } as const;
 

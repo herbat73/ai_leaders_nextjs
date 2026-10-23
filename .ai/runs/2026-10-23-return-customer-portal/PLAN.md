@@ -25,8 +25,8 @@
 | 2 | 2.2 | formatDatePl, pluralPl and stage mapping | dispatch | done | e63eaa6 |
 | 2 | 2.3 | Tracker page /returns/[rma] | dispatch | done | 907ef54 |
 | 2 | 2.4 | Lookup page, overview and html lang pl | dispatch | done | f2437bd |
-| 2 | 2.5 | Wizard components with stories | dispatch | done | this |
-| 2 | 2.6 | Wizard page /returns/new | dispatch | todo | — |
+| 2 | 2.5 | Wizard components with stories | dispatch | done | 3e81e25 |
+| 2 | 2.6 | Wizard page /returns/new | dispatch | done | this |
 | 2 | 2.7 | Submit switch and legacy form removal | dispatch | todo | — |
 | 2 | 2.8 | Agent card extension | dispatch | todo | — |
 | 3 | 3.1 | README check, AGENTS.md and platform-primitives update | dispatch | todo | — |

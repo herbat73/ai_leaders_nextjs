@@ -111,6 +111,23 @@ export class ReturnLookupService {
     return { view: this.toView(order, eligibility), sessionToken };
   }
 
+  /**
+   * The lookup view for the verified session's order, re-fetched from the port (no limiter budget, no session issued):
+   * what the wizard page needs to render the picker. Undelivered orders come back with `deliveredAt: null` and no lines.
+   */
+  async describeOrder(sessionOrderNumber: string): Promise<ReturnLookupView> {
+    const result: OrderLookupResult = await this.orderLookup.getByNumber(sessionOrderNumber);
+    if (result.status === "unavailable") throw new ServiceUnavailableError(ORDER_UNAVAILABLE_MESSAGE);
+    if (result.status === "not_found") throw new NotFoundError("Order not found");
+    const order = result.order;
+    const claimed = await this.returnRepository.claimedQuantities(order.orderNumber);
+    const eligibility = checkEligibility(order, this.clock(), this.eligibilityConfig, claimed);
+    if (eligibility.status === "not_delivered") {
+      return { orderNumber: order.orderNumber, deliveredAt: null, lines: [], trackingUrl: eligibility.trackingUrl };
+    }
+    return this.toView(order, eligibility);
+  }
+
   async quote(input: ReturnQuoteRequest): Promise<ReturnQuoteView> {
     const decision = this.rateLimiter.consume(rateKeys.quote(input.sessionOrderNumber), CUSTOMER_RATE_RULES.session);
     if (!decision.allowed) throw new TooManyRequestsError();
