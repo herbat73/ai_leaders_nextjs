@@ -25,7 +25,7 @@ export class Migration20261023202921 extends Migration {
 
   override async down(): Promise<void> {
     // Checked first so a refusal changes nothing (the statements below also run in one transaction).
-    const [nulls] = await await this.execute(`select count(*)::int as "count" from "return_requests" where "reason" is null;`);
+    const [nulls] = await this.execute(`select count(*)::int as "count" from "return_requests" where "reason" is null;`);
     if (Number(nulls.count) > 0) {
       throw new Error('Refusing to roll back: some return requests have no reason (customer portal submissions), so "reason" cannot be made not null again. Nothing was changed.');
     }

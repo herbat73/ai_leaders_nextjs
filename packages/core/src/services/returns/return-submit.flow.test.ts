@@ -295,6 +295,23 @@ describe("ReturnService.submit", () => {
     expect(repo.inputs).toHaveLength(0);
   });
 
+  it("does not spend session budget on unavailable answers", async () => {
+    let healthy = false;
+    const unavailable: OrderLookupResult = { status: "unavailable" };
+    const port: OrderLookup = {
+      lookup: async (): Promise<OrderLookupResult> => unavailable,
+      getByNumber: async (orderNumber): Promise<OrderLookupResult> =>
+        healthy ? createFakeOrderLookup({ clock: () => NOW }).getByNumber(orderNumber) : unavailable,
+    };
+    const { service } = setup({ port });
+    for (let i = 0; i < 35; i += 1) expect(await failure(service.submit("PL-10001", body()))).toMatchObject({ status: 503 });
+    healthy = true;
+    for (let i = 0; i < 30; i += 1) {
+      await failure(service.submit("PL-10001", body({ items: [{ lineRef: "L9", quantity: 1, reasonCode: "other" }] })));
+    }
+    expect(await failure(service.submit("PL-10001", body()))).toMatchObject({ status: 429, code: "rate_limited" });
+  });
+
   it("answers 404 for an unknown order", async () => {
     const { service } = setup();
     expect(await failure(service.submit("PL-99999", body()))).toMatchObject({ status: 404 });

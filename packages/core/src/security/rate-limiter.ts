@@ -67,6 +67,12 @@ export class RateLimiter {
     return { ...decision, remaining: decision.remaining - 1 };
   }
 
+  /** Refunds one recorded event (a reservation that turned out not to count); no-op when the window already ended. */
+  release(key: string): void {
+    const current = this.live(key, this.clock().getTime());
+    if (current && current.count > 0) current.count -= 1;
+  }
+
   /** Number of tracked keys (including expired ones not yet evicted). */
   get size(): number {
     return this.windows.size;

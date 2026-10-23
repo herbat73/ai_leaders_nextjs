@@ -11,7 +11,7 @@ import type { ApiLogger } from "../../http/types";
 import { CUSTOMER_RATE_RULES, rateKeys, type RateLimiter } from "../../security/rate-limiter";
 import type { ReturnSubmitBody } from "../../validators/returns/return-submit.schema";
 import { maskEmail, type MailPort, type MailTemplate } from "../mail/mail.port";
-import type { OrderLookup } from "../orders/order-lookup.port";
+import type { OrderLookup, OrderLookupResult } from "../orders/order-lookup.port";
 import { checkDecisionNote } from "./decision-note";
 import { checkEligibility, type EligibilityConfig, type IneligibleReason } from "./eligibility";
 import { calculateQuote, validateQuoteLines, type QuoteConfig } from "./quote";
@@ -164,11 +164,21 @@ export class ReturnService {
    * quantity or a window that closed after the first attempt; the in-lock lookup still settles two racing retries.
    */
   async submit(sessionOrderNumber: string, input: ReturnSubmitBody): Promise<ReturnSubmitResult> {
-    const decision = this.rateLimiter.consume(rateKeys.quote(sessionOrderNumber), CUSTOMER_RATE_RULES.session);
-    if (!decision.allowed) throw new TooManyRequestsError();
+    const sessionKey = rateKeys.quote(sessionOrderNumber);
+    if (!this.rateLimiter.consume(sessionKey, CUSTOMER_RATE_RULES.session).allowed) throw new TooManyRequestsError();
 
-    const lookedUp = await this.orderLookup.getByNumber(sessionOrderNumber);
-    if (lookedUp.status === "unavailable") throw new ServiceUnavailableError(ORDER_UNAVAILABLE_MESSAGE);
+    let lookedUp: OrderLookupResult;
+    try {
+      lookedUp = await this.orderLookup.getByNumber(sessionOrderNumber);
+    } catch (error) {
+      this.rateLimiter.release(sessionKey);
+      throw error;
+    }
+    if (lookedUp.status === "unavailable") {
+      // Reserved before the await; an unavailable platform does not spend session budget.
+      this.rateLimiter.release(sessionKey);
+      throw new ServiceUnavailableError(ORDER_UNAVAILABLE_MESSAGE);
+    }
     if (lookedUp.status === "not_found") throw new NotFoundError("Order not found");
     const order = lookedUp.order;
     // Only the canonical number from the port is locked on, stored and compared (S8).

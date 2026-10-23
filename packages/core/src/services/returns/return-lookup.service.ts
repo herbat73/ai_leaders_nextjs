@@ -76,27 +76,35 @@ export class ReturnLookupService {
   }
 
   /**
-   * Budgets: lookups per IP and failed attempts per (order, IP) are checked first (429). The order port then answers;
-   * `unavailable` consumes nothing and is a 503, any other answer counts as one lookup and `not_found` also as one
-   * failed attempt. A wrong order and a wrong e-mail are the same `not_found`.
+   * Budgets: lookups per IP and failed attempts per (order, IP) are reserved first (429). The order port then answers;
+   * `unavailable` refunds both (503), a match refunds the failed-attempt slot, `not_found` keeps both. A wrong order and a wrong e-mail are the same `not_found`.
    */
   async lookup(input: { orderNumber: string; email: string; ip: string }): Promise<ReturnLookupOutcome> {
     const lookupKey = rateKeys.lookup(input.ip);
     const failedKey = rateKeys.failedAttempt(input.orderNumber, input.ip);
-    if (
-      !this.rateLimiter.check(lookupKey, CUSTOMER_RATE_RULES.lookup).allowed ||
-      !this.rateLimiter.check(failedKey, CUSTOMER_RATE_RULES.failedAttempt).allowed
-    ) {
+    // Both slots are reserved before the port is awaited, so parallel lookups cannot all pass the check first.
+    if (!this.rateLimiter.consume(lookupKey, CUSTOMER_RATE_RULES.lookup).allowed) throw new TooManyRequestsError();
+    if (!this.rateLimiter.consume(failedKey, CUSTOMER_RATE_RULES.failedAttempt).allowed) {
+      this.rateLimiter.release(lookupKey);
       throw new TooManyRequestsError();
     }
 
-    const result = await this.orderLookup.lookup(input.orderNumber, input.email);
-    if (result.status === "unavailable") throw new ServiceUnavailableError(ORDER_UNAVAILABLE_MESSAGE);
-    this.rateLimiter.hit(lookupKey, CUSTOMER_RATE_RULES.lookup);
-    if (result.status === "not_found") {
-      this.rateLimiter.hit(failedKey, CUSTOMER_RATE_RULES.failedAttempt);
-      throw new NotFoundError(LOOKUP_NOT_FOUND_MESSAGE);
+    let result: OrderLookupResult;
+    try {
+      result = await this.orderLookup.lookup(input.orderNumber, input.email);
+    } catch (error) {
+      this.rateLimiter.release(lookupKey);
+      this.rateLimiter.release(failedKey);
+      throw error;
     }
+    if (result.status === "unavailable") {
+      this.rateLimiter.release(lookupKey);
+      this.rateLimiter.release(failedKey);
+      throw new ServiceUnavailableError(ORDER_UNAVAILABLE_MESSAGE);
+    }
+    if (result.status === "not_found") throw new NotFoundError(LOOKUP_NOT_FOUND_MESSAGE);
+    // A match is not a failed attempt: refund that reservation.
+    this.rateLimiter.release(failedKey);
 
     const order = result.order;
     const claimed = await this.returnRepository.claimedQuantities(order.orderNumber);
@@ -129,11 +137,21 @@ export class ReturnLookupService {
   }
 
   async quote(input: ReturnQuoteRequest): Promise<ReturnQuoteView> {
-    const decision = this.rateLimiter.consume(rateKeys.quote(input.sessionOrderNumber), CUSTOMER_RATE_RULES.session);
-    if (!decision.allowed) throw new TooManyRequestsError();
+    const sessionKey = rateKeys.quote(input.sessionOrderNumber);
+    if (!this.rateLimiter.consume(sessionKey, CUSTOMER_RATE_RULES.session).allowed) throw new TooManyRequestsError();
 
-    const result: OrderLookupResult = await this.orderLookup.getByNumber(input.sessionOrderNumber);
-    if (result.status === "unavailable") throw new ServiceUnavailableError(ORDER_UNAVAILABLE_MESSAGE);
+    let result: OrderLookupResult;
+    try {
+      result = await this.orderLookup.getByNumber(input.sessionOrderNumber);
+    } catch (error) {
+      this.rateLimiter.release(sessionKey);
+      throw error;
+    }
+    if (result.status === "unavailable") {
+      // Reserved before the await (parallel calls stay limited); an unavailable platform does not spend budget.
+      this.rateLimiter.release(sessionKey);
+      throw new ServiceUnavailableError(ORDER_UNAVAILABLE_MESSAGE);
+    }
     if (result.status === "not_found") throw new NotFoundError("Order not found");
 
     const order = result.order;

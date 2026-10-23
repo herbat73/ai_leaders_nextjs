@@ -174,6 +174,44 @@ describe("ReturnLookupService.lookup", () => {
     await expect(service.lookup({ ...ANNA, ip: IP })).resolves.toBeDefined();
   });
 
+  it("reserves the budget before the port answers: 8 parallel wrong-e-mail lookups reach the port at most 5 times", async () => {
+    const inner = createFakeOrderLookup({ clock: () => NOW });
+    let reached = 0;
+    const slow: OrderLookup = {
+      lookup: async (orderNumber, email) => {
+        reached += 1;
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        return inner.lookup(orderNumber, email);
+      },
+      getByNumber: inner.getByNumber,
+    };
+    const { service } = setup({ port: slow });
+    const results = await Promise.allSettled(
+      Array.from({ length: 8 }, () => service.lookup({ orderNumber: ANNA.orderNumber, email: "no@example.pl", ip: IP })),
+    );
+    expect(reached).toBe(5);
+    const reasons = results.map((r) => (r.status === "rejected" ? (r.reason as AppError) : null));
+    expect(reasons.filter((e) => e instanceof NotFoundError)).toHaveLength(5);
+    expect(reasons.filter((e) => e instanceof TooManyRequestsError)).toHaveLength(3);
+  });
+
+  it("reserves the per-IP lookup budget before the port answers (12 parallel lookups of distinct orders: 10 reach the port, 2 are 429)", async () => {
+    const inner = createFakeOrderLookup({ clock: () => NOW });
+    const slow: OrderLookup = {
+      lookup: async (orderNumber, email) => {
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        return inner.lookup(orderNumber, email);
+      },
+      getByNumber: inner.getByNumber,
+    };
+    const { service } = setup({ port: slow });
+    const results = await Promise.allSettled(
+      Array.from({ length: 12 }, (_, i) => service.lookup({ orderNumber: `PL-9${i}`, email: ANNA.email, ip: IP })),
+    );
+    expect(results.filter((r) => r.status === "rejected" && r.reason instanceof NotFoundError)).toHaveLength(10);
+    expect(results.filter((r) => r.status === "rejected" && r.reason instanceof TooManyRequestsError)).toHaveLength(2);
+  });
+
   it("gives tracking info and no session for an undelivered order", async () => {
     const { service } = setup();
     const outcome = await service.lookup({ orderNumber: "PL-10004", email: "piotr.zielinski@example.pl", ip: IP });
@@ -257,6 +295,38 @@ describe("ReturnLookupService.quote", () => {
     expect((await failure(setup({ port: unavailablePort() }).service.quote({ ...base, items: [{ lineRef: "L1", quantity: 1 }] }))).status).toBe(503);
     const missing = setup().service.quote({ ...base, sessionOrderNumber: "PL-00000", items: [{ lineRef: "L1", quantity: 1 }] });
     expect(await failure(missing)).toBeInstanceOf(NotFoundError);
+  });
+
+  it("does not spend session budget on unavailable answers, yet the 31st normal call is 429", async () => {
+    let healthy = false;
+    const inner = createFakeOrderLookup({ clock: () => NOW });
+    const flaky: OrderLookup = {
+      lookup: inner.lookup,
+      getByNumber: (orderNumber) => (healthy ? inner.getByNumber(orderNumber) : unavailablePort().getByNumber(orderNumber)),
+    };
+    const { service } = setup({ port: flaky });
+    for (let i = 0; i < 40; i += 1) {
+      expect((await failure(service.quote({ ...base, items: [{ lineRef: "L1", quantity: 1 }] }))).status).toBe(503);
+    }
+    healthy = true;
+    for (let i = 0; i < 30; i += 1) await service.quote({ ...base, items: [{ lineRef: "L1", quantity: 1 }] });
+    expect(await failure(service.quote({ ...base, items: [{ lineRef: "L1", quantity: 1 }] }))).toBeInstanceOf(TooManyRequestsError);
+  });
+
+  it("limits parallel quotes to 30 per minute even while the port is slow", async () => {
+    const inner = createFakeOrderLookup({ clock: () => NOW });
+    const slow: OrderLookup = {
+      lookup: inner.lookup,
+      getByNumber: async (orderNumber) => {
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        return inner.getByNumber(orderNumber);
+      },
+    };
+    const { service } = setup({ port: slow });
+    const results = await Promise.allSettled(
+      Array.from({ length: 35 }, () => service.quote({ ...base, items: [{ lineRef: "L1", quantity: 1 }] })),
+    );
+    expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(30);
   });
 
   it("limits quotes to 30 per minute per order", async () => {

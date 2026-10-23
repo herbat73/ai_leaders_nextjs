@@ -32,6 +32,7 @@
 | 3 | 3.1 | README check, AGENTS.md and platform-primitives update | dispatch | done | 37cddd4 |
 | 3 | 3.2 | Acceptance walkthrough recorded | inline | done | 765046f |
 | 3 | 3.3 | Brief bookkeeping and follow-up list | inline | done | 5ca55ad |
+| 3 | 3.4-review-fix | Review fixes: atomic limiter reservation, unavailable budget, migration typo | inline | done | this |
 
 ## Goal
 Ship the customer side of the first return slice (order lookup, return wizard, status tracker, backend, CSRF) on ONE PR.

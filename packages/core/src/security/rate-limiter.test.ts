@@ -83,6 +83,23 @@ describe("RateLimiter", () => {
   });
 });
 
+describe("RateLimiter.release", () => {
+  const rule = { limit: 2, windowMs: 1000 };
+
+  it("refunds one recorded event and never goes below zero", () => {
+    const limiter = new RateLimiter({ clock: () => new Date(0) });
+    limiter.consume("k", rule);
+    limiter.consume("k", rule);
+    expect(limiter.check("k", rule).allowed).toBe(false);
+    limiter.release("k");
+    expect(limiter.check("k", rule).allowed).toBe(true);
+    limiter.release("k");
+    limiter.release("k");
+    limiter.release("unknown");
+    expect(limiter.check("k", rule).remaining).toBe(2);
+  });
+});
+
 describe("normalizeOrderNumber", () => {
   it("trims, strips whitespace and case-folds", () => {
     expect(normalizeOrderNumber("  A B-1\t")).toBe("ab-1");
