@@ -27,7 +27,7 @@ Replace the unconstrained status select on `/admin/returns` with a nine-status w
 - [x] 1.6 db: entities and the hand-written migration with `down` and snapshot — afcb1ff
 - [x] 1.7 db: repository (`transition`, `findDetail`, `findStatus`, `list`, create) and logger wiring — 3301e84
 - [x] 1.8 app: routes, admin page, badge map and restricted status actions — 9bfa790
-- [ ] 1.9 db: `test:db` runner and Postgres tests (P5), AGENTS.md and README entries
+- [x] 1.9 db: `test:db` runner and Postgres tests (P5), AGENTS.md and README entries — d961036
 - [ ] 1.10 scripted Postgres run and run log (merge gate)
 
 ### Phase 2: Inbox and card
