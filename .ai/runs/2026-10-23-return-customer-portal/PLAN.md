@@ -15,8 +15,8 @@
 | 1 | 1.3 | Domain types and repository support for items, resolution and order lock | dispatch | done | 333e9c8 |
 | 1 | 1.4 | OrderLookup port and fake adapter | dispatch | done | 0d57a5a |
 | 1 | 1.5 | Money addMoney/applyRate, eligibility and quote | dispatch | done | d08d4db |
-| 1 | 1.6 | Rate limiter and clientIp | dispatch | done | this |
-| 1 | 1.7 | Guest session service and cookie helper | dispatch | todo | — |
+| 1 | 1.6 | Rate limiter and clientIp | dispatch | done | e64c11c |
+| 1 | 1.7 | Guest session service and cookie helper | dispatch | done | this |
 | 1 | 1.8 | MailPort, mock adapter and transition hook | dispatch | todo | — |
 | 1 | 1.9 | Lookup and quote services, routes and flow tests | dispatch | todo | — |
 | 1 | 1.10 | Submit service, route and flow tests | dispatch | todo | — |

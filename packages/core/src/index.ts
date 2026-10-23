@@ -16,6 +16,7 @@ export * from "./services/orders/order-lookup.port";
 export * from "./services/orders/order-source";
 export * from "./services/returns/decision-note";
 export * from "./services/returns/eligibility";
+export * from "./services/returns/guest-session.service";
 export * from "./services/returns/quote";
 export * from "./services/returns/return.service";
 export * from "./services/returns/rma";

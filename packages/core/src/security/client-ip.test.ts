@@ -21,3 +21,17 @@ describe("clientIp", () => {
     }
   });
 });
+
+describe("clientIp address validation", () => {
+  it("accepts valid IPv4 and IPv6 forms", () => {
+    for (const v of ["0.0.0.0", "255.255.255.255", "::", "::1", "fe80::1", "2001:DB8:0:0:0:0:0:1", "::ffff:1.2.3.4", "1::"]) {
+      expect(clientIp(h(v), { trustProxy: true })).toBe(v.toLowerCase());
+    }
+  });
+
+  it("rejects malformed addresses", () => {
+    for (const v of ["01.2.3.4", "1.2.3", "1:2:3:4:5:6:7", "1:2:3:4:5:6:7:8:9", "1::2::3", ":1", "g::1", "12345::1", "::1.2.3"]) {
+      expect(clientIp(h(v), { trustProxy: true })).toBe(SHARED_IP_BUCKET);
+    }
+  });
+});
