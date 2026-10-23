@@ -38,6 +38,32 @@ export function compareMoney(a: Money, b: Money): number {
   return a.amountMinor - b.amountMinor;
 }
 
+/** `a + b` for the same currency; throws on a currency mismatch or a result beyond the safe integers. */
+export function addMoney(a: Money, b: Money): Money {
+  if (a.currency !== b.currency) throw new RangeError("Cannot add different currencies");
+  const amountMinor = a.amountMinor + b.amountMinor;
+  assertMinor(amountMinor);
+  return { amountMinor, currency: a.currency };
+}
+
+/**
+ * `m × rate`, rounded half-up to whole minor units (0.5 minor units rounds up). The rate is an integer number of basis
+ * points (`11000` = 110 %, `1` = 0.01 %), so the arithmetic is exact integer math with no float drift. Only for non-negative amounts and rates.
+ */
+export function applyRate(m: Money, rateBasisPoints: number): Money {
+  assertMinor(m.amountMinor);
+  if (m.amountMinor < 0) throw new RangeError("Cannot apply a rate to a negative amount");
+  if (!Number.isSafeInteger(rateBasisPoints) || rateBasisPoints < 0) {
+    throw new RangeError("Rate must be a non-negative integer number of basis points");
+  }
+  // Split into whole 10 000ths and a remainder so no intermediate product leaves the safe integers early.
+  const whole = Math.floor(m.amountMinor / 10000);
+  const rest = m.amountMinor % 10000;
+  const amountMinor = whole * rateBasisPoints + Math.floor((rest * rateBasisPoints + 5000) / 10000);
+  assertMinor(amountMinor);
+  return { amountMinor, currency: m.currency };
+}
+
 /** `m × quantity` for a non-negative integer quantity; throws on a bad quantity or a result beyond the safe integers. */
 export function multiplyMoney(m: Money, quantity: number): Money {
   if (!Number.isInteger(quantity) || quantity < 0) throw new RangeError("Quantity must be a non-negative integer");
