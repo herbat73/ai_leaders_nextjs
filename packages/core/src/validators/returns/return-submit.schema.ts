@@ -23,7 +23,7 @@ export interface ReturnSubmitBody {
 }
 
 /**
- * Body of `POST /api/returns` (and the transitional `/submit`). Unknown keys are stripped, so a client-supplied amount
+ * Body of `POST /api/returns`. Unknown keys are stripped, so a client-supplied amount
  * or e-mail never reaches the service. `exchangeNote` is required only for `exchange`.
  */
 export const returnSubmitSchema: z.ZodType<ReturnSubmitBody> = z

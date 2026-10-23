@@ -21,7 +21,7 @@ export function LogoutButton(): ReactElement {
       setPending(false);
       return;
     }
-    router.push("/returns/lookup");
+    router.push("/");
   }
 
   return (

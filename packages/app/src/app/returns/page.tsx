@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 export default async function ReturnsOverviewPage() {
   const cookieStore = await cookies();
   const session = await getGuestSessionService().verify(cookieStore.get(GUEST_SESSION_COOKIE)?.value);
-  if (!session) redirect("/returns/lookup");
+  if (!session) redirect("/");
 
   // Local data only: the order platform is not called here. The "start a return" action is always shown; eligibility
   // (delivery, window, remaining quantities) is re-checked by the wizard page, which loads the order anyway.

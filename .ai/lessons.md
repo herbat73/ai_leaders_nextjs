@@ -13,6 +13,8 @@ For a lesson with enough depth to need code samples, longer explanations, or mul
 
 Keep entries short — a few lines each. Newest entries at the top.
 
+- **2026-10-23 — Submit switch.** After `app/api/returns/submit/route.ts` is gone, `POST /api/returns/submit` answers 405, not 404: the dynamic `/api/returns/[id]` segment captures `submit` and has no POST. Moving or deleting a route leaves stale `.next/types/validator.ts` that breaks `npm run typecheck` in `app`; `rm -rf packages/app/.next` fixes it.
+
 - **2026-10-23 — Wizard page.** A page that must re-run its Server Component after a failure needs `router.refresh()` from a client button (a plain `<a href>` to the same route trips `no-html-link-for-pages`). Server `fieldErrors["items.<lineRef>"]` from quote/submit are applied by marking that line ineligible locally (deselected, reason shown on the line) because `LinePicker` has no per-line error slot. `conflict` has no customer error key; the wizard maps it itself.
 
 - **2026-10-23 — Customer pages and error codes.** `apiCall` yields `network_error` (status 0) and `unexpected_response` itself, so a customer page must map codes (`customerErrorKey` in core, Polish copy in `returns/_lib/error-copy.ts`) rather than show `error.message`, which is English. A guest-session page redirects with `redirect()` after `await cookies()`; the lookup 404 is one neutral message for wrong order and wrong e-mail alike.

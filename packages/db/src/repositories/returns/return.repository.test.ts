@@ -28,7 +28,7 @@ function repository(logger: ApiLogger = makeLogger()): MikroOrmReturnRepository 
 }
 
 async function createRequest(order = "ORD-1"): Promise<number> {
-  const created = await repository().create({ orderNumber: order, customerEmail: "c@example.com", reason: "Too small" });
+  const created = await repository().createWithItems(portalInput(order));
   return created.id;
 }
 
@@ -43,20 +43,8 @@ const storedNote = async (id: number) =>
     .decision_note;
 
 describe("create", () => {
-  it("assigns a sequence-backed RMA, starts as submitted and writes the submitted event", async () => {
-    const created = await repository().create({ orderNumber: "ORD-9", customerEmail: "c@example.com", reason: "Damaged" });
-
-    expect(created).toMatchObject({ status: "submitted", kind: "return", hasDecisionNote: false });
-    expect(created.rma).toBe(formatRma(Number(created.rma.split("-")[2]), created.createdAt));
-    expect(await events(created.id)).toEqual([
-      { type: "submitted", from_status: null, to_status: "submitted", note: null, actor: "system" },
-    ]);
-  });
-
-  it("hands out distinct, increasing RMAs to concurrent creates", async () => {
-    const created = await Promise.all(
-      Array.from({ length: 8 }, (_, index) => repository().create({ orderNumber: `C-${index}`, customerEmail: "c@example.com", reason: "r" })),
-    );
+  it("hands out distinct RMAs to concurrent creates", async () => {
+    const created = await Promise.all(Array.from({ length: 8 }, (_, index) => repository().createWithItems(portalInput(`C-${index}`))));
 
     const numbers = created.map((request) => Number(request.rma.split("-")[2]));
     expect(new Set(numbers).size).toBe(8);
@@ -68,11 +56,7 @@ describe("create", () => {
 
     await expect(
       em.transactional(async (tx) => {
-        await new MikroOrmReturnRepository({ em: tx, logger: makeLogger() }).create({
-          orderNumber: "ROLLED-BACK",
-          customerEmail: "c@example.com",
-          reason: "r",
-        });
+        await new MikroOrmReturnRepository({ em: tx, logger: makeLogger() }).createWithItems(portalInput("ROLLED-BACK"));
         throw new Error("abort");
       }),
     ).rejects.toThrow("abort");
@@ -243,11 +227,7 @@ describe("after the migration", () => {
       await insertLegacyRequest(fresh, { status: "refunded", createdAt: "2026-03-02T10:00:00Z" });
       await fresh.migrateUp();
 
-      const created = await new MikroOrmReturnRepository({ em: fresh.fork(), logger: makeLogger() }).create({
-        orderNumber: "NEW",
-        customerEmail: "c@example.com",
-        reason: "r",
-      });
+      const created = await new MikroOrmReturnRepository({ em: fresh.fork(), logger: makeLogger() }).createWithItems(portalInput("NEW"));
 
       expect(Number(created.rma.split("-")[2])).toBe(3);
     } finally {
@@ -344,7 +324,11 @@ describe("findByIdempotencyKey, findByRma, findDetail", () => {
   });
 
   it("returns no items for a legacy request", async () => {
-    const id = await createRequest("P-5");
+    // A row written before the items table existed: raw SQL, since no repository path creates one any more.
+    const [{ id }] = await db.query<{ id: number }>(
+      `insert into "return_requests" ("order_number", "customer_email", "reason", "status", "kind", "rma", "created_at", "updated_at")
+       values ('P-5', 'c@example.com', 'Too small', 'submitted', 'return', 'RMA-2026-90005', now(), now()) returning "id"`,
+    );
     expect((await repository().findDetail(id))?.items).toEqual([]);
   });
 });
@@ -394,7 +378,7 @@ describe("withOrderLock", () => {
     await expect(
       repository().withOrderLock("W-2", async (tx) => {
         await tx.createWithItems(portalInput("W-2"));
-        await tx.create({ orderNumber: "W-2", customerEmail: "c@example.com", reason: "r" });
+        await tx.createWithItems(portalInput("W-2"));
         throw new Error("abort");
       }),
     ).rejects.toThrow("abort");

@@ -12,7 +12,6 @@ import type { MailMessage, MailPort } from "../mail/mail.port";
 import { returnStateMachine } from "./transitions";
 import {
   RETURN_STATUSES,
-  type LegacyNewReturnRequest,
   type ReturnDetail,
   type ReturnEvent,
   type ReturnRepository,
@@ -71,11 +70,6 @@ function makeRepository(initial: ReturnRequest[] = []): Fake {
     findByIdempotencyKey: unsupported,
     claimedQuantities: unsupported,
     withOrderLock: unsupported,
-    create: async (input: LegacyNewReturnRequest) => {
-      const row = makeRequest({ ...input, id: fake.rows.length + 1, rma: `RMA-2026-${fake.rows.length + 1}` });
-      fake.rows.push(row);
-      return row;
-    },
     transition: async (id, from, to, note) => {
       fake.beforeTransition?.();
       const row = fake.rows.find((candidate) => candidate.id === id);
@@ -211,18 +205,6 @@ describe("ReturnService.list", () => {
 
     expect((await service.list({ status: "approved" })).map((item) => item.id)).toEqual([2]);
     expect(await service.list({ status: "resolved" })).toEqual([]);
-  });
-});
-
-describe("ReturnService.create", () => {
-  it("creates a request through the repository", async () => {
-    const created = await makeService(makeRepository()).create({
-      orderNumber: "ORD-2",
-      customerEmail: "a@example.com",
-      reason: "Damaged",
-    });
-
-    expect(created).toMatchObject({ id: 1, orderNumber: "ORD-2", status: "submitted", kind: "return" });
   });
 });
 

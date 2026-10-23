@@ -96,13 +96,6 @@ export interface ReturnDetailView {
   events: ReturnEvent[];
 }
 
-/** The legacy free-text form; removed together with its form and route in the submit switch. */
-export interface LegacyNewReturnRequest {
-  orderNumber: string;
-  customerEmail: string;
-  reason: string;
-}
-
 export interface NewReturnItem {
   lineRef: string;
   sku: string;
@@ -142,8 +135,6 @@ export interface ReturnRepository {
   findDetail(id: number): Promise<ReturnDetail | null>;
   /** Status only, so the service can validate a move without reading the decision note. */
   findStatus(id: number): Promise<StoredReturnStatus | null>;
-  /** Legacy path: assigns the RMA and writes the `submitted` event with the row. */
-  create(input: LegacyNewReturnRequest): Promise<ReturnRequest>;
   /**
    * Assigns the RMA and writes the row, its items and the `submitted` event in one transaction (joins the caller's).
    * A duplicate `idempotencyKey` surfaces as `ConflictError` (409 `conflict`), never as an unmapped error.

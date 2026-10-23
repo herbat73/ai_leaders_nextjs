@@ -13,7 +13,6 @@ import {
   RETURN_METHODS,
   RETURN_REASON_CODES,
   RETURN_RESOLUTIONS,
-  type LegacyNewReturnRequest,
   type Money,
   type NewReturnRequest,
   type ReturnDetail,
@@ -192,33 +191,6 @@ export class MikroOrmReturnRepository implements ReturnRepository {
   async findStatus(id: number): Promise<StoredReturnStatus | null> {
     const row = await this.em.findOne(ReturnRequestSchema, { id }, { fields: ["status"], refresh: true });
     return row ? toReturnStatus(row.status) : null;
-  }
-
-  create(input: LegacyNewReturnRequest): Promise<ReturnRequest> {
-    return this.em.transactional(async (tx) => {
-      // The sequence is not part of the entity model, so this is one of the two raw statements (the other is the migration).
-      const [{ seq }] = await tx.execute<{ seq: string }[]>(`select nextval('return_rma_seq') as "seq"`);
-      const createdAt = new Date();
-      const row = tx.create(ReturnRequestSchema, {
-        ...input,
-        rma: formatRma(Number(seq), createdAt),
-        kind: RETURN_KIND,
-        status: "submitted",
-        createdAt,
-        updatedAt: createdAt,
-      });
-      tx.create(ReturnRequestEventSchema, {
-        returnRequest: row,
-        type: "submitted",
-        fromStatus: null,
-        toStatus: "submitted",
-        note: null,
-        actor: "system",
-        createdAt,
-      });
-      await tx.flush();
-      return toDomain(row);
-    }, joinOrOpen());
   }
 
   async createWithItems(input: NewReturnRequest): Promise<ReturnRequest> {

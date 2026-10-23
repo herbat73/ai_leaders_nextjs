@@ -42,7 +42,6 @@ function makeRepository(rows: ReturnRequest[] = [], claimed: Record<string, Reco
     list: async () => rows,
     findDetail: async () => null,
     findStatus: async () => null,
-    create: unsupported,
     createWithItems: unsupported,
     listByOrder: async (orderNumber) => rows.filter((row) => row.orderNumber === orderNumber),
     findByRma: async (rma): Promise<ReturnDetail | null> => {

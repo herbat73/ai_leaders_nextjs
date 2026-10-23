@@ -2,8 +2,9 @@ import { describe, expect, it, vi } from "vitest";
 
 import { createFakeOrderLookup } from "../../adapters/orders/fake-order-lookup";
 import { money } from "../../domain/money";
-import { AppError, ConflictError } from "../../errors";
+import { AppError, ConflictError, ValidationError } from "../../errors";
 import { RateLimiter } from "../../security/rate-limiter";
+import { parseWith } from "../../http/parse";
 import { returnSubmitSchema, type ReturnSubmitBody } from "../../validators/returns/return-submit.schema";
 import type { MailMessage } from "../mail/mail.port";
 import type { OrderLookup, OrderLookupResult } from "../orders/order-lookup.port";
@@ -39,7 +40,6 @@ function makeRepo(): FakeRepo {
     list: async () => repo.rows,
     findDetail: async () => null,
     findStatus: async (id) => repo.rows.find((row) => row.id === id)?.status ?? null,
-    create: unsupported,
     transition: unsupported,
     listByOrder: async (orderNumber) => repo.rows.filter((row) => row.orderNumber === orderNumber),
     findByRma: async () => null,
@@ -359,5 +359,21 @@ describe("returnSubmitSchema", () => {
 
   it("does not require an exchange note for other resolutions", () => {
     expect(returnSubmitSchema.safeParse({ ...valid, resolution: "store_credit" }).success).toBe(true);
+  });
+
+  it("rejects the legacy orderNumber/customerEmail/reason body with a validation error naming the missing fields", () => {
+    const legacy = { orderNumber: "ORD-1", customerEmail: "a@example.com", reason: "Too small" };
+
+    let thrown: unknown;
+    try {
+      parseWith(returnSubmitSchema, legacy);
+    } catch (error) {
+      thrown = error;
+    }
+
+    expect(thrown).toBeInstanceOf(ValidationError);
+    const fieldErrors = (thrown as ValidationError).fieldErrors ?? {};
+    expect(Object.keys(fieldErrors)).toEqual(expect.arrayContaining(["items", "resolution", "returnMethod", "acknowledged", "idempotencyKey"]));
+    expect(fieldErrors).not.toHaveProperty("reason");
   });
 });

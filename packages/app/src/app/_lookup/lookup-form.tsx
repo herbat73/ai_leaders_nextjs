@@ -5,7 +5,7 @@ import { useState, type FormEvent, type ReactElement } from "react";
 import { apiCall } from "@easyrms/ui/admin";
 import { Banner, Field, TextInput } from "@easyrms/ui/public";
 
-import { errorMessage } from "../_lib/error-copy";
+import { errorMessage } from "../returns/_lib/error-copy";
 import { lookupCopy as copy } from "./copy";
 
 /** Mirrors `ReturnLookupView` from core (only what this island reads). */

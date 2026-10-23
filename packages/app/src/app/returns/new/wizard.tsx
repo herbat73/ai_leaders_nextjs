@@ -130,7 +130,7 @@ export function Wizard({ lines }: { lines: LookupLineView[] }): ReactElement {
     if (resolution === null || returnMethod === null) return;
     setSubmitting(true);
     setFailure(null);
-    const result = await apiCall<SubmitResponse>("/api/returns/submit", {
+    const result = await apiCall<SubmitResponse>("/api/returns", {
       method: "POST",
       body: {
         items: items.flatMap((item) =>
@@ -152,7 +152,7 @@ export function Wizard({ lines }: { lines: LookupLineView[] }): ReactElement {
     setSubmitting(false);
     if (result.error.code === "conflict") return setFailure({ text: copy.conflict, link: { href: "/returns", label: copy.conflictLink } });
     const { key, message } = errorMessage(result.error, result.status);
-    if (key === "unauthorized") return setFailure({ text: message, link: { href: "/returns/lookup", label: copy.sessionLink } });
+    if (key === "unauthorized") return setFailure({ text: message, link: { href: "/", label: copy.sessionLink } });
     if (key === "validation_error" && result.error.fieldErrors) {
       if (applyRefused(result.error.fieldErrors)) {
         setStep("items");

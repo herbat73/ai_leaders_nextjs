@@ -30,7 +30,7 @@ export default async function TrackerPage({ params }: { params: Promise<{ rma: s
   const { rma } = await params;
   const cookieStore = await cookies();
   const session = await getGuestSessionService().verify(cookieStore.get(GUEST_SESSION_COOKIE)?.value);
-  if (!session) redirect("/returns/lookup");
+  if (!session) redirect("/");
 
   // Another order's session gets the same 404 as an unknown RMA: existence is never revealed.
   const { request, decisionNote, items, events } = await loadDetail(session.orderNumber, rma);

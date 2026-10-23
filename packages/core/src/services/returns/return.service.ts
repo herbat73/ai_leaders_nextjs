@@ -19,7 +19,6 @@ import { ORDER_UNAVAILABLE_MESSAGE } from "./return-lookup.service";
 import { returnStateMachine } from "./transitions";
 import {
   RETURN_STATUSES,
-  type LegacyNewReturnRequest,
   type ReturnDetailView,
   type ReturnListFilter,
   type ReturnListItem,
@@ -102,10 +101,6 @@ export class ReturnService {
     const now = this.clock();
     const rows = await this.returnRepository.list(filter);
     return rows.map((row) => this.toListItem(row, now));
-  }
-
-  create(input: LegacyNewReturnRequest): Promise<ReturnRequest> {
-    return this.returnRepository.create(input);
   }
 
   async getDetail(id: number): Promise<ReturnDetailView> {

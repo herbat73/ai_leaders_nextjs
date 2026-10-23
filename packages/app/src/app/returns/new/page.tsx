@@ -26,7 +26,7 @@ async function load(orderNumber: string): Promise<Loaded> {
   } catch (error) {
     const code = errorCode(error);
     if (code === "service_unavailable") return { kind: "unavailable" };
-    if (code === "not_found") redirect("/returns/lookup");
+    if (code === "not_found") redirect("/");
     throw error;
   }
 }
@@ -34,7 +34,7 @@ async function load(orderNumber: string): Promise<Loaded> {
 export default async function NewReturnPage() {
   const cookieStore = await cookies();
   const session = await getGuestSessionService().verify(cookieStore.get(GUEST_SESSION_COOKIE)?.value);
-  if (!session) redirect("/returns/lookup");
+  if (!session) redirect("/");
 
   const loaded = await load(session.orderNumber);
   if (loaded.kind === "ok" && loaded.view.deliveredAt === null) redirect("/returns");
