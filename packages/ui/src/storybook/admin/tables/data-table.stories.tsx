@@ -35,3 +35,5 @@ export const WithRows: Story = {};
 export const Empty: Story = { args: { rows: [], emptyMessage: "No returns yet." } };
 export const Loading: Story = { args: { loading: true } };
 export const Error: Story = { args: { error: "Could not load returns." } };
+export const Captioned: Story = { args: { caption: "Return requests" } };
+export const CaptionedEmpty: Story = { args: { rows: [], caption: "Return requests", emptyMessage: "No returns yet." } };
