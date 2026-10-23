@@ -24,3 +24,7 @@
 - All Steps done; full gate green. Skipped: om-integration-tests and style pass (no suite/tooling), screenshots (no browser).
 - Passed the ~20 consecutive-Step safety checkpoint (22 Steps) without pausing because the remaining work was two inline docs/verification Steps and the finish; flagged for the user.
 - Not done on purpose: follow-up issues were listed in follow-ups.md, not filed.
+
+## 2026-10-23T21:35:14Z — review and finish
+- Review: 2 independent read-only passes; changes requested (2 majors, minors); fixed in review-fix Steps 3.4–3.7; re-review clean. Waived: rate limit on first x-forwarded-for entry (spec decision S9, documented proxy-overwrite precondition).
+- Run complete. Status: complete. Remaining human work: browser QA, follow-up issues, security review gate.

@@ -12,3 +12,7 @@ Run 2026-10-23T21:26:32Z. All 22 Tasks rows done.
 - ➖ `om-integration-tests`: skipped — the repo has no integration/E2E browser suite and no browser provider is installed in this sandbox; the HTTP-level walkthrough and `test:db` stand in.
 - ➖ Design-system/style pass: skipped — no automated style tooling beyond lint and the Storybook build exists.
 - ⚠️ No screenshots: click-through UI behaviour (wizard step gating, focus movement, retry button) was never driven in a browser.
+
+## After the review-fix Steps 3.4–3.7 (HEAD 8ac56ea), 2026-10-23T21:35:14Z
+- ✅ typecheck, `npm test` 427, lint 0 errors / 86 warnings (same as before the fixes), audit, `storybook:build`, production build, `test:db` 51.
+- Review (backend + frontend read-only passes) findings: 2 majors and the minors fixed; first-`x-forwarded-for` entry waived (spec decision, routed to the security review follow-up).

@@ -1,16 +1,16 @@
 # Handoff — 2026-10-23-return-customer-portal
 
-**Last updated:** 2026-10-23T21:26:32Z
+**Last updated:** 2026-10-23T21:35:14Z
 **Branch:** feat/return-customer-portal
 **PR:** https://github.com/herbat73/ai_leaders_nextjs/pull/27
-**Current phase/step:** all Steps done; review pass and finish
-**Last commit:** 5ca55ad — docs: brief bookkeeping, follow-up list and move the portal spec to implemented
+**Current phase/step:** complete (review fixes 3.4–3.7 landed)
+**Last commit:** 8ac56ea — fix(ui): drop unsupported aria-invalid from radio inputs
 
 ## What just happened
-- All 22 Steps landed; final gate green; walkthrough recorded.
+- Review pass done (changes requested → fixed in 3.4–3.7 → re-review clean); PR flipped to ready.
 
 ## Next concrete action
-- Run om-auto-review-pr --autofix, post the summary, flip the PR to ready.
+- Human QA of the UI under next dev (no browser was available to the run); file the follow-up issues from follow-ups.md; security review before any public deployment.
 
 ## Blockers / open questions
 - none. Executor steps use /tmp/executor-rules.md (outside the repo); recreate from the PLAN if lost.
