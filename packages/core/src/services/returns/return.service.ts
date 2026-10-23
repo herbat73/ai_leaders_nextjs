@@ -1,5 +1,7 @@
 import { dueAt, overdue } from "../../calendar";
 import { ConflictError, NotFoundError, ValidationError } from "../../errors";
+import type { ApiLogger } from "../../http/types";
+import { maskEmail, type MailPort } from "../mail/mail.port";
 import { checkDecisionNote } from "./decision-note";
 import { returnStateMachine } from "./transitions";
 import {
@@ -26,10 +28,24 @@ export function toReturnStatus(value: unknown): StoredReturnStatus {
 export class ReturnService {
   private readonly returnRepository: ReturnRepository;
   private readonly clock: () => Date;
+  private readonly mailPort: MailPort;
+  private readonly logger: ApiLogger;
 
-  constructor({ returnRepository, clock }: { returnRepository: ReturnRepository; clock: () => Date }) {
+  constructor({
+    returnRepository,
+    clock,
+    mailPort,
+    logger,
+  }: {
+    returnRepository: ReturnRepository;
+    clock: () => Date;
+    mailPort: MailPort;
+    logger: ApiLogger;
+  }) {
     this.returnRepository = returnRepository;
     this.clock = clock;
+    this.mailPort = mailPort;
+    this.logger = logger;
   }
 
   async list(filter?: ReturnListFilter): Promise<ReturnListItem[]> {
@@ -65,11 +81,30 @@ export class ReturnService {
     const outcome = await this.returnRepository.transition(id, from, status, check.note);
     switch (outcome.result) {
       case "moved":
+        await this.notifyStatusChanged(outcome.request);
         return this.toListItem(outcome.request, this.clock());
       case "conflict":
         throw new ConflictError(`Return ${id} is now ${outcome.currentStatus}`, { status: outcome.currentStatus });
       case "not_found":
         throw new NotFoundError(`Return ${id} not found`);
+    }
+  }
+
+  /** Best effort: a failing mail port (throw or rejection) is logged without body and never fails the transition. */
+  private async notifyStatusChanged(request: ReturnRequest): Promise<void> {
+    const template = "return_status_changed";
+    try {
+      await this.mailPort.send({
+        template,
+        to: request.customerEmail,
+        data: { rma: request.rma, status: request.status },
+      });
+    } catch (error) {
+      this.logger.error("mail send failed", {
+        template,
+        to: maskEmail(request.customerEmail),
+        error: error instanceof Error ? error.name : "unknown",
+      });
     }
   }
 

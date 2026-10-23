@@ -1,17 +1,29 @@
 import "server-only";
 
-import { asValue, createContainer, InjectionMode, type AwilixContainer } from "awilix";
-import { registerCore, type ApiLogger, type CaseSampleService, type ReturnService } from "@easyrms/core";
+import { asFunction, asValue, createContainer, InjectionMode, type AwilixContainer } from "awilix";
+import {
+  createLogMailPort,
+  registerCore,
+  type ApiLogger,
+  type CaseSampleService,
+  type MailLogger,
+  type MailPort,
+  type ReturnService,
+} from "@easyrms/core";
 import { getOrm, registerDb } from "@easyrms/db";
 
 /** What can be resolved from a request scope. */
 export interface Cradle {
   caseSampleService: CaseSampleService;
   logger: ApiLogger;
+  mailPort: MailPort;
   returnService: ReturnService;
 }
 
-const logger: ApiLogger = { error: (message, context) => console.error(message, context) };
+const logger: ApiLogger & MailLogger = {
+  info: (message, context) => console.info(message, context),
+  error: (message, context) => console.error(message, context),
+};
 
 const globalForContainer = globalThis as unknown as { __easyrmsContainer?: Promise<AwilixContainer> };
 
@@ -19,7 +31,10 @@ const globalForContainer = globalThis as unknown as { __easyrmsContainer?: Promi
 function getRootContainer(): Promise<AwilixContainer> {
   globalForContainer.__easyrmsContainer ??= (async () => {
     const container = createContainer({ injectionMode: InjectionMode.PROXY, strict: true });
-    container.register({ logger: asValue(logger) });
+    container.register({
+      logger: asValue(logger),
+      mailPort: asFunction(createLogMailPort).singleton(),
+    });
     registerCore(container);
     registerDb(container, await getOrm());
     return container;

@@ -1,9 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { ConflictError, NotFoundError, ValidationError } from "../../errors";
+import type { ApiLogger } from "../../http/types";
 import { returnListQuerySchema } from "../../validators/returns/return-list-query.schema";
 import { returnStatusUpdateSchema } from "../../validators/returns/return-status-update.schema";
 import { isReturnStatus, ReturnService, toReturnStatus } from "./return.service";
+import type { MailMessage, MailPort } from "../mail/mail.port";
 import { returnStateMachine } from "./transitions";
 import {
   RETURN_STATUSES,
@@ -96,8 +98,18 @@ function makeRepository(initial: ReturnRequest[] = []): Fake {
   return fake;
 }
 
-function makeService(repository: ReturnRepository, now = new Date("2026-11-06T10:00:00Z")): ReturnService {
-  return new ReturnService({ returnRepository: repository, clock: () => now });
+function makeMailPort(): MailPort & { sent: MailMessage[] } {
+  const port = { sent: [] as MailMessage[], send: (message: MailMessage): void => void port.sent.push(message) };
+  return port;
+}
+
+function makeService(
+  repository: ReturnRepository,
+  now = new Date("2026-11-06T10:00:00Z"),
+  mailPort: MailPort = makeMailPort(),
+  logger: ApiLogger = { error: vi.fn() },
+): ReturnService {
+  return new ReturnService({ returnRepository: repository, clock: () => now, mailPort, logger });
 }
 
 async function errorOf(promise: Promise<unknown>): Promise<unknown> {
@@ -413,5 +425,55 @@ describe("returnListQuerySchema", () => {
 
   it("rejects anything else", () => {
     for (const status of ["requested", "", "SUBMITTED", "all"]) expect(parse({ status }).success).toBe(false);
+  });
+});
+
+describe("ReturnService.transition mail", () => {
+  const NOW = new Date("2026-11-06T10:00:00Z");
+
+  it("sends exactly one return_status_changed with the RMA and new status", async () => {
+    const mail = makeMailPort();
+    const service = makeService(makeRepository([makeRequest()]), NOW, mail);
+    await service.transition(1, "approved", LONG_NOTE);
+    expect(mail.sent).toEqual([
+      {
+        template: "return_status_changed",
+        to: "customer@example.com",
+        data: { rma: "RMA-2026-00001", status: "approved" },
+      },
+    ]);
+  });
+
+  it("sends nothing when the transition is rejected", async () => {
+    const mail = makeMailPort();
+    const service = makeService(makeRepository([makeRequest()]), NOW, mail);
+    await errorOf(service.transition(1, "resolved"));
+    expect(mail.sent).toHaveLength(0);
+  });
+
+  const failures: [string, MailPort][] = [
+    [
+      "throws synchronously",
+      {
+        send: () => {
+          throw new Error("smtp down for customer@example.com");
+        },
+      },
+    ],
+    ["rejects", { send: () => Promise.reject(new Error("smtp down for customer@example.com")) }],
+  ];
+
+  it.each(failures)("swallows and logs a port that %s", async (_name, port) => {
+    const error = vi.fn();
+    const service = makeService(makeRepository([makeRequest()]), NOW, port, { error });
+    const item = await service.transition(1, "approved", LONG_NOTE);
+    expect(item.status).toBe("approved");
+    expect(error).toHaveBeenCalledTimes(1);
+    expect(error).toHaveBeenCalledWith("mail send failed", {
+      template: "return_status_changed",
+      to: "c***@example.com",
+      error: "Error",
+    });
+    expect(JSON.stringify(error.mock.calls)).not.toContain("customer@example.com");
   });
 });
