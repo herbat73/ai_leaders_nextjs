@@ -1,82 +1,64 @@
 # 🔍 Pre-implementation analysis: Case sample lab (E00-T01) and the platform primitives under it
 
-**Readiness: conditional** — no Critical finding: the spec is confirmed, grounded in the code, and its hand-computed fixture reproduces. Starting now is safe if the "during implementation" items below join the plan (chiefly a named Migration and Backward Compatibility note, a Phase 4 exit gate, and one guard false-positive test).
-Spec: `.ai/specs/2026-10-22-case-sample-lab-and-platform-primitives.md` · source issue #14 (not read from the tracker) · audited 2026-10-23 against `BACKWARD_COMPATIBILITY.md`, template built-in (no repo spec template), review checklist `doc/code-review-checklist.md`. Supersedes the earlier same-day report (no-go on R2), whose blocker is now cleared.
+**Readiness: go** — no Critical finding and no Warning remains: the spec is `Approved`, grounded in the real code, its hand-computed fixture still reproduces, and all five conditions from the previous (conditional) audit are resolved. One new Nice-to-have (a wording contradiction in the phone guard) does not block.
+Spec: `.ai/specs/2026-10-22-case-sample-lab-and-platform-primitives.md` · source issue #14 (not read from the tracker) · audited 2026-10-23 (re-audit of the committed revision d9c37ff, working tree clean) against `BACKWARD_COMPATIBILITY.md`, template built-in (no repo spec template), review checklist `doc/code-review-checklist.md`. Replaces the earlier same-day conditional report.
+
+## ✅ Previous conditions: status
+| # | Earlier condition | Now | Evidence |
+|---|-------------------|-----|----------|
+| 1 | Named Migration and Backward Compatibility section (BC row 6, Important gap) | Resolved | New section "Migration & Backward Compatibility" lists §1 HTTP API (route, `payload_too_large` 413), §3 `core` (new exports, optional `maxBytes`, test for unchanged callers), §3 `ui/admin` (`DataTable` caption, exact render, stories of an existing caller), §4 and §2/§5 as untouched. Matches `BACKWARD_COMPATIBILITY.md` surfaces 1–5. |
+| 2 | Phase 4 dependency and exit gate (R5 nit) | Resolved | Phasing: "Needs Phase 3 merged ... Exit: `doc/platform-primitives.md` rows final and linked, the issue #14 comment posted, and the spec in `.ai/specs/implemented/`." Each is observable. |
+| 3 | Guard boundary for `value_pln` `1000000.00` (Nice-to-have) | Resolved, with one wording nit (see N1) | Data Model: the phone pattern applies only to cells with no decimal point or comma and exactly 9 digits after stripping. Phase 1 step 4 adds tests for `1000000.00` and `1000000,00` (accepted, not flagged). Even without the rule, the max `value_pln` has 7 integer digits plus decimals, so the boundary is now deliberate. |
+| 4 | Redundant `PayloadTooLargeError` in the export list | Resolved | Removed from the Architecture export list. The BC table correctly notes it is exported via `export * from "./errors"` (`packages/core/src/index.ts`, verified earlier). |
+| 5 | `.ai/specs/research/` does not exist | Resolved | UI/UX step 5 now says the user creates the folder when committing the first note. Folder still absent in the repo, so the statement is true. |
+| 6 | Status wording (informational) | Resolved | Status now begins "Approved: confirmed by the owner in session on 2026-10-23", matching the sibling specs. |
 
 ## ⚠️ Decisions for the spec owner
-- **Status wording (informational).** The Status line reads "Confirmed by the owner in session on 2026-10-23", and the metric definitions and R10b are recorded as accepted. The sibling specs say `Approved`. R1 and R2 pass; using `Approved` would make a later status check mechanical. Recommended: reword. Trade-off: none.
-- **Scope cohesion.** The spec bundles a feature (lab) with reusable primitives, but the primitives are what the feature uses, the catalog now lives in `doc/platform-primitives.md`, and Q7 already splits Phase 1 step 1 into its own PR. No split recommended.
+None open. Scope cohesion was reconsidered: the primitives are exactly what the lab uses, Q7 splits Phase 1 step 1 into its own PR, and the catalog lives in `doc/platform-primitives.md`. No split recommended.
 
 ## 📋 Readiness gate
 | # | Item | Result | Evidence / fix |
 |---|------|--------|----------------|
-| R1 | Declared status | ✅ | Status line records owner confirmation (2026-10-23), including both formerly flagged defaults. |
-| R2 | No blocking open questions | ✅ | No Open Questions block and no `⚠` marker remains. The metric definitions and R10b are recorded as accepted in the Status line, the Resolved decisions table and the Metric definitions heading. |
-| R3 | Traceability | ✅ | Each metric maps to a table row, a service test and a fixture value. Rules map to the boundary tests. UI acceptance is a recorded manual walkthrough against the same fixture. I re-derived the fixture by hand (counts, medians, p75 = 6.25, Wilson intervals 0.47–0.91, 0.32–0.81, 0.35–0.85, 0.39–0.86, agreement 5/1/1, what-if 8 of 12) and all match. |
-| R4 | Contracts defined | ✅ | Route request, response, errors and `fieldErrors` keys are specified. Auth is "none, same as every admin route" and is stated as an accepted risk. The UI names the canonical primitives (`DataTable`, `LoadingMessage`, `ErrorMessage`, `apiCall`) and covers the states. Light/dark is covered by stories. |
-| R5 | Phases deliverable | ✅ (one nit) | Phases 1–3 have dependencies and exit gates. Phase 4 has no stated dependency or exit gate (see gaps). |
-| R6 | Grounded in the codebase | ✅ | Verified below. |
-
-R6 verification against the code:
-- `packages/core/src/http/parse.ts`: `parseJsonBody(request, schema)` has no cap today. An optional `maxBytes` is additive. "Invalid JSON body" is the existing message.
-- `packages/core/src/errors.ts` has `AppError`, `ValidationError` and others, with no 413. `core/src/index.ts` already `export *`s `./errors`, so `PayloadTooLargeError` is exported once defined.
-- `packages/core/src/register.ts` registers only `returnService` (scoped). `packages/app/src/server/container.ts` has `getRootContainer` memoized on `globalThis`, which calls `getOrm()`, and a `Cradle` interface. A core-only `getCoreContainer()` is therefore needed to keep the lab DB-free, and the spec's wiring matches the real shape.
-- `ui` has `api-call.ts` with the `network_error` and `unexpected_response` codes and English fallbacks, and `LoadingMessage` already takes `message`. `EmptyState` requires `message`. `DataTable` returns `EmptyState` before the table (the claimed behavior change is real) and has no `caption`. `ui/src/admin/table.tsx` has no `TableCaption`. `FileImport`, `stats/` and `rules/` do not exist. Stories live in `ui/src/storybook/admin/{forms,tables}/`, matching the rule.
-- `core` Vitest includes `src/**/*.test.ts`, so the planned tests and the `__fixtures__` CSV are runnable. `papaparse` is not yet installed. `app/public` exists with no template. `.ai/specs/research/` does not exist yet, so the user creates it when committing the note.
-- Brief: R08 (150 zł), R09 (60 zł) and R10 (≥ 2000 zł → manager; transport → priority; electronics/appliances → video) are all `active`. D07 (Polish only) and D09 (one app, `/admin`) are present, and A01, A04 and Q02 exist. N01–N04 are untouched. The R5 "disabled in mockup" note is correct (brief line 91).
-- Sibling specs agree with this one: the portal reuses `Money`, `formatMoney` and `multiplyMoney`, adds `addMoney` and `applyRate` itself, and lists the lab route in its CSRF step 0. The agent spec keeps `kind` as the literal `"return"` and has no dependency on this spec. `doc/platform-primitives.md` mirrors the statuses.
+| R1 | Declared status | ✅ | `Approved`, with owner confirmation date. |
+| R2 | No blocking open questions | ✅ | No Open Questions block and no `⚠ NEEDS HUMAN CONFIRMATION` marker. Metric definitions and R10b recorded as accepted. |
+| R3 | Traceability | ✅ | Each metric maps to a definitions row, a service test and a fixture value. Fixture re-derived in the earlier audit and unchanged in this revision (the diff since the last audit touches only the Status line, export list, guard sentence, research-folder note, BC section, Phase 4 text and one test line). |
+| R4 | Contracts defined | ✅ | Route request/response/errors, `fieldErrors` keys, 413 cap, CSRF position, UI primitives with props, states, accessibility, Polish copy plan (D07). |
+| R5 | Phases deliverable | ✅ | Phases 1–4 all declare dependencies and observable exit gates. |
+| R6 | Grounded in the codebase | ✅ | Re-checked this run: `apiHandler` maps any `AppError` to its own `status`/`code` and envelope (so a new 413 subclass is purely additive); `core/src` has `errors.ts`, `http/{api-handler,parse,...}`, `register.ts`; `ui/src/admin/api/api-call.ts` already sends `x-requested-with`. Earlier verification (container shape, `DataTable`, `TableCaption` absent, Vitest include, brief rules R08–R10 and D07/D09) is unchanged by the diff. |
 
 ## 💥 Backward compatibility
+Every `BACKWARD_COMPATIBILITY.md` surface (§1–§5) checked against every phase. No Critical, no Warning.
 | # | Surface | Phase/step | Change | Severity | Migration path |
 |---|---------|------------|--------|----------|----------------|
-| 1 | §1 HTTP API | P2.4 | New route `POST /api/discovery/case-sample`; new error code `payload_too_large` (413). Both are additions. | none | None needed. The route falls under the portal's later CSRF 403, which the spec acknowledges. |
-| 2 | §3 core exports | P1.1–P1.4, P2.1 | New exports; `parseJsonBody` gains an optional `maxBytes` option. | none | Existing callers are unchanged; test required (the spec has it). |
-| 3 | §3 `ui/admin` | P3.1 | `DataTable` gains optional `caption`. Behavior with `caption` and no rows is new; without it, output is unchanged. | Warning (low) | The spec specifies the exact render and checks it via stories of existing callers. Add the admin returns table as an explicit story case (it already does) and name this in the BC note. |
-| 4 | §4 config/env | all | No env var or npm script is changed. `papaparse` is a dependency only. | none | None. |
-| 5 | §2 DB, §5 process | all | Untouched (no schema; specs and runs follow naming). | none | None. |
-| 6 | Spec section | whole spec | There is no named Migration and Backward Compatibility section. The additive claim lives in one paragraph of Risks. | Warning | Add a short section listing rows 1–3 above, since §1 and §3 surfaces are touched. |
-
-## 📝 Spec completeness
-| Section | Missing / incomplete | Impact | What to add |
-|---------|----------------------|--------|-------------|
-| Migration & Backward Compatibility | No named section (the content exists in Risks) | Reviewers checking BC must hunt for it | A 5-line section as in the BC table. |
-| Phasing, Phase 4 | No dependency or observable exit gate | A close-out can be declared done unobserved | "Needs Phase 3 merged. Exit: doc links resolve, spec moved, lessons added, comment on #14 posted." |
+| 1 | §1 HTTP API | P2.4 | New route, new error code 413 | none (additive) | Named in the spec's section. Falls under the portal's later CSRF 403 (portal Phase 1 step 0 lists `/api/discovery/case-sample` explicitly, verified). |
+| 2 | §3 core exports | P1, P2.1 | New exports; optional `maxBytes` on `parseJsonBody` | none | Test for unchanged callers is specified. |
+| 3 | §3 `ui/admin` | P3.1 | `DataTable` optional `caption` | none (previously low Warning, now has the named note, exact render and caller story) | Covered by stories plus typecheck. |
+| 4 | §4 config | all | None; `papaparse` dependency only | none | None. |
+| 5 | §2 DB, §5 process | all | Untouched | none | None. |
 
 ## 🔍 Repo-rule compliance
-| Rule (source) | Spec location | Fix | Severity |
-|---------------|---------------|-----|----------|
-| `AGENTS.md` / standards §2 rule 4 ("used by one page → colocate") | `FileImport`, `StatTile`, `BreakdownTable`, `RuleSummary` placed in `ui/src/admin/` with a single consumer | Already declared as an owner-approved deviation with a named second consumer each. No action. | Info (declared) |
-| Standards §5 (CSRF custom header on state-changing routes) | API Contracts | Covered by the portal spec's step 0 and `apiCall` already sends the header. The spec states the gap until then. | Info |
-| Code-review checklist (new routes use `apiHandler`, client via `apiCall`, no Server Actions, services registered explicitly in Awilix) | Architecture | Compliant. `getCoreContainer()` is a second composition path, and it is acknowledged as a risk. | none |
+No violations. The component-placement deviation (standards §2 rule 4) is declared and owner-approved with a named second consumer each; CSRF position (standards §5) is consistent with the portal spec; routes use `apiHandler` and `apiCall`, no Server Actions, service registered explicitly in Awilix. `getCoreContainer()` is a declared second composition path in `app`.
 
 ## ⚠️ Risks
 | Risk | Level | Impact | Mitigation |
 |------|-------|--------|------------|
-| The second container (`getCoreContainer`) is untested in `app` (no runner) and could accidentally resolve scoped services | Medium | An unexpected DB dependency or a startup error, found only manually | Declared in the spec, with a manual check with Postgres stopped. Optionally make `registerCore` unit-test that `caseSampleService` resolves from a bare container. |
-| Personal-data guard false positives or negatives | Medium | A legitimate upload is blocked, or an identifier slips through (heuristic, declared) | The whitelist is the real control. See the gap on the max-value cell below. |
-| Sampling bias ("most recent ~50") makes intervals optimistic | Medium | A reader over-trusts the note | The spec has the caveat sentence in the note and a test for it. |
-| `papaparse` and the `npm run audit` gate | Low | The gate could go red on a new advisory | The spec's Phase 1 exit includes audit. |
-| Rule vocabulary and `Money` shapes harden once the portal and B-05 persist them | Low | Later rework | Marked provisional; consumers confirm first. |
+| Second container could resolve a scoped service by accident (no `app` test runner) | Medium | Hidden DB dependency | Declared; manual check with Postgres stopped in Phase 2 step 4 |
+| Personal-data guard is heuristic (false positives and negatives) | Medium | Blocked legitimate upload or a missed identifier | Column whitelist is the real control; boundary test added |
+| "Most recent ~50" sampling makes intervals optimistic | Medium | Over-trust of the note | Caveat sentence in the note, with a test |
+| `papaparse` and the audit gate | Low | Red gate on a new advisory | Phase 1 exit includes `audit` |
+| Rule vocabulary and `Money` harden when portal/B-05 persist them | Low | Later rework | Marked provisional |
 
 ## 🔍 Gaps
-- **Important** — Migration and Backward Compatibility has no named section (see BC row 6). Add it before or alongside implementation.
-- **Important** — Phase 4 has no dependency or exit gate (R5 nit). Add one line.
-- **Nice-to-have** — The `cellGuard` phone rule strips dots, so the legal maximum `value_pln` `1000000.00` becomes the 9 digits `100000000` and would be refused as personal data. Add a unit test and either apply the pattern only to cells that are digits and separators with no decimal comma or dot, or accept the boundary and document it.
-- **Nice-to-have** — The "Spec adds `PayloadTooLargeError` to `core/src/index.ts`" wording is redundant because `export * from "./errors"` exists. Drop it from the export list.
-- **Nice-to-have** — `.ai/specs/research/` does not exist. Mention that the user creates it when committing the note.
+- **Nice-to-have (N1, new)** — Data Model guard sentence contradicts itself: the phone pattern strips "dots" as separators, but then applies only to cells that contain no decimal point or comma. A dot- or comma-separated phone (`600.123.456`, `600,123,456`) therefore bypasses the phone check (the e-mail check and the whitelist still apply). Either drop "dots" from the stripped set and accept the gap as documented, or keep stripping and exempt only cells that parse as a plain decimal (`^\d+[.,]\d{1,2}$`). Add one test line either way. Not blocking: the guard is declared a backstop.
+- **Nice-to-have (carried)** — Optional: a `registerCore` unit test that `caseSampleService` resolves from a bare container, to reduce the second-container risk.
 
 ## 📋 Remediation plan
-1. **Before implementation** — none mandatory. Optionally reword the Status to `Approved`.
-2. **During implementation (add to the plan)**
-   - Add the Migration and Backward Compatibility section (BC rows 1–3) to the spec, or at least to the PR body.
-   - Add the Phase 4 dependency and exit gate.
-   - Add the `1000000.00` guard test in Phase 1 step 4 (`parseTable`).
-   - Ship Phase 1 step 1 as its own early PR, since the portal PR A waits on it.
-3. **After implementation (follow-up)** — a unit-level check for the core-only container if an `app` runner ever appears. Re-confirm the vocabulary when B-05 is specified.
+1. **Before implementation** — none required. Optionally fix N1 wording.
+2. **During implementation (add to the plan)** — resolve N1 in Phase 1 step 4 when writing the `cellGuard` tests; ship Phase 1 step 1 as its own early PR (already in the spec, Q7).
+3. **After implementation (follow-up)** — re-confirm the rule vocabulary when B-05 is specified; core-only container check if an `app` runner appears.
 
 ## 🧪 Audit limits
-- Read in full: the spec; `BACKWARD_COMPATIBILITY.md`; `doc/code-review-checklist.md`; `doc/platform-primitives.md`; `AGENTS.md`/`CLAUDE.md`; the product brief (rules, non-goals, decisions, assumptions). Skimmed: `doc/engineering-standards.md` (sections 1–7), `.ai/lessons.md`, and the portal and agent specs (only the lines that mention this spec).
-- Code searched: `packages/core/src` (http, errors, register, index, vitest config), `packages/app/src/server/container.ts`, the admin returns page and route, `packages/ui/src/admin` and `ui/src/storybook`, `next.config.ts`. I did not open the Next.js docs beyond confirming `force-dynamic` is already used by the existing admin page on Next 16.4.1.
-- The fixture was recomputed with a throwaway Node snippet (no files written); no tests or builds were run.
-- Not checked: the tracker (issue #14 and its comment of 2026-10-22), the docs/ concept source (not in the repo), `.uxproof/` (absent), and the mockup source cited by the brief.
+- Read in full: the spec, `BACKWARD_COMPATIBILITY.md`, the previous report, the skill references. Verified against code: `packages/core/src/http/api-handler.ts`, `core/src` layout, `ui/src/admin/api/api-call.ts`; grepped the portal spec for the CSRF step and the lab route. Other code surfaces (container, `DataTable`, vitest config, brief rule ids, `doc/platform-primitives.md`) were verified in the earlier audit, and the diff since then (`git diff HEAD~1`) touches none of the claims about them.
+- Fixture was not recomputed again, because the fixture section is unchanged since the last audit, which re-derived it. No tests or builds were run.
+- Not checked: the tracker (issue #14 and its comment), `.uxproof/` (absent), the mockup source.
 - No suspected prompt injection found.

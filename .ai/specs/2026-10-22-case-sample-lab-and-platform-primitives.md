@@ -181,7 +181,7 @@ Limits: ≤ 512 KB (524 288 UTF-8 bytes, measured on the encoded text, not chara
   metric or rule reads it (data minimisation).
 - Second guard: `parseTable`'s `cellGuard` runs over every raw cell, including dropped columns, **before** they are
   discarded. Any cell matching an e-mail pattern, or a phone pattern after stripping spaces, dashes, dots, brackets and a
-  leading `+48`/`0048` (exactly 9 digits, and only when the raw cell contains no decimal point or comma, so a `value_pln` such as `1000000.00` is never taken for a phone number), fails the whole upload with "wiersz N wygląda na dane osobowe" (row, never the value); the message adds a hint: "usuń tę kolumnę z pliku i wczytaj go ponownie" (for example when an internal id of nine digits sits in a dropped column).
+  leading `+48`/`0048` (exactly 9 digits; a cell of the form digits, one `.` or `,`, one or two digits, such as `1000000.00` or `1000000,00`, is exempt, so a legal `value_pln` is never taken for a phone number, while `600.123.456`, `600,123,456` and a bare `600123456` are still checked), fails the whole upload with "wiersz N wygląda na dane osobowe" (row, never the value); the message adds a hint: "usuń tę kolumnę z pliku i wczytaj go ponownie" (for example when an internal id of nine digits sits in a dropped column).
 - Error messages from `parseTable`, the schemas and the service name rows and columns, never cell values, so the
   `apiHandler` error log cannot carry them.
 - The committed note is **pseudonymised, not anonymous**: someone with order-system access could try to match cases.
@@ -390,7 +390,7 @@ Every step ends with the validation gate (`typecheck`, `test`, `lint`, `audit`, 
 4. **Tabular import.** Add `papaparse` and `@types/papaparse` to `@easyrms/core`. `parseTable` handles header
    normalization, `,`/`;`, BOM, U+FFFD rejection, dropped columns, per-row Zod errors keyed by line, the max row count, and
    `cellGuard` over raw cells before columns are dropped. Tests use small inline CSVs for each case, including PII present
-   only in a dropped column, the boundary `value_pln` `1000000.00` and `1000000,00` (accepted, not flagged), and assert that no error message contains a cell value.
+   only in a dropped column, the boundary `value_pln` `1000000.00` and `1000000,00` (accepted, not flagged) and `600.123.456`, `600,123,456`, `600123456` (flagged), and assert that no error message contains a cell value.
 
 ### Phase 2: Case sample backend
 1. **Body cap and schemas.** `PayloadTooLargeError` (413) in `core/src/errors.ts` and an optional `maxBytes` on
