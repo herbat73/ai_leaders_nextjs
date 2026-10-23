@@ -8,6 +8,7 @@ export * from "./http";
 export * from "./metrics";
 export * from "./register";
 export * from "./rules";
+export * from "./security";
 export * from "./services/discovery/case-sample-note";
 export * from "./services/discovery/case-sample.service";
 export * from "./services/discovery/case-sample.types";
