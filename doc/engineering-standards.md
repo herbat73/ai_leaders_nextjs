@@ -85,7 +85,7 @@ the smaller, more explicit change.
 
 Apply as the relevant feature appears.
 
-- **Now:** no raw SQL concatenation (MikroORM APIs only); never spread a raw request body into
+- **Now:** no raw SQL concatenation (MikroORM APIs only; the only raw statements are parameterised and inside `db`: `nextval('return_rma_seq')`, `pg_advisory_xact_lock(hashtext(?))` in `withOrderLock`, and migrations); never spread a raw request body into
   `em.create()`/`em.assign()` — go through the parsed Zod output; no secrets, tokens or passwords in logs,
   responses or commits; secrets only via env (documented in README); `npm run audit` (high+, expiring allowlist in `audit-allowlist.json`) must pass.
 - **(when auth exists)** bcrypt/bcryptjs cost ≥ 12 (upgrade path argon2id); JWT HS256+ with ≥ 32-byte env secret

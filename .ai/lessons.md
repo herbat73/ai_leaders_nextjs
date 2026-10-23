@@ -13,6 +13,8 @@ For a lesson with enough depth to need code samples, longer explanations, or mul
 
 Keep entries short — a few lines each. Newest entries at the top.
 
+- **2026-10-23 — Racing submits in real Postgres.** Eight concurrent portal submits for one line answer 201 plus a mix of 409 (lost the lock, in-lock re-check) and 400 `already_claimed` (arrived after the winner committed, caught by the pre-lock check), so an end-to-end race check must accept both and assert exactly one row; the deterministic 409 proof is the `db` test that pauses inside the lock. `pg_locks` shows the key as `objid = hashtext(key) & 0xffffffff` with `objsubid = 1`, which lets a test prove the lock key is the canonical order number.
+
 - **2026-10-23 — Submit replay vs eligibility.** A retry of an already-inserted submit would fail the pre-lock eligibility check (its own request consumed the quantity, or the window closed since), so `ReturnService.submit` does a read-only `findByIdempotencyKey` before that check and only then relies on the in-lock lookup for racing retries. In flow tests, simulate "another request slips in between the pre-lock check and the lock" with an awaited hook at the start of the fake `withOrderLock`, not a fire-and-forget submit (that one races the lock and flips the winner).
 
 - **2026-10-23 — Customer lookup budgets.** `unavailable` from the order port must consume no limiter budget, so the lookup counter is `check`ed before the port call and `hit` only after a `found`/`not_found` answer (the per-IP and failed-attempt budgets are checked, never pre-consumed). A fresh local DB needs `npm run db:migrate` before routes that read `return_requests` work (a missing table is an opaque 500 `42P01`).

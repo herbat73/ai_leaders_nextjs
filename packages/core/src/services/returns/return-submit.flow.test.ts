@@ -20,6 +20,8 @@ interface FakeRepo extends ReturnRepository {
   inputs: NewReturnRequest[];
   /** Runs when a lock is requested, before it is taken: a request that slips in after the service's pre-lock check. */
   beforeLock?: () => Promise<void>;
+  /** Every key `withOrderLock` was asked to lock on. */
+  lockKeys: string[];
   /** Makes `findByIdempotencyKey` blind and the insert raise the unique-violation `ConflictError`. */
   uniqueViolationOnInsert?: boolean;
 }
@@ -33,6 +35,7 @@ function makeRepo(): FakeRepo {
   const repo: FakeRepo = {
     rows: [],
     inputs: [],
+    lockKeys: [],
     list: async () => repo.rows,
     findDetail: async () => null,
     findStatus: async (id) => repo.rows.find((row) => row.id === id)?.status ?? null,
@@ -80,6 +83,7 @@ function makeRepo(): FakeRepo {
       return row;
     },
     withOrderLock: async (orderNumber, fn) => {
+      repo.lockKeys.push(orderNumber);
       await repo.beforeLock?.();
       const previous = tails.get(orderNumber) ?? Promise.resolve();
       const run = previous.then(() => fn(repo));
@@ -239,6 +243,18 @@ describe("ReturnService.submit", () => {
     expect(fulfilled).toHaveLength(1);
     expect(rejected).toHaveLength(1);
     expect(rejected[0]?.reason).toMatchObject({ status: 409, code: "conflict" });
+    expect(repo.rows).toHaveLength(1);
+  });
+
+  it("locks, stores and compares on the canonical order number, never a case or space variant (S8)", async () => {
+    const { repo, service } = setup();
+    const results = await Promise.allSettled([
+      service.submit("pl-10001", body({ idempotencyKey: KEY_A })),
+      service.submit("  Pl-10001 ", body({ idempotencyKey: KEY_B })),
+    ]);
+    expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+    expect(repo.lockKeys).toEqual(["PL-10001", "PL-10001"]);
+    expect(repo.inputs.map((input) => input.orderNumber)).toEqual(["PL-10001"]);
     expect(repo.rows).toHaveLength(1);
   });
 
