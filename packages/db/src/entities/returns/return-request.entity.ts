@@ -5,10 +5,13 @@ export const ReturnRequestSchema = defineEntity({
   tableName: "return_requests",
   properties: {
     id: p.integer().primary(),
+    rma: p.string().length(32).unique(),
+    kind: p.string().length(16).default("return"),
     orderNumber: p.string().length(100),
     customerEmail: p.string().length(320),
     reason: p.text(),
-    status: p.string().length(32).default("requested"),
+    status: p.string().length(32).default("submitted"),
+    decisionNote: p.text().nullable(),
     createdAt: p.datetime().onCreate(() => new Date()),
     updatedAt: p
       .datetime()
