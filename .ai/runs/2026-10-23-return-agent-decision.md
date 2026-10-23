@@ -15,6 +15,8 @@ Replace the unconstrained status select on `/admin/returns` with a nine-status w
 
 ## Progress
 
+PR: #23
+
 > Convention: `- [ ]` pending, `- [x]` done. Append ` — <commit sha>` when a step lands. Do not rename step titles.
 
 ### Phase 1: Status model and timeline
