@@ -69,7 +69,7 @@ export function SummaryStep({ itemsHeading, items, rows, acknowledgement, submit
           <span>{acknowledgement.label}</span>
         </label>
         {acknowledgement.error && (
-          <p id={ackErrorId} className="mt-1 text-sm text-red-600 dark:text-red-400">
+          <p id={ackErrorId} role="alert" className="mt-1 text-sm text-red-600 dark:text-red-400">
             {acknowledgement.error}
           </p>
         )}

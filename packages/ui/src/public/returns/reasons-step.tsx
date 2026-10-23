@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactElement } from "react";
+import { useId, type ReactElement } from "react";
 
 import { ChoiceGroup, type ChoiceOption } from "../choice-group";
 import { Field } from "../field";
@@ -31,19 +31,54 @@ export interface ReasonsStepProps {
 }
 
 /** Per selected line: a reason choice and an optional comment with a character counter. */
-export function ReasonsStep({ items, reasonOptions, maxCommentLength, onReasonChange, onCommentChange }: ReasonsStepProps): ReactElement {
+export function ReasonsStep({
+  items,
+  reasonOptions,
+  maxCommentLength,
+  onReasonChange,
+  onCommentChange,
+}: ReasonsStepProps): ReactElement {
+  const base = useId();
   return (
     <div className="space-y-6">
-      {items.map((item) => (
-        <section key={item.lineId} className="space-y-3 rounded-lg border border-border p-3">
-          <h3 className="text-base font-semibold text-foreground">{item.title}</h3>
-          <ChoiceGroup legend={item.reasonLegend} options={reasonOptions} value={item.reason} onChange={(v) => onReasonChange(item.lineId, v)} error={item.reasonError} />
-          <Field label={item.commentLabel} hint={item.commentHint} error={item.commentError}>
-            <Textarea value={item.comment} maxLength={maxCommentLength} onChange={(e) => onCommentChange(item.lineId, e.target.value)} />
-          </Field>
-          <p className="text-right text-sm text-muted-foreground">{item.counterText}</p>
-        </section>
-      ))}
+      {items.map((item) => {
+        const counterId = `${base}-${item.lineId}-counter`;
+        return (
+          <section
+            key={item.lineId}
+            className="space-y-3 rounded-lg border border-border p-3"
+          >
+            <h3 className="text-base font-semibold text-foreground">
+              {item.title}
+            </h3>
+            <ChoiceGroup
+              legend={item.reasonLegend}
+              options={reasonOptions}
+              value={item.reason}
+              onChange={(v) => onReasonChange(item.lineId, v)}
+              error={item.reasonError}
+            />
+            <Field
+              label={item.commentLabel}
+              hint={item.commentHint}
+              error={item.commentError}
+            >
+              <Textarea
+                aria-describedby={counterId}
+                value={item.comment}
+                maxLength={maxCommentLength}
+                onChange={(e) => onCommentChange(item.lineId, e.target.value)}
+              />
+            </Field>
+            <p
+              id={counterId}
+              className="text-right text-sm text-muted-foreground"
+            >
+              {item.counterText}
+            </p>
+          </section>
+        );
+      })}
     </div>
   );
 }

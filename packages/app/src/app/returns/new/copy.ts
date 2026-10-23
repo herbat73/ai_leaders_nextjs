@@ -6,6 +6,7 @@ export const wizardCopy = {
   orderLabel: "Zamówienie",
   back: "Wróć do zwrotów",
   stepperLabel: "Postęp zgłoszenia zwrotu",
+  stepDoneLabel: "ukończony",
   backButton: "Wstecz",
   nextButton: "Dalej",
   steps: {

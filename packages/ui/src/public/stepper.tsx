@@ -10,10 +10,12 @@ export interface StepperProps {
   currentId: string;
   /** Accessible name of the list. */
   label?: string;
+  /** Visually hidden text announced after a completed step's label, e.g. "ukończony". */
+  doneLabel: string;
 }
 
 /** Wizard progress: an ordered list, the current step carries `aria-current="step"`. */
-export function Stepper({ steps, currentId, label }: StepperProps): ReactElement {
+export function Stepper({ steps, currentId, label, doneLabel }: StepperProps): ReactElement {
   const currentIndex = steps.findIndex((s) => s.id === currentId);
   return (
     <nav aria-label={label}>
@@ -32,6 +34,7 @@ export function Stepper({ steps, currentId, label }: StepperProps): ReactElement
                 {state === "done" ? "✓" : index + 1}
               </span>
               <span className={state === "current" ? "font-semibold text-foreground" : "text-muted-foreground"}>{step.label}</span>
+              {state === "done" && <span className="sr-only">{doneLabel}</span>}
             </li>
           );
         })}

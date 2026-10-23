@@ -68,7 +68,7 @@ export function LinePicker({ legend, lines, decreaseLabel, increaseLabel, onTogg
   const base = useId();
   const errorId = `${base}-error`;
   return (
-    <fieldset aria-describedby={error ? errorId : undefined} aria-invalid={error ? true : undefined} className="space-y-2">
+    <fieldset aria-describedby={error ? errorId : undefined} className="space-y-2">
       <legend className="mb-2 text-sm font-medium text-foreground">{legend}</legend>
       {lines.map((line) => {
         const checkId = `${base}-${line.id}`;
@@ -141,7 +141,7 @@ export function LinePicker({ legend, lines, decreaseLabel, increaseLabel, onTogg
         );
       })}
       {error && (
-        <p id={errorId} className="text-sm text-red-600 dark:text-red-400">
+        <p id={errorId} role="alert" className="text-sm text-red-600 dark:text-red-400">
           {error}
         </p>
       )}

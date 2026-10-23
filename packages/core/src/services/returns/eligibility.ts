@@ -54,6 +54,17 @@ export function isWithinReturnWindow(deliveredAt: Date, now: Date, windowDays: n
   return daysSinceDelivery(deliveredAt, now) <= windowDays;
 }
 
+/** The URL when it parses as absolute `http:`/`https:`, else null (the platform value goes into an `href`). */
+export function safeHttpUrl(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  try {
+    const { protocol } = new URL(raw);
+    return protocol === "http:" || protocol === "https:" ? raw : null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Per-line eligibility (R01, R06, S7). `claimed` is `ReturnRepository.claimedQuantities`, which already leaves out
  * cancelled and rejected requests, so those release their quantity. Reason precedence: not returnable, outside the
@@ -65,7 +76,7 @@ export function checkEligibility(
   config: EligibilityConfig,
   claimed: Record<string, number>,
 ): OrderEligibility {
-  if (order.deliveredAt === null) return { status: "not_delivered", trackingUrl: order.trackingUrl ?? null };
+  if (order.deliveredAt === null) return { status: "not_delivered", trackingUrl: safeHttpUrl(order.trackingUrl) };
   const inWindow = isWithinReturnWindow(order.deliveredAt, now, config.windowDays);
   const lines = order.lines.map((line): LineEligibility => {
     const remainingQuantity = Math.max(0, line.quantity - (claimed[line.lineRef] ?? 0));

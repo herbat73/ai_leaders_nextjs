@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { money } from "../../domain/money";
 import type { ReturnOrder } from "../orders/order-lookup.port";
-import { checkEligibility, clampReturnWindowDays, daysSinceDelivery } from "./eligibility";
+import { checkEligibility, clampReturnWindowDays, daysSinceDelivery, safeHttpUrl } from "./eligibility";
 
 const CONFIG = { windowDays: 30 };
 
@@ -100,6 +100,19 @@ describe("checkEligibility", () => {
       trackingUrl: "https://t.example/1",
     });
     expect(checkEligibility(order(null), now, CONFIG, {})).toEqual({ status: "not_delivered", trackingUrl: null });
+  });
+
+  it("drops tracking links that are not absolute http(s) URLs", () => {
+    expect(safeHttpUrl("https://t.example/1")).toBe("https://t.example/1");
+    expect(safeHttpUrl("http://t.example/1")).toBe("http://t.example/1");
+    for (const bad of ["javascript:alert(1)", "data:text/html,x", "/relative/path", "not a url", "", "  javascript:alert(1)"]) {
+      expect(safeHttpUrl(bad)).toBeNull();
+    }
+    expect(safeHttpUrl(undefined)).toBeNull();
+    expect(checkEligibility(order(null, { trackingUrl: "javascript:alert(1)" }), now, CONFIG, {})).toEqual({
+      status: "not_delivered",
+      trackingUrl: null,
+    });
   });
 
   it("marks non-returnable lines, even inside the window", () => {

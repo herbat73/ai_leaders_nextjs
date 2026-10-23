@@ -22,7 +22,7 @@ Where this file and `AGENTS.md` disagree, `AGENTS.md` wins. Sections marked **(w
 | API route | one `route.ts` per resource under `app/src/app/api/<concept>/` | `api/returns/route.ts` |
 | Domain error | `<Name>Error` extending `AppError`, in `core/src/errors.ts` | `NotFoundError` |
 | Route builder | `makeCrudRoute` or `apiHandler` from `@easyrms/core` | |
-| Client fetch | `apiCall`/`apiCallOrThrow` from `@easyrms/ui/admin`, never raw `fetch` | |
+| Client fetch | `apiCall`/`apiCallOrThrow` from `@easyrms/ui/api` (public pages) or `@easyrms/ui/admin`, never raw `fetch` | |
 
 Create a concept folder only when its first file is added. No `modules/` directory, no per-concept
 setup/auto-discovery.

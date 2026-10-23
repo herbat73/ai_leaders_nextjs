@@ -37,6 +37,7 @@ const meta = {
     steps,
     currentId: "items",
     stepperLabel: "Postęp zgłoszenia",
+    stepDoneLabel: "ukończony",
     heading: "Produkty",
     focusKey: "items",
     backLabel: "Wstecz",

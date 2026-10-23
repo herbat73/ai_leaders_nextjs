@@ -22,7 +22,7 @@ import {
   type WizardItemState,
   type WizardStep,
 } from "@easyrms/core";
-import { apiCall } from "@easyrms/ui/admin";
+import { apiCall } from "@easyrms/ui/api";
 import {
   Banner,
   LinePicker,
@@ -338,6 +338,7 @@ export function Wizard({ lines }: { lines: LookupLineView[] }): ReactElement {
       steps={WIZARD_STEPS.map((id) => ({ id, label: copy.steps[id] }))}
       currentId={step}
       stepperLabel={copy.stepperLabel}
+      stepDoneLabel={copy.stepDoneLabel}
       heading={copy.headings[step]}
       focusKey={step}
       backLabel={copy.backButton}

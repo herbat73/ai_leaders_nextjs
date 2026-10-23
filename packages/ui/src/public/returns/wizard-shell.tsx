@@ -8,6 +8,8 @@ export interface WizardShellProps {
   steps: StepperStep[];
   currentId: string;
   stepperLabel: string;
+  /** Visually hidden suffix for completed steps in the stepper, e.g. "ukończony". */
+  stepDoneLabel: string;
   heading: string;
   /** Changing this value moves focus to the heading (pass the current step id). */
   focusKey: string;
@@ -26,7 +28,7 @@ export interface WizardShellProps {
 
 /** Stepper, focusable step heading (focus moves on step change) and Back/Next buttons. */
 export function WizardShell(props: WizardShellProps): ReactElement {
-  const { steps, currentId, stepperLabel, heading, focusKey, backLabel, nextLabel, showBack, showNext, nextDisabled, backDisabled, onBack, onNext, children } = props;
+  const { steps, currentId, stepperLabel, stepDoneLabel, heading, focusKey, backLabel, nextLabel, showBack, showNext, nextDisabled, backDisabled, onBack, onNext, children } = props;
   const headingRef = useRef<HTMLHeadingElement>(null);
   const first = useRef(true);
 
@@ -42,7 +44,7 @@ export function WizardShell(props: WizardShellProps): ReactElement {
     "rounded-lg px-4 py-3 text-sm font-semibold focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60";
   return (
     <div className="space-y-6">
-      <Stepper steps={steps} currentId={currentId} label={stepperLabel} />
+      <Stepper steps={steps} currentId={currentId} label={stepperLabel} doneLabel={stepDoneLabel} />
       <h2 ref={headingRef} tabIndex={-1} className="text-xl font-semibold text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/60">
         {heading}
       </h2>

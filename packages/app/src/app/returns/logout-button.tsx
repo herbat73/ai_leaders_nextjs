@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, type ReactElement } from "react";
-import { apiCall } from "@easyrms/ui/admin";
+import { apiCall } from "@easyrms/ui/api";
 
 import { overviewCopy as copy } from "./copy";
 

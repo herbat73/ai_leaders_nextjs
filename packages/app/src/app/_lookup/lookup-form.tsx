@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent, type ReactElement } from "react";
-import { apiCall } from "@easyrms/ui/admin";
+import { apiCall } from "@easyrms/ui/api";
 import { Banner, Field, TextInput } from "@easyrms/ui/public";
 
 import { errorMessage } from "../returns/_lib/error-copy";

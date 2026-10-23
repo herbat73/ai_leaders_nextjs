@@ -13,7 +13,7 @@ const steps = [
 const meta = {
   title: "Public/Stepper",
   component: Stepper,
-  args: { steps, currentId: "items", label: "Postęp zgłoszenia" },
+  args: { steps, currentId: "items", label: "Postęp zgłoszenia", doneLabel: "ukończony" },
 } satisfies Meta<typeof Stepper>;
 
 export default meta;

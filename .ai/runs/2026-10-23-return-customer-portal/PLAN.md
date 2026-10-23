@@ -33,7 +33,8 @@
 | 3 | 3.2 | Acceptance walkthrough recorded | inline | done | 765046f |
 | 3 | 3.3 | Brief bookkeeping and follow-up list | inline | done | 5ca55ad |
 | 3 | 3.4-review-fix | Review fixes: atomic limiter reservation, unavailable budget, migration typo | inline | done | 4751990 |
-| 3 | 3.5-review-fix | Review fixes: wizard validation, conflict handling, idempotency key, quantity input | inline | done | this |
+| 3 | 3.5-review-fix | Review fixes: wizard validation, conflict handling, idempotency key, quantity input | inline | done | 74943e9 |
+| 3 | 3.6-review-fix | Review fixes: public bundle, accessibility, trackingUrl scheme | inline | done | this |
 
 ## Goal
 Ship the customer side of the first return slice (order lookup, return wizard, status tracker, backend, CSRF) on ONE PR.

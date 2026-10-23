@@ -53,8 +53,8 @@ export function ResolutionStep({ legend, options, value, onChange, error, quote,
             </dl>
           </div>
         )}
-        {quote.status === "error" && <Banner tone="error">{quote.errorText}</Banner>}
       </div>
+      {quote.status === "error" && <Banner tone="error">{quote.errorText}</Banner>}
     </div>
   );
 }

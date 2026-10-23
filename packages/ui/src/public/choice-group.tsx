@@ -26,7 +26,7 @@ export function ChoiceGroup({ legend, options, value, onChange, error }: ChoiceG
   const errorId = `${name}-error`;
 
   return (
-    <fieldset aria-describedby={error ? errorId : undefined} aria-invalid={error ? true : undefined} className="space-y-2">
+    <fieldset aria-describedby={error ? errorId : undefined} className="space-y-2">
       <legend className="mb-2 text-sm font-medium text-foreground">{legend}</legend>
       {options.map((option) => {
         const inputId = `${name}-${option.value}`;
@@ -52,7 +52,8 @@ export function ChoiceGroup({ legend, options, value, onChange, error }: ChoiceG
               checked={value === option.value}
               disabled={option.disabled}
               onChange={() => onChange(option.value)}
-              aria-describedby={describedBy || undefined}
+              aria-describedby={[describedBy, error ? errorId : null].filter(Boolean).join(" ") || undefined}
+              aria-invalid={error ? true : undefined}
               className="mt-1 size-4 accent-primary"
             />
             <span className="block">
@@ -72,7 +73,7 @@ export function ChoiceGroup({ legend, options, value, onChange, error }: ChoiceG
         );
       })}
       {error && (
-        <p id={errorId} className="text-sm text-red-600 dark:text-red-400">
+        <p id={errorId} role="alert" className="text-sm text-red-600 dark:text-red-400">
           {error}
         </p>
       )}
