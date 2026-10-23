@@ -1,5 +1,5 @@
 import { SignJWT, jwtVerify } from "jose";
-import { ConfigurationError } from "../../errors";
+import { ConfigurationError, UnauthorizedError } from "../../errors";
 
 export const GUEST_SESSION_TTL_SECONDS = 7200;
 export const GUEST_SESSION_MIN_SECRET_BYTES = 32;
@@ -80,4 +80,14 @@ export function resolveGuestSessionSecret(input: {
     "EASYRMS_GUEST_SESSION_SECRET is not set: using an ephemeral per-process secret; guest sessions end when the dev server restarts",
   );
   return input.devSecretProvider();
+}
+
+/** The verified session for a route that needs one; no cookie, a bad one and an expired one all give `UnauthorizedError`. */
+export async function requireGuestSession(
+  service: GuestSessionService,
+  token: string | null | undefined,
+): Promise<{ orderNumber: string }> {
+  const session = await service.verify(token);
+  if (!session) throw new UnauthorizedError();
+  return session;
 }

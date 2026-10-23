@@ -64,6 +64,23 @@ export class ReturnService {
     return { ...detail, request: this.toListItem(detail.request, this.clock()) };
   }
 
+  /** The session order's requests, newest first. */
+  async listForOrder(sessionOrder: string): Promise<ReturnListItem[]> {
+    const now = this.clock();
+    const rows = await this.returnRepository.listByOrder(sessionOrder);
+    return rows.map((row) => this.toListItem(row, now));
+  }
+
+  /**
+   * One request by RMA for the customer. A request of another order is a 404 with the same message as an unknown RMA,
+   * so existence is never revealed. The detail still carries the agent's decision note; the tracker maps what it shows.
+   */
+  async getByRma(sessionOrder: string, rma: string): Promise<ReturnDetailView> {
+    const detail = await this.returnRepository.findByRma(rma);
+    if (!detail || detail.request.orderNumber !== sessionOrder) throw new NotFoundError("Return not found");
+    return { ...detail, request: this.toListItem(detail.request, this.clock()) };
+  }
+
   /**
    * Moves a request along the state machine. Checks run in the order the API documents: note rules (400), existence
    * (404), allowed move (409); the repository's compare-and-set then settles a race between two agents (409).
