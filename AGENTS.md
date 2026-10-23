@@ -99,7 +99,7 @@ routes. Do not add Server Actions. New reusable components: shadcn primitive →
 
 ## Current state
 
-The monorepo structure is in place (npm workspaces, `packages/{app,core,db,ui}`, shared `tsconfig.base.json`). The Next.js app lives in `packages/app`. MikroORM (`db`), Awilix (composition root in `packages/app/src/server/container.ts`), Tailwind and shadcn/ui (`ui`) are installed and wired; the first feature is return requests (public form at `/`, agent inbox at `/admin/returns` and decision card at `/admin/returns/[id]` with a nine-status state machine, RMA numbers and a timeline, API under `/api`). Local database: `npm run db:start`, then `npm run db:migrate` (see `.ai/specs/implemented/`).
+The monorepo structure is in place (npm workspaces, `packages/{app,core,db,ui}`, shared `tsconfig.base.json`). The Next.js app lives in `packages/app`. MikroORM (`db`), Awilix (composition root in `packages/app/src/server/container.ts`), Tailwind and shadcn/ui (`ui`) are installed and wired; the first feature is return requests (public form at `/`, agent inbox at `/admin/returns` and decision card at `/admin/returns/[id]` with a nine-status state machine, RMA numbers and a timeline, API under `/api`; plus the case sample lab at `/admin/discovery/case-sample`, a stateless discovery tool built on the rules engine, `Money`, metrics and tabular import in `core`). Local database: `npm run db:start`, then `npm run db:migrate` (see `.ai/specs/implemented/`).
 
 Practical notes:
 

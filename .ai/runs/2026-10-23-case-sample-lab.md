@@ -42,4 +42,4 @@ Persistence, CLI, real order/mail ports, anything from the customer-portal spec,
 
 ### Phase 4: Close-out
 
-- [ ] 4.1 Docs, run log and lessons
+- [x] 4.1 Docs, run log and lessons

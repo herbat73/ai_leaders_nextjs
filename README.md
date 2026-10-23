@@ -48,6 +48,10 @@ A return request moves through a fixed path, enforced by a state machine in `@ea
 
 > **Do not expose the app publicly yet.** Agents are anonymous: `/admin` and `PATCH /api/returns/[id]` have no authentication, so anyone who can reach them can approve or reject returns. An agent login spec is a recorded blocker (product brief, Q15).
 
+### Case sample lab
+
+`/admin/discovery/case-sample` takes an anonymised CSV of ~50 recent mail/phone cases (template at `/case-sample-template.csv`), computes the follow-up share, message counts and time to resolution, dry-runs rules R08–R10 (with what-if thresholds for R08/R09) and produces the `[DATA]` research note to commit under `.ai/specs/research/`. Nothing is stored and it needs no database. API: `POST /api/discovery/case-sample`. Needs no new configuration.
+
 ### Database
 
 PostgreSQL is accessed through MikroORM with a single shared connection pool. Schema changes are versioned migrations in `packages/db`.
