@@ -24,6 +24,7 @@ export * from "./services/returns/quote";
 export * from "./services/returns/return-lookup.service";
 export * from "./services/returns/return.service";
 export * from "./services/returns/rma";
+export * from "./services/returns/tracker-events";
 export * from "./services/returns/tracker-stages";
 export * from "./services/returns/transitions";
 export * from "./services/returns/types";
