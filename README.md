@@ -113,6 +113,7 @@ panel to check WCAG issues. Stories pass props only: no database, container or `
 | `EASYRMS_DB_POOL_MIN` / `EASYRMS_DB_POOL_MAX` | `2` / `10` | Connection pool size |
 | `EASYRMS_DB_DEBUG` | `false` | Set to `true` to log SQL |
 | `EASYRMS_TRUST_PROXY` | unset (`false` in development and tests) | `true` or `false`; **required in production** (unset or any other value makes the first mutating request fail with an opaque 500 and a logged configuration error; `next build` is unaffected). `true` means a reverse proxy in front of the app overwrites `x-forwarded-host` (and `x-forwarded-for`): the CSRF check compares the `Origin` host with `x-forwarded-host`, and the client IP used for rate limiting (from the guest-session work) is the first `x-forwarded-for` entry. `false` means the `Host` header is used and all clients share one rate-limit bucket. A proxy that rewrites `Host` while the value is `false` makes every mutation (POST/PUT/PATCH/DELETE) return 403 `csrf_rejected` |
+| `EASYRMS_ORDER_SOURCE` | `fake` in development and tests | Which order platform adapter looks up orders for returns. Only `fake` (seeded in-memory orders) exists today. **Required in production**, where `fake` always fails closed (no override): unset, `fake` or an unknown value is a configuration error on the first customer request (opaque 500, logged); `next build` is unaffected |
 
 > **Status:** the monorepo, database (MikroORM), DI (Awilix) and UI (Tailwind, shadcn/ui) foundations are in place, with a first return-request flow. See `.ai/specs/implemented/`.
 

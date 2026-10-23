@@ -12,8 +12,8 @@
 |-------|------|-------|------|--------|--------|
 | 1 | 1.1 | CSRF check, trustProxy, response passthrough, new AppErrors | dispatch | done | 519bb01 |
 | 1 | 1.2 | Items table: entity, expand-only migration, snapshot, migration tests | dispatch | done | 36e9ed0 |
-| 1 | 1.3 | Domain types and repository support for items, resolution and order lock | dispatch | done | this |
-| 1 | 1.4 | OrderLookup port and fake adapter | dispatch | todo | — |
+| 1 | 1.3 | Domain types and repository support for items, resolution and order lock | dispatch | done | 333e9c8 |
+| 1 | 1.4 | OrderLookup port and fake adapter | dispatch | done | this |
 | 1 | 1.5 | Money addMoney/applyRate, eligibility and quote | dispatch | todo | — |
 | 1 | 1.6 | Rate limiter and clientIp | dispatch | todo | — |
 | 1 | 1.7 | Guest session service and cookie helper | dispatch | todo | — |

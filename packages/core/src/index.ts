@@ -1,5 +1,6 @@
 // Reusable, framework-agnostic business logic for EasyRMS.
 // Must not import React, Next.js, or the database.
+export * from "./adapters/orders/fake-order-lookup";
 export * from "./calendar";
 export * from "./domain";
 export * from "./errors";
@@ -10,6 +11,8 @@ export * from "./rules";
 export * from "./services/discovery/case-sample-note";
 export * from "./services/discovery/case-sample.service";
 export * from "./services/discovery/case-sample.types";
+export * from "./services/orders/order-lookup.port";
+export * from "./services/orders/order-source";
 export * from "./services/returns/decision-note";
 export * from "./services/returns/return.service";
 export * from "./services/returns/rma";
