@@ -25,7 +25,7 @@ Persistence, CLI, real order/mail ports, anything from the customer-portal spec,
 
 - [x] 1.1 Domain types and Money
 - [x] 1.2 Rules engine
-- [ ] 1.3 Metrics
+- [x] 1.3 Metrics
 - [ ] 1.4 Tabular import
 
 ### Phase 2: Case sample backend

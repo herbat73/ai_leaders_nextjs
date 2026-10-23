@@ -4,6 +4,7 @@ export * from "./calendar";
 export * from "./domain";
 export * from "./errors";
 export * from "./http";
+export * from "./metrics";
 export * from "./register";
 export * from "./rules";
 export * from "./services/returns/decision-note";
