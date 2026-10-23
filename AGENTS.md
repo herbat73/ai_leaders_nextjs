@@ -81,6 +81,8 @@ Every route and page reuses two shared layers instead of re-implementing fetch/v
 - `packages/ui/src/admin/` — `api/api-call.ts` (the only sanctioned `fetch('/api/*')` site), `forms/crud-form.tsx`,
   `tables/data-table.tsx`, `feedback/*`.
 
+Before building a new cross-cutting primitive (rules engine, money, state machine, ports, limiter, import, stat/rule components, …), check `doc/platform-primitives.md`: it maps which primitives exist, which spec builds them and which are non-binding design sketches. Reuse a built one; start from a sketch rather than a parallel mechanism; update its row when a spec lands.
+
 Data flow is hybrid: Server Components for reads; mutations and client-initiated reads go through `apiCall` to API
 routes. Do not add Server Actions. New reusable components: shadcn primitive → `ui/src/admin/` (via
 `npx shadcn@latest add`); generic pattern → `ui/src/admin/<category>/`; concept-specific →

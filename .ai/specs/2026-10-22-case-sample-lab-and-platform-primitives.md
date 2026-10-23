@@ -1,6 +1,6 @@
 # Case sample lab (E00-T01) and the platform primitives under it
 
-Status: Confirmed by the owner in session on 2026-10-23 (revised after review the same day). The metric definitions and the R10b complaint restriction were accepted as written by the owner on 2026-10-23 (defaults taken as accepted; the note still records them under "Method and limits"). Source issue: #14 (E00-T01, epic #13). Design authority: `.ai/specs/product-brief.md`.
+Status: Confirmed by the owner in session on 2026-10-23 (revised after review the same day, and again after the second architectural review: catalog moved to `doc/platform-primitives.md`, only Phase 1 step 1 gates the return specs, `multiplyMoney`, a DB-free lab and a sampling caveat in the note). The metric definitions and the R10b complaint restriction were accepted as written by the owner on 2026-10-23 (defaults taken as accepted; the note still records them under "Method and limits"). Source issue: #14 (E00-T01, epic #13). Design authority: `.ai/specs/product-brief.md`.
 
 ## 📝 TLDR
 The product owner and the head of customer service need to test A01 (follow-ups are the main service cost) and A04
@@ -22,10 +22,10 @@ Owner (Adam Adamczyk) accepted all recommendations on 2026-10-22:
 | Q2 | Stateless: upload → compute → note; no table, nothing persisted |
 | Q3 | CSV columns as listed under Data Model (whitelist; unknown columns dropped and reported); review removed `delivered_on` (unused) and requires `case_ref` to start with a letter |
 | Q4 | R08–R10 read-only plus what-if threshold overrides for the settling rules, shown beside the baseline |
-| Q5 | The primitives catalog lives in this spec and is promoted to `doc/platform-primitives.md` at close-out |
+| Q5 | The primitives catalog lives in `doc/platform-primitives.md` (moved out of this spec after review, so one map is kept current across the specs; the spec keeps only its own primitives) |
 | Q6 | `papaparse` added to `@easyrms/core` |
 | Metrics, R10b | The metric definitions table and the R10b complaint restriction are accepted as written (owner, 2026-10-23) |
-| Q7 | This spec merges before the two return specs; `2026-10-22-return-customer-portal.md` reuses `Money` (it defines its own order and quote input types, not `ClaimFacts`); it adds `addMoney` and `applyRate` itself, extending `money.ts` without changing the existing exports |
+| Q7 | Of this spec only **Phase 1 step 1** (`Money`, `formatMoney`, `multiplyMoney`, domain types) must merge before `2026-10-22-return-customer-portal.md`'s PR A; it ships as its own early PR, and Phases 1 steps 2–4, 2 and 3 run in parallel with the return specs. The portal reuses `Money` (it defines its own order and quote input types, not `ClaimFacts`) and adds `addMoney` and `applyRate` itself, extending `money.ts` without changing the existing exports |
 | Language | The whole app is Polish-only (decision D07 in the product brief, confirmed by Adam Adamczyk 2026-10-23): lab copy, `describeRule` text and the note are Polish; `ui` components take all text through props and keep no default strings. N04 (English version) stays a non-goal |
 
 ## 📝 Problem Statement
@@ -36,7 +36,7 @@ and the rules engine is UC-09. Building it once, behind stable contracts, makes 
 platform instead of throwaway work.
 
 With n ≈ 50, a share has a 95% interval of roughly ±13 points, so the note must show intervals, not bare percentages.
-Otherwise a 30% result would read as "A04 failed" when 35% is still inside its range.
+Otherwise a 30% result would read as "A04 failed" when 35% is still inside its range. The interval also assumes random sampling, which "the most recent ~50 cases" is not, so the note says its uncertainty is a lower bound.
 
 ## 📝 Proposed Solution
 1. The user downloads a CSV template, fills it from mail/phone history (anonymous rows) and uploads it.
@@ -77,11 +77,10 @@ B-05 cannot render or edit code).
 ## 📝 Architecture
 New cross-cutting primitives in `core` sit next to the existing `http/` folder (they are not domain concepts, so they do
 not follow the per-concept folder rule). The feature is a new `discovery` concept with a service, a validator, a route and
-a page, and no `db` part. "Stateless" means nothing is stored; the route still resolves the container, which needs
-Postgres to be reachable (see Edge Cases).
+a page, and no `db` part. "Stateless" means nothing is stored, and the route does not need Postgres: `app/src/server/container.ts` gains `getCoreContainer()`, a container with `registerCore` only (no `getOrm()`), memoized on `globalThis` like the root container, and `resolveCaseSampleService()` uses it. The existing root container and request scope are unchanged; the composition root stays in `app`. Discovery is the tool you want before the product has a database.
 
 `core` exports added to `core/src/index.ts` (needed by `app`): `CaseSampleService`, `caseSampleAnalyzeSchema`,
-`PayloadTooLargeError`, `describeRule`, `BRIEF_RULES`, and the domain types, `Money` helpers and `Rule` types.
+`PayloadTooLargeError`, `describeRule`, `BRIEF_RULES`, and the domain types, `Money` helpers (including `multiplyMoney`) and `Rule` types.
 
 ```mermaid
 flowchart LR
@@ -110,7 +109,7 @@ Layout:
 
 | Path | Content |
 |---|---|
-| `core/src/domain/money.ts` | `Money { amountMinor, currency: "PLN" }`, `parseMoney()`, `compareMoney()`, `formatMoney()` (arithmetic such as `applyRate` is added by its first consumer, the customer-portal quote) |
+| `core/src/domain/money.ts` | `Money { amountMinor, currency: "PLN" }`, `parseMoney()`, `compareMoney()`, `multiplyMoney(m, qty)` (non-negative integer quantity, safe-integer checked), `formatMoney()` (`addMoney` and `applyRate` are added by the customer-portal quote, their first consumer) |
 | `core/src/domain/claim-kind.ts` | `CLAIM_KINDS = ["return","complaint","transport","missing"]`, `ClaimKind` (the agent spec types its `kind` column as the literal `"return"` for now and has no code dependency on this spec; a later spec widens it to `ClaimKind`) |
 | `core/src/domain/claim-facts.ts` | `ClaimFacts { kind, value: Money, categories: ProductCategory[] }`, `PRODUCT_CATEGORIES` |
 | `core/src/rules/` | `rule.schema.ts` (Zod vocabulary), `evaluate.ts`, `simulate.ts`, `with-thresholds.ts`, `describe.ts`, `brief-rules.ts` (R08–R10 as data) |
@@ -125,7 +124,7 @@ Layout:
 | `ui/src/admin/forms/file-import.tsx`, `ui/src/admin/stats/`, `ui/src/admin/rules/` | UI primitives |
 
 Wiring: `caseSampleService: asClass(CaseSampleService).singleton()` in `registerCore` (no dependencies, no request state).
-It is added to `Cradle` and exposed through `resolveCaseSampleService()` in `app/src/server/container.ts`.
+It is added to `Cradle` and exposed through `resolveCaseSampleService()` in `app/src/server/container.ts`, which resolves it from `getCoreContainer()`; the scoped registrations (`returnService` and others) are never resolved there.
 
 ### Rules engine (the primitive with the longest life)
 ```ts
@@ -270,7 +269,7 @@ UI primitives (props only, no data access):
 - Findings for A04: the settled share with its interval versus 35%, agreement, and what-if if used.
 - Per-case table (`C01…`) with value bands, not exact amounts.
 - Breakdowns.
-- Method and limits: the settling definition, the R08–R10 versions, sample size, and the pseudonymisation note (no
+- Method and limits: the settling definition, the R08–R10 versions, sample size, the sampling caveat ("the 95% interval assumes a random sample; this sample is the most recent cases, so seasonality and selection are not covered and the true uncertainty is larger"), and the pseudonymisation note (no
   direct identifiers; bands and months reduce, but do not remove, re-identification risk).
 
 **Polish strings and label map (G9).** `ui` holds no strings and shared code defaults are English, so the lab page passes every visible text as a prop, including `LoadingMessage`'s message and `DataTable`/`BreakdownTable` `emptyMessage` and `caption`. Labels live in one constant object in the page: kind (`return` "Zwrot", `complaint` "Reklamacja", `transport` "Szkoda transportowa", `missing` "Brak w przesyłce"), channel (`mail` "E-mail", `phone` "Telefon"), outcome (`approved` "Zaakceptowane", `rejected` "Odrzucone", `partial` "Częściowo", `cancelled` "Anulowane", `open` "Otwarte"), the four tile labels ("Liczba spraw", "Sprawy z dopytaniem", "Mediana wiadomości", "Rozstrzygnięte regułą"), table column headers and captions. The server never sends English text for display: `PayloadTooLargeError` uses the Polish message "Plik jest zbyt duży (limit 512 KB)", and the page maps `error.code` (`validation_error`, `payload_too_large`, `internal_error`, and `apiCall`'s `network_error` and `unexpected_response`) to Polish copy instead of showing `error.message` or the English `apiCall` fallbacks; `parseJsonBody`'s "Invalid JSON body" is reachable only by a malformed request, which the page never sends.
@@ -284,8 +283,7 @@ UI primitives (props only, no data access):
 - **Open cases:** counted in n and follow-ups, excluded from time-to-resolution, and the note says how many.
 - **Zero cases of a kind:** the breakdown row is omitted and medians are `—`, never `NaN`.
 - **Empty or one-row files:** the interval is still computed (Wilson behaves at n = 1). An empty file is an error.
-- **Database unreachable:** the route still needs the container, which builds the ORM on first use, so the lab fails
-  with the usual 500 like every other route. This is accepted; documented in Risks.
+- **Database unreachable:** the lab still works, because it resolves its service from the core-only container and never builds the ORM; only the return routes fail with their usual 500.
 - **Personal data:** a guard hit fails the upload and names the row, not the value.
 - **What-if for another rule:** 400; the UI only offers R08 and R09.
 - **A real order number in `case_ref`:** refused by the leading-letter rule, with a hint to number cases `S01…`.
@@ -309,8 +307,7 @@ Product direction calls and accepted risks:
   Low impact: nothing is stored or readable afterwards, and uploads are anonymous by contract.
 - **Heuristic personal-data guard:** it cannot catch every identifier (for example a name typed into `case_ref` within the
   regex). The column whitelist is the real control, and the guard is a backstop.
-- **Container needs the database:** the stateless lab still fails when Postgres is down. A DB-free scope would be a new
-  composition path for one page; not worth it now.
+- **Second container:** `getCoreContainer()` is a second composition path in `app`. It registers only `core` and must not resolve scoped registrations; a test in `app` is not possible (no runner), so this is guarded by the page's manual check with Postgres stopped.
 - **Contracts that later become hard to reverse:** the rule vocabulary, `ClaimKind`/`ProductCategory` values and `Money`
   in minor units. Nothing stores them in this spec, so they stay provisional; they harden when B-05 or the return specs
   persist them, and those specs must confirm or revise them first.
@@ -318,58 +315,14 @@ Product direction calls and accepted risks:
   `npm run audit`.
 
 ## 📝 Decisions in play
-- **Relies on:** R08, R09 and R10 (encoded as data, values unchanged); A01, A04 and Q02 (the hypotheses this tests);
-  Q12 (rules only, no AI); Collection plan item 1; N01–N04 (untouched).
+- **Relies on:** R08, R09 and R10 (encoded as data, values unchanged; all `active` in the brief since the owner's confirmation of 2026-10-23); A01, A04 and Q02 (the hypotheses this tests);
+  Q12 (rules only, no AI); D07 (Polish only); D09 (one Next.js app with routes per shell, so the lab lives at `/admin/discovery/case-sample`); Collection plan item 1; N01–N04 (untouched).
 - **Supersedes:** no brief entry. The #14 scope override is an issue-level change, approved by the owner (Adam Adamczyk).
 - **Writes back:** none automatically. The owner records results in the brief's Riskiest assumptions `Result` column after
   reading the note.
 
 ## 📝 Platform primitives catalog
-Taken from UC-01…UC-15, screens K/Z/B/D/X and the API catalog (`docs/05`) via the brief. Primitives marked "design"
-are **non-binding proposals**: a sketch of the contract, built and approved by the first spec that needs it (YAGNI,
-`doc/engineering-standards.md` §4). Approving this spec does not approve them. That spec starts from the sketch and
-may change it, but should not build a parallel mechanism. Promoted to `doc/platform-primitives.md` at close-out as a
-map of the platform, with the same non-binding status.
-
-### Backend (`core`; persistence in `db`)
-
-| Primitive | Contract sketch | Consumers in the backlog | Status |
-|---|---|---|---|
-| Rules engine | see Architecture: closed, provisional `Condition`/`Action` vocabulary, `evaluate`, `simulate`, `withThresholds`, `describeRule` | UC-09, UC-14/B-05, R07 evidence, R10 routing | **this spec** |
-| `ClaimKind`, `ProductCategory`, `ClaimFacts` | normalized rule input: kind, value, categories; later + reasons, days since delivery, supplier | rules, eligibility (UC-02…05), quote (Z-04) | **this spec** |
-| `Money` | integer minor units, `PLN` only for now; parse (pl/en), compare, format pl-PL; arithmetic added by its first consumer | quote, R11 limits, refunds, supplier notes, analytics | **this spec** |
-| Metrics | `share` (Wilson 95%), `median`, `percentile`, `groupBy` over plain rows | B-06, #15 KPI baselines, this report | **this spec** |
-| Tabular import | `parseTable(text, rowSchema, { maxRows, cellGuard }) → rows \| errors[{ line, column, message }], droppedColumns` | this lab; later bulk import / B2B (N01) | **this spec** |
-| State machine | `defineStateMachine({ states, transitions, guards }) → { can, assert, next, allowed }`; throws `ConflictError` | claims (9 statuses; the agent spec's table becomes its first instance), supplier claims DRAFT→SENT→ACCEPTED/REJECTED→CREDITED, uploads | built by `2026-10-22-return-agent-decision.md` (Phase 1, not yet built) |
-| Domain events + timeline | `DomainEvent { id: "concept.entity.action", aggregateId, actor, at, payload }`; one typed in-process emitter in `core/src/events`; timeline = events projected per aggregate | K-05, B-02, R11 audit, mail triggers | design (the agent spec keeps a per-concept events table instead of a generic emitter) |
-| Ports & adapters | `<Name>Port` + mock adapter, env-selected, fail closed in production | `OrderLookup`, `MailPort` (customer spec), carrier, payments, vouchers, AV scan | design |
-| Policy settings | typed, clamped settings with an effective date ("applies to new claims") | B-07, R01, R03, R12 | design |
-| Business calendar / SLA | `addBusinessDays`, `dueAt`, `overdue` (clock passed in), `escalateAt` (holiday calendar pluggable) | Q10 2-day target, R04 14 days, Q07 escalation | `addBusinessDays`/`dueAt` built by `2026-10-22-return-agent-decision.md` (Phase 1, not yet built); SLA escalation stays design |
-| Evidence requirements | `requirements(facts, product, supplier, rules) → { photos, video, serial, sources[] }`, using the rules engine's `require_evidence` | Z-03, R07, Q14 | design |
-| Attachments | upload intent → scan → ready/error; per-type limits (`docs/05` §5.9) | Z-03, K-05 messages, B-03, D-01 | design |
-| Identity & permissions | actors `customer`/`agent`/`warehouse`/`supplier`/`system`; permissions (`MANAGE_RULES`, Q05); per-record scope check | every shell; agent-auth prerequisite | design |
-| Reference numbers | sequence-backed `PREFIX-YYYY-NNNNN` | RMA (agent spec), `SC-` supplier claims | design |
-| Notifications & templates | template id + variables (`{imie}`, `{rma}`) rendered and sent via `MailPort` | B-02, B-07, status mails | design |
-| Idempotency & rate limiting | idempotency key per mutation; limiter port (in-memory first) | Z-06 submit, K-01/K-04 lookup (R14) | design |
-
-### Frontend (`ui`; admin = shadcn, public = Tailwind)
-
-| Primitive | Where | Consumers | Status |
-|---|---|---|---|
-| `FileImport` | `ui/src/admin/forms/` | this lab; later B-03, B-07 | **this spec** |
-| `StatTile`, `StatRow` | `ui/src/admin/stats/` | this lab, B-06 KPI tiles | **this spec** |
-| `BreakdownTable` | `ui/src/admin/stats/` | this lab, B-06 "show as table" | **this spec** |
-| `RuleSummary` | `ui/src/admin/rules/` | this lab, B-05 list, B-02 "applied rules" | **this spec** |
-| `Wizard` / `Stepper` (names indicative; the portal builds `Stepper` and `StageList` flat in `ui/src/public/`) | `ui/src/public/wizard/` | Z-01…Z-06, Z-00 | planned in `2026-10-22-return-customer-portal.md` (Phase 2; not yet built) |
-| `StatusTracker` (built as `StageList`) | `ui/src/public/tracker/` | K-05 | planned in `2026-10-22-return-customer-portal.md` (Phase 2; not yet built) |
-| Public Tailwind primitives (`Field`, `TextInput`, `Textarea`, `ChoiceGroup`, `Banner`) | `ui/src/public/` | the portal wizard and tracker; later Z-03, K-04 | planned in `2026-10-22-return-customer-portal.md` (Phase 2; not yet built) |
-| `Timeline` | `ui/src/admin/timeline/` | B-02, K-05 | planned in `2026-10-22-return-agent-decision.md` (Phase 2; not yet built) |
-| `Inbox` filters + SLA badge | `ui/src/admin/inbox/` | B-01, B-03, B-04, D-01 | design |
-| `RuleBuilder` (drawer) | `ui/src/admin/rules/` | B-05 | design |
-| `EvidenceUpload` | `ui/src/public/evidence/` | Z-03, K-05 | design |
-| Polish formatting (`formatMoney`, `formatDatePl`, `pluralPl`) | `core` (`formatMoney` is built here; the date and plural helpers by the portal spec) | quote, tracker, timeline, notes | `formatMoney` **this spec**; rest in the portal spec |
-
-`ui` stays Next-free and has no test runner, so formatting is never done in `ui`: `core`/`app` format money, dates and plurals and pass the strings to components as props. A `ui/src/lib/formatMoney` is therefore dropped from the catalog.
+Moved to `doc/platform-primitives.md` (non-binding map; statuses kept in step with the specs that build each primitive). What this spec builds: the rules engine, `ClaimKind`/`ProductCategory`/`ClaimFacts`, `Money` (parse, compare, `multiplyMoney`, `formatMoney`), metrics and tabular import in `core`; `FileImport`, `StatTile`/`StatRow`, `BreakdownTable` and `RuleSummary` in `ui`. Everything else in the map is built by another spec or is a non-binding design sketch, and approving this spec approves none of it.
 
 ## 📝 Fixture and expected values
 The oracle for Phase 2 and Phase 3, hand-computed from the metric definitions and R08–R10 *before* any code exists; the implementer reproduces it, never derives it from the service output. File `packages/core/src/services/discovery/__fixtures__/case-sample.csv` (12 rows; `opened_on`/`resolved_on` in July 2026; `value_pln` in zł; `—` = empty):
@@ -400,7 +353,7 @@ Phase 3 manual acceptance uses the same numbers: tiles "Liczba spraw 12", follow
 
 ## 📋 Phasing
 - **Phase 1: core primitives.** Domain types, money, rules engine, metrics, tabular import. Pure and unit-tested; nothing
-  consumes them yet, so the app is unchanged. No dependencies. Exit: `npm test`, `typecheck`, `lint`, `audit` green (including the `papaparse` audit).
+  consumes them yet, so the app is unchanged. No dependencies. Step 1 (domain types and `Money`) merges first as its own PR and is the only part the return specs depend on (Q7); steps 2–4 follow in their own PR. Exit: `npm test`, `typecheck`, `lint`, `audit` green (including the `papaparse` audit).
 - **Phase 2: case sample backend.** Schemas, `CaseSampleService`, note renderer, container wiring, route. Needs Phase 1 merged. Exit: `npm test` green including the fixture values and every metric-definition test; the `curl` check recorded in `.ai/runs/`.
 - **Phase 3: UI primitives and the lab page.** Needs Phase 2 merged. Exit: `storybook:build` green and the manual walkthrough against the fixture recorded in `.ai/runs/`.
 - **Phase 4: close-out.** Catalog promoted to `doc/`, docs, lessons, spec moved.
@@ -410,8 +363,8 @@ Every step ends with the validation gate (`typecheck`, `test`, `lint`, `audit`, 
 `@easyrms/core`.
 
 ### Phase 1: Core primitives
-1. **Domain types and `Money`.** `claim-kind.ts`, `claim-facts.ts` (with `PRODUCT_CATEGORIES`) and `money.ts`, exported
-   from `core/src/index.ts`. Tests: parse `149,99`/`149.99`/`1 299,00`, reject negatives and > 2 decimals, safe-integer
+1. **Domain types and `Money` (its own early PR: the only part of this spec the return specs wait for).** `claim-kind.ts`, `claim-facts.ts` (with `PRODUCT_CATEGORIES`) and `money.ts`, exported
+   from `core/src/index.ts`. Tests: `multiplyMoney` (quantity 0 and 3, rejects negative or non-integer quantity and safe-integer overflow), parse `149,99`/`149.99`/`1 299,00`, reject negatives and > 2 decimals, safe-integer
    overflow, compare, pl-PL formatting pinned to exact strings including the non-breaking space (`149,99 zł` and `1 299,00 zł` with U+00A0 between digit groups and before `zł`), which relies on Node's ICU data.
 2. **Rules engine.** `rule.schema.ts`, `evaluate.ts`, `simulate.ts`, `with-thresholds.ts`, `describe.ts` and
    `brief-rules.ts`. Tests:
@@ -440,16 +393,16 @@ Every step ends with the validation gate (`typecheck`, `test`, `lint`, `audit`, 
    the guard (e-mail and a formatted phone such as `+48 600-123-456` in a dropped column), duplicate ref, `case_ref` absent
    from the output and the note, what-if changes only the what-if block and carries its own definitions, shares are
    `null` for empty groups.
-3. **Note renderer.** `renderCaseSampleNote` produces the sections from UI/UX. Tests: the `[DATA]` tag, interval text,
+3. **Note renderer.** `renderCaseSampleNote` produces the sections from UI/UX. Tests: the `[DATA]` tag, interval text, the sampling-caveat sentence,
    the "not agreed" kill-line remark, `—` for empty medians, no raw `case_ref`, value bands and months only (no exact
    amount or day appears).
-4. **Wiring and route.** `registerCore` singleton, `Cradle` entry, `resolveCaseSampleService`, and
+4. **Wiring and route.** `registerCore` singleton, `Cradle` entry, `getCoreContainer()` and `resolveCaseSampleService`, and
    `app/src/app/api/discovery/case-sample/route.ts` using `apiHandler` + `parseJsonBody` with `maxBytes` (`force-dynamic`). Test: the
    service-level tests cover behavior; a manual `curl` against `npm run dev` checks 200, 400 with row `fieldErrors`, and
-   400 for the guard.
+   400 for the guard, once with Postgres stopped (200 still returned, recorded in `.ai/runs/`).
 
 ### Phase 3: UI primitives and the lab page
-1. **UI primitives.** Optional `caption` on `DataTable`. Today `DataTable` returns `EmptyState` before rendering any table, so this is a behavior change, specified exactly: with `caption` and no rows it renders `<table><caption>…</caption></table>` followed by the `EmptyState`; without `caption` the output is byte-for-byte unchanged for every existing caller (loading and error states are unchanged too). Stories cover both. Then `FileImport`,
+1. **UI primitives.** Optional `caption` on `DataTable`. Today `DataTable` returns `EmptyState` before rendering any table, so this is a behavior change, specified exactly: with `caption` and no rows it renders `<table><caption>…</caption></table>` followed by the `EmptyState`; without `caption` the output is unchanged for every existing caller (loading and error states are unchanged too). `ui` has no test runner, so this is checked by stories that render an existing caller's props (the admin returns table) beside the captioned variants, plus the typecheck. Stories cover both. Then `FileImport`,
    `StatTile`/`StatRow`, `BreakdownTable`, `RuleSummary`, exported from `@easyrms/ui/admin`, each with a story in `ui/src/storybook/`
    (`2026-10-22-storybook-integration.md`). Acceptance: stories for `FileImport` (idle, dragging, too large, wrong
    encoding, disabled), `StatTile` (with and without hint), `BreakdownTable` (rows, empty with caption; `ui` holds no default strings, so the empty message is always passed in Polish) and
@@ -461,7 +414,7 @@ Every step ends with the validation gate (`typecheck`, `test`, `lint`, `audit`, 
    line/column; what-if R08 = 200 zł changes only the what-if column; the downloaded note opens and contains no `case_ref`.
 
 ### Phase 4: Close-out
-1. **Docs.** Promote the catalog to `doc/platform-primitives.md` and link it from `doc/engineering-standards.md` §2 and
+1. **Docs.** `doc/platform-primitives.md` already exists (moved out of this spec); update the rows this spec built to their final status, link it from `doc/engineering-standards.md` §2 and
    from `AGENTS.md` ("Reusable API & UI layer"). Update `AGENTS.md` "Current state" with the lab. No new env variables,
    so the README only gets a line about the lab.
 2. **Issue.** Comment on #14: the lab exists, how to use it, the done-when is unchanged (the note in `.ai/specs/research/`).
