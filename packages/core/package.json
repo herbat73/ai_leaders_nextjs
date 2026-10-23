@@ -9,11 +9,13 @@
     "test": "vitest run"
   },
   "devDependencies": {
+    "@types/papaparse": "^5.5.2",
     "typescript": "^5",
     "vitest": "^4.1.12"
   },
   "dependencies": {
     "awilix": "^13.0.5",
+    "papaparse": "^5.7.0",
     "zod": "^4.6.7"
   }
 }
