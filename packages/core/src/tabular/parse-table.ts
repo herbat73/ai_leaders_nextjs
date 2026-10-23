@@ -42,11 +42,18 @@ export function parseTable<S extends ZodRawShape>(
   const header = records[0]?.map((name) => name.trim().toLowerCase());
   if (!header || header.every((name) => name === "")) return fail({ line: 0, message: "Plik jest pusty" });
 
+  if (options.cellGuard && records[0]?.some((cell) => options.cellGuard?.(cell))) {
+    return fail({
+      line: 1,
+      message: "Nagłówek wygląda na dane osobowe (brak wiersza nagłówka?) — dodaj nagłówek i wczytaj plik ponownie",
+    });
+  }
+
   const known = Object.keys(rowSchema.shape);
   const errors: TableError[] = [];
   const seen = new Set<string>();
   for (const name of header) {
-    if (seen.has(name)) errors.push({ line: 1, column: name, message: "Powtórzona kolumna" });
+    if (seen.has(name)) errors.push({ line: 1, message: "Powtórzona kolumna w nagłówku" });
     seen.add(name);
   }
   for (const key of known) {

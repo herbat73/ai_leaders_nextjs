@@ -76,11 +76,13 @@ export function CaseSampleLab(): ReactElement {
   const [rowErrors, setRowErrors] = useState<RowError[]>([]);
   const [thresholds, setThresholds] = useState({ R08: "", R09: "" });
   const [copyStatus, setCopyStatus] = useState<string>();
+  const [thresholdError, setThresholdError] = useState<string>();
 
   async function analyze(text: string, overrides: Record<string, string>): Promise<void> {
     setLoading(true);
     setError(undefined);
     setRowErrors([]);
+    setThresholdError(undefined);
     setCopyStatus(undefined);
     const result = await apiCall<CaseSampleReport>("/api/discovery/case-sample", {
       method: "POST",
@@ -89,6 +91,12 @@ export function CaseSampleLab(): ReactElement {
     setLoading(false);
     if (result.ok) {
       setReport(result.data);
+      return;
+    }
+    // A bad threshold keeps the current results so the user can fix the typo without re-uploading.
+    const failed = Object.entries(result.error.fieldErrors ?? {}).filter(([key]) => key.startsWith("thresholds."));
+    if (report && failed.length > 0) {
+      setThresholdError(`${copy.invalidThresholds}: ${failed.map(([key, message]) => `${key.slice(11)} — ${message}`).join("; ")}`);
       return;
     }
     // Map the code to Polish copy instead of showing the server or `apiCall` English text.
@@ -152,7 +160,10 @@ export function CaseSampleLab(): ReactElement {
         </CardContent>
       </Card>
 
-      <div aria-live="polite" className="space-y-6">
+      <p role="status" className="sr-only">
+        {report ? copy.ready : ""}
+      </p>
+      <div className="space-y-6">
         {error && (
           <Card>
             <CardContent className="space-y-3 pt-6">
@@ -279,6 +290,11 @@ export function CaseSampleLab(): ReactElement {
                     {copy.whatIf.submit}
                   </Button>
                 </form>
+                {thresholdError && (
+                  <div className="mt-3">
+                    <ErrorMessage message={thresholdError} />
+                  </div>
+                )}
               </CardContent>
             </Card>
 

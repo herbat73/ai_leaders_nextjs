@@ -12,6 +12,6 @@ export function looksLikePersonalData(cell: string): boolean {
   if (trimmed === "") return false;
   if (EMAIL.test(trimmed)) return true;
   if (DECIMAL.test(trimmed)) return false;
-  const digits = trimmed.replace(/[\s\-.,()[\]]/g, "").replace(/^(?:\+48|0048)/, "");
+  const digits = trimmed.replace(/[\s\-.,()[\]]/g, "").replace(/^(?:\+48|0048|48(?=\d{9}$))/, "");
   return /^\d{9}$/.test(digits);
 }

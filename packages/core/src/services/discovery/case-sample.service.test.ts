@@ -59,7 +59,7 @@ describe("CaseSampleService.analyze (hand-computed fixture)", () => {
       ["transport", 2, 17],
       ["missing", 1, 8],
     ]);
-    expect(report.byKind[0]?.valueMedian).toBe("150,00\u00a0zł") // median of 89, 149.99, 150, 150.01, 30, 2000 = 149.995, rounded;
+    expect(report.byKind[0]?.valueMedian).toBe("150,00\u00a0zł");
     expect(report.byChannel.map((r) => [r.label, r.count])).toEqual([["mail", 8], ["phone", 4]]);
     expect(report.byOutcome.map((r) => [r.label, r.count])).toEqual([
       ["approved", 6], ["rejected", 2], ["partial", 2], ["cancelled", 1], ["open", 1],

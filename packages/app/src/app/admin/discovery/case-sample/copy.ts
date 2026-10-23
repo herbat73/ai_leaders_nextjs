@@ -24,6 +24,8 @@ export const labCopy = {
     },
   },
   loading: "Liczenie…",
+  ready: "Wyniki zostały obliczone",
+  invalidThresholds: "Popraw progi i spróbuj ponownie",
   errors: {
     validation_error: "Plik zawiera błędy. Popraw je i wczytaj plik ponownie.",
     payload_too_large: "Plik jest zbyt duży (limit 512 KB)",
@@ -32,7 +34,7 @@ export const labCopy = {
     unexpected_response: "Nieoczekiwana odpowiedź serwera. Spróbuj ponownie.",
     fallback: "Nie udało się policzyć wyników. Spróbuj ponownie.",
   } as Record<string, string>,
-  rowErrors: { title: "Błędy w pliku", line: "Wiersz", column: "Kolumna", message: "Opis", file: "Plik" },
+  rowErrors: { title: "Błędy w pliku", line: "Wiersz", column: "Kolumna", message: "Opis" },
   droppedColumns: (names: string[]) => `Pominięto kolumny spoza szablonu: ${names.join(", ")}.`,
   tiles: { sample: "Liczba spraw", followUp: "Sprawy z dopytaniem", messages: "Mediana wiadomości", settled: "Rozstrzygnięte regułą" },
   interval: (low: string, high: string) => `przedział 95%: ${low}–${high}`,

@@ -37,7 +37,7 @@ describe("parseTable", () => {
 
   it("rejects missing and duplicate columns", () => {
     expect(ok("ref\nA")).toMatchObject({ ok: false, errors: [{ line: 1, column: "value", message: "Brak kolumny" }] });
-    expect(ok("ref,ref,value\nA,A,1")).toMatchObject({ ok: false, errors: [{ line: 1, column: "ref" }] });
+    expect(ok("ref,ref,value\nA,A,1")).toMatchObject({ ok: false, errors: [{ line: 1 }] });
   });
 
   it("rejects the replacement character, an empty file, no data rows, too many rows and ragged rows", () => {
@@ -57,6 +57,13 @@ describe("parseTable", () => {
     expect(JSON.stringify(result)).not.toContain("jan@example.com");
   });
 
+  it("guards header cells too and never echoes a duplicated header cell", () => {
+    const noHeader = parseTable("jan@example.com,jan@example.com\n1,2", schema, { maxRows: 10, cellGuard: looksLikePersonalData });
+    expect(noHeader).toMatchObject({ ok: false, errors: [{ line: 1 }] });
+    expect(JSON.stringify(noHeader)).not.toContain("jan@example.com");
+    expect(JSON.stringify(ok("secret,secret,ref,value\n1,2,A,1"))).not.toContain("secret");
+  });
+
   it("never puts a cell value in an error message", () => {
     const result = ok("ref,value\nSECRET-REF,SECRET-VALUE");
     expect(JSON.stringify(result)).not.toContain("SECRET");
@@ -64,7 +71,7 @@ describe("parseTable", () => {
 });
 
 describe("looksLikePersonalData", () => {
-  it.each(["jan@example.com", "600123456", "+48 600-123-456", "0048 600 123 456", "(600) 123.456", "600.123.456", "600,123,456"])(
+  it.each(["jan@example.com", "600123456", "+48 600-123-456", "0048 600 123 456", "(600) 123.456", "600.123.456", "600,123,456", "48 600 123 456"])(
     "flags %j",
     (cell) => expect(looksLikePersonalData(cell)).toBe(true),
   );

@@ -8,7 +8,7 @@ const rules = BRIEF_RULES.map((rule) => ({ id: rule.id, name: rule.name, enabled
 
 export default function CaseSamplePage() {
   return (
-    <main className="mx-auto max-w-5xl space-y-6 p-8">
+    <main lang="pl" className="mx-auto max-w-5xl space-y-6 p-8">
       <Card>
         <CardHeader>
           <CardTitle>{copy.title}</CardTitle>
