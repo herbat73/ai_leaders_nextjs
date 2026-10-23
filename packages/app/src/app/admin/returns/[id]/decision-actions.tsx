@@ -112,7 +112,7 @@ export function DecisionActions({ id, allowed }: { id: number; allowed: ReturnSt
               required
             />
             <p id={NOTE_HINT_ID} className="text-xs text-muted-foreground">
-              {copy.rejectNoteHint(REJECT_NOTE_MIN_LENGTH)}
+              {copy.rejectNoteVisibility} {copy.rejectNoteHint(REJECT_NOTE_MIN_LENGTH)}
             </p>
             <p id={NOTE_COUNTER_ID} aria-live="polite" className="text-xs text-muted-foreground">
               {copy.rejectCounter(typed, REJECT_NOTE_MIN_LENGTH)}

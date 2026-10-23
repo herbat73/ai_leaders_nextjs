@@ -1,4 +1,4 @@
-import type { ReturnStatus, StoredReturnStatus } from "@easyrms/core";
+import type { ReturnMethod, ReturnReasonCode, ReturnResolution, ReturnStatus, StoredReturnStatus } from "@easyrms/core";
 
 /** Polish copy for the agent pages (AD-N3): one constant, colocated; status values stay language-neutral. */
 export const returnsCopy = {
@@ -45,7 +45,27 @@ export const returnsCopy = {
     noReason: "Brak",
     due: "Termin odpowiedzi",
     overdue: "Po terminie",
-    decisionNote: "Notatka widoczna dla klienta",
+    decisionNote: "Notatka dla klienta (widoczna dla klienta)",
+    items: "Zwracane produkty",
+    itemSku: (sku: string) => `SKU: ${sku}`,
+    itemQuantity: (quantity: number) => `${quantity} szt.`,
+    itemUnitPrice: "cena jedn.",
+    itemReason: "Powód",
+    itemComment: "Komentarz klienta",
+    reasonCodes: {
+      size: "Nieodpowiedni rozmiar",
+      not_as_described: "Produkt niezgodny z opisem",
+      changed_mind: "Klient zmienił zdanie",
+      better_price: "Lepsza cena gdzie indziej",
+      mistake: "Zamówienie przez pomyłkę",
+      other: "Inny powód",
+    } satisfies Record<ReturnReasonCode, string>,
+    resolution: "Rozwiązanie",
+    resolutions: { refund: "Zwrot pieniędzy", store_credit: "Kredyt sklepowy", exchange: "Wymiana" } satisfies Record<ReturnResolution, string>,
+    resolutionAmount: "Kwota",
+    exchangeNote: "Opis wymiany",
+    returnMethod: "Sposób zwrotu",
+    returnMethods: { parcel_locker: "Paczkomat", courier: "Kurier", store: "Sklep stacjonarny" } satisfies Record<ReturnMethod, string>,
     noDecisionNote: "Brak notatki.",
     timeline: "Historia",
     timelineEmpty: "Brak historii.",
@@ -53,7 +73,8 @@ export const returnsCopy = {
     noActions: "Dla tego statusu nie ma dostępnych akcji.",
     unknownStatus: "Status zgłoszenia jest nieprawidłowy, nie można nim zarządzać.",
     rejectTitle: "Odrzucenie zgłoszenia",
-    rejectNoteLabel: "Uzasadnienie dla klienta",
+    rejectNoteLabel: "Uzasadnienie dla klienta (widoczne dla klienta)",
+    rejectNoteVisibility: "Ten tekst zobaczy klient w statusie zwrotu. Nie wpisuj tu danych wewnętrznych.",
     rejectNoteHint: (minimum: number) => `Wymagane co najmniej ${minimum} znaków.`,
     rejectCounter: (typed: number, minimum: number) => `${typed} / ${minimum} znaków`,
     rejectSubmit: "Odrzuć zgłoszenie",
