@@ -1,7 +1,7 @@
 # Engineering standards: adopt `engineering-standards.md` in EasyRMS
 
 - **Date:** 2026-10-13
-- **Status:** Implemented on branch `feat/engineering-standards` (browser check of the two client islands still pending, see Implementation notes).
+- **Status:** Implemented and merged. Open item carried over when moved on 2026-10-23: the browser check of the two client islands (`SubmitReturnForm`, `ReturnStatusActions`) was never done; see Implementation notes. Also: the `braces` audit allowlist entry expires 2027-01-13.
 - **Source:** `/engineering-standards.md` (repo root)
 
 ## Goal

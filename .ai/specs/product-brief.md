@@ -152,6 +152,7 @@ Wartości R01, R03, R08–R10 i R12 są zaimplementowane w mockupie tak samo jak
 | D04 | 2026-10-13 | Trzy aplikacje z osobnymi powłokami i subdomenami | różni użytkownicy i urządzenia | pending | proposal | unknown | owner + architektura | `[DOCUMENT]` docs/03 | none |
 | D05 | 2026-10-13 | Klient loguje się linkiem e-mail (bez hasła); pracownicy przez SSO/OIDC | mniej tarcia, bez haseł | pending | proposal | unknown | owner + security | `[DOCUMENT]` docs/05 §5.1 | none |
 | D06 | 2026-10-13 | MVP = UC-01…UC-15 | zakres koncepcji | pending | proposal | unknown | owner | `[DOCUMENT]` docs/02 §2.1 | none |
+| D07 | 2026-10-23 | Cała aplikacja (portal klienta, `/admin`, Storybook, komunikaty walidacji, szablony e-mail) jest tylko po polsku; wartości przechowywane (statusy, rozwiązania) pozostają neutralne językowo | rynek docelowy jest polski; jedna wersja językowa upraszcza MVP, a wersja EN to N04 | Adam Adamczyk | confirmed | unknown | owner | decyzja w sesji 2026-10-23 | none |
 
 ## Riskiest assumptions
 
