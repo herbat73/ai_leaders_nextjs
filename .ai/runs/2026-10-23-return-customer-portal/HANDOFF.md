@@ -1,16 +1,16 @@
 # Handoff — 2026-10-23-return-customer-portal
 
-**Last updated:** 2026-10-23T20:37:20Z
+**Last updated:** 2026-10-23T20:49:54Z
 **Branch:** feat/return-customer-portal
 **PR:** https://github.com/herbat73/ai_leaders_nextjs/pull/27
-**Current phase/step:** Phase 1 Step 1.6
-**Last commit:** d08d4db — feat(returns): addMoney, applyRate, eligibility and quote
+**Current phase/step:** Phase 1 Step 1.11
+**Last commit:** 148acec — feat(returns): customer submit service, route and flow tests
 
 ## What just happened
-- Steps 1.1–1.5 landed (CSRF/HTTP layer, items migration, repository support, OrderLookup + fake, eligibility + quote); checkpoint 1 green.
+- Steps 1.6–1.10 landed (limiter, guest session, mail, lookup/quote, submit); checkpoint 2 green.
 
 ## Next concrete action
-- Step 1.6: rate limiter and clientIp (core), then 1.7 guest session.
+- Step 1.11: DB concurrency checks + scripted e2e run recorded in .ai/runs/, then Phase 2 (UI).
 
 ## Blockers / open questions
 - none. Executor steps use /tmp/executor-rules.md (outside the repo); recreate from the PLAN if lost.
