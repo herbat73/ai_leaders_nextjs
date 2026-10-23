@@ -33,7 +33,7 @@ Persistence, CLI, real order/mail ports, anything from the customer-portal spec,
 - [x] 2.1 Body cap and schemas
 - [x] 2.2 CaseSampleService.analyze
 - [x] 2.3 Note renderer
-- [ ] 2.4 Wiring and route
+- [x] 2.4 Wiring and route
 
 ### Phase 3: UI primitives and the lab page
 
