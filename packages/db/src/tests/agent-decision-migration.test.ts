@@ -34,7 +34,7 @@ describe("Migration20261023183126 up", () => {
       await insertLegacyRequest(database, { status, createdAt: `2026-03-0${index + 1}T10:00:00Z` });
     }
 
-    await database.migrateUp();
+    await database.migrateUp(MIGRATIONS.agentDecision);
 
     expect((await requests(database)).map((row) => row.status)).toEqual([
       "submitted",
@@ -55,7 +55,7 @@ describe("Migration20261023183126 up", () => {
     await insertLegacyRequest(database, { status: "requested", createdAt: "2026-04-01T10:00:00Z" });
     await insertLegacyRequest(database, { status: "requested", createdAt: "2026-03-01T10:00:00Z" });
 
-    await database.migrateUp();
+    await database.migrateUp(MIGRATIONS.agentDecision);
 
     expect((await requests(database)).map((row) => row.rma)).toEqual([
       "RMA-2026-00004",
@@ -71,7 +71,7 @@ describe("Migration20261023183126 up", () => {
     await insertLegacyRequest(database, { status: "requested", createdAt: "2026-12-31T23:30:00Z" });
     await insertLegacyRequest(database, { status: "requested", createdAt: "2025-06-01T10:00:00Z" });
 
-    await database.migrateUp();
+    await database.migrateUp(MIGRATIONS.agentDecision);
 
     const rows = await requests(database);
     const ordered = [...rows].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime() || a.id - b.id);
@@ -87,7 +87,7 @@ describe("Migration20261023183126 up", () => {
        from generate_series(1, 100001) as n`,
     );
 
-    await database.migrateUp();
+    await database.migrateUp(MIGRATIONS.agentDecision);
 
     const [{ rma }] = await database.query<{ rma: string }>(
       `select "rma" from "return_requests" order by "created_at" desc limit 1`,
@@ -102,7 +102,7 @@ describe("Migration20261023183126 up", () => {
     await insertLegacyRequest(database, { status: "requested", createdAt: "2026-03-01T10:00:00Z" });
     await insertLegacyRequest(database, { status: "approved", createdAt: "2026-03-02T10:00:00Z" });
 
-    await database.migrateUp();
+    await database.migrateUp(MIGRATIONS.agentDecision);
 
     const events = await database.query<{ return_request_id: number; type: string; to_status: string; actor: string; created_at: Date | string }>(
       `select * from "return_request_events" order by "return_request_id"`,
@@ -118,7 +118,7 @@ describe("Migration20261023183126 up", () => {
   it("works on an empty table", async () => {
     const database = await legacyDatabase();
 
-    await database.migrateUp();
+    await database.migrateUp(MIGRATIONS.agentDecision);
 
     expect(await requests(database)).toEqual([]);
   });
@@ -126,7 +126,7 @@ describe("Migration20261023183126 up", () => {
   it("enforces a unique, not-null rma afterwards", async () => {
     const database = await legacyDatabase();
     await insertLegacyRequest(database, { status: "requested", createdAt: "2026-03-01T10:00:00Z" });
-    await database.migrateUp();
+    await database.migrateUp(MIGRATIONS.agentDecision);
 
     await expect(
       database.query(
@@ -146,7 +146,7 @@ describe("Migration20261023183126 down", () => {
     const database = await legacyDatabase();
     await insertLegacyRequest(database, { status: "requested", createdAt: "2026-03-01T10:00:00Z" });
     await insertLegacyRequest(database, { status: "refunded", createdAt: "2026-03-02T10:00:00Z" });
-    await database.migrateUp();
+    await database.migrateUp(MIGRATIONS.agentDecision);
 
     await database.migrateDown();
 
@@ -164,7 +164,7 @@ describe("Migration20261023183126 down", () => {
   it("refuses after an agent moved a request, and changes nothing", async () => {
     const database = await legacyDatabase();
     await insertLegacyRequest(database, { status: "requested", createdAt: "2026-03-01T10:00:00Z" });
-    await database.migrateUp();
+    await database.migrateUp(MIGRATIONS.agentDecision);
     await database.query(`update "return_requests" set "status" = 'approved', "decision_note" = 'kept' where "id" = 1`);
     await database.query(
       `insert into "return_request_events" ("return_request_id", "type", "from_status", "to_status", "note", "actor", "created_at") values (1, 'status_changed', 'submitted', 'approved', 'kept', 'agent', now())`,
@@ -184,7 +184,7 @@ describe("Migration20261023183126 down", () => {
     async (status) => {
       const database = await legacyDatabase();
       await insertLegacyRequest(database, { status: "requested", createdAt: "2026-03-01T10:00:00Z" });
-      await database.migrateUp();
+      await database.migrateUp(MIGRATIONS.agentDecision);
       await database.query(`update "return_requests" set "status" = ?`, [status]);
 
       await expect(database.migrateDown()).rejects.toThrow(/forward-only/);

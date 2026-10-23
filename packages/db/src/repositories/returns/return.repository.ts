@@ -40,7 +40,8 @@ function toDomain(entity: ReturnRequestEntity): ReturnRequest {
     kind: RETURN_KIND,
     orderNumber: entity.orderNumber,
     customerEmail: entity.customerEmail,
-    reason: entity.reason,
+    // TODO(step 1.3): the domain `reason` becomes nullable; coerced here until then.
+    reason: entity.reason ?? "",
     status: toReturnStatus(entity.status),
     hasDecisionNote: Boolean(entity.decisionNote),
     createdAt: entity.createdAt,

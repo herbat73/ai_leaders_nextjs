@@ -46,6 +46,10 @@ What happened / what was learned. Why it matters. Link to `.ai/lessons/...` for 
 
 ---
 
+## 2026-10-23 — DB migration tests must pin `migrateUp(target)` once a later migration exists
+
+`migrateDown()` without `to` reverts only the latest migration. Tests of an earlier migration's `down` that call `migrateUp()` (all pending) start undoing the wrong one as soon as a newer migration lands. Always `migrateUp(MIGRATIONS.<that migration>)` in such tests.
+
 ## 2026-10-18 — Stray npm in an ancestor `node_modules/.bin` hijacks nested `npm` calls
 
 npm puts every ancestor directory's `node_modules/.bin` on PATH while running a script. A home-folder `C:\Users\<user>\node_modules` that contained npm 6 (a transitive dependency) shadowed the real npm inside scripts. npm 6 ignores `-w`, so the root `db:migrate` (`npm run db:migrate -w @easyrms/db`) called itself recursively and spawned hundreds of processes. Symptom: `npm ERR! code ELIFECYCLE` (npm 6 output) and repeated `"@easyrms/db"` args. Fix: delete the stray shims (`node_modules/.bin/npm*`) above the repo. Also on Windows `spawnSync("npm", …)` fails without `shell: true` (`npm.cmd`).
