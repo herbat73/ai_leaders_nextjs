@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { NotFoundError } from "../../errors";
-import { isReturnStatus, ReturnService } from "./return.service";
+import { isReturnStatus, ReturnService, toReturnStatus } from "./return.service";
 import type { NewReturnRequest, ReturnRepository, ReturnRequest, ReturnStatus } from "./types";
 
 const NOW = new Date("2026-10-22T10:00:00Z");
@@ -50,6 +50,18 @@ describe("isReturnStatus", () => {
     expect(isReturnStatus("shipped")).toBe(false);
     expect(isReturnStatus(undefined)).toBe(false);
     expect(isReturnStatus(1)).toBe(false);
+  });
+});
+
+describe("toReturnStatus", () => {
+  it("returns a status that is in the list", () => {
+    expect(toReturnStatus("approved")).toBe("approved");
+  });
+
+  it("returns unknown for a legacy value, garbage and non-strings", () => {
+    expect(toReturnStatus("shipped")).toBe("unknown");
+    expect(toReturnStatus("")).toBe("unknown");
+    expect(toReturnStatus(null)).toBe("unknown");
   });
 });
 

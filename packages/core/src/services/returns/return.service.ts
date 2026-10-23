@@ -11,6 +11,11 @@ export function isReturnStatus(value: unknown): value is ReturnStatus {
   return (RETURN_STATUSES as readonly unknown[]).includes(value);
 }
 
+/** Maps a stored value to a known status, or `"unknown"` for anything else (never falls back to a workable status). */
+export function toReturnStatus(value: unknown): ReturnStatus | "unknown" {
+  return isReturnStatus(value) ? value : "unknown";
+}
+
 export class ReturnService {
   private readonly returnRepository: ReturnRepository;
 
