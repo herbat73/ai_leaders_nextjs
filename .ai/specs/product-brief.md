@@ -195,6 +195,7 @@ none
 | Q12 | Rekomendacja w MVP: reguły czy model AI? Progi z mockupu (≥ 500 zł → naprawa, ≥ 6 zgłoszeń → nadużycie) do zatwierdzenia lub odrzucenia. | no | owner | answered 2026-10-22 | Tylko reguły, bez AI; progi z mockupu (≥ 500 zł, ≥ 6 zgłoszeń) poza pierwszym wycinkiem, wrócą jako konfigurowalne reguły po próbce (A04). |
 | Q13 | Pierwszy wycinek zakresu: czy zwrot end-to-end (UC-01, 02, 06, 10) zamiast całego D06? | yes — spec | owner | answered 2026-10-22 | Zwrot end-to-end: UC-01, UC-02, UC-06, UC-10. Reklamacje, szkody transportowe, silnik reguł, magazyn i dostawcy w kolejnych specyfikacjach. |
 | Q14 | Szkoda transportowa: 1 czy 2 zdjęcia minimum (produkt + opakowanie)? | no | owner | answered 2026-10-22 | Minimum 1 zdjęcie (zgodnie z walidatorem w docs); mockup (2 zdjęcia) do dostosowania. Dotyczy wycinka szkód transportowych. |
+| Q15 | Logowanie agenta: panel `/admin` i `PATCH /api/returns/[id]` nie mają dziś uwierzytelniania (AD-A2), więc każdy z dostępem do aplikacji może zatwierdzać i odrzucać, a zdarzenia nie wskazują agenta. Potrzebna osobna specyfikacja logowania i ról agenta. | yes — blokuje publiczne wdrożenie (portal klienta jest w tej samej aplikacji) | właściciel produktu (Adam Adamczyk) | open | Brak decyzji. Do czasu jej wdrożenia aplikacja nie może być wystawiona publicznie (README). Tymczasowa blokada `/admin` na produkcji to decyzja produktowa, jeszcze niepodjęta. |
 
 ## Definition of Ready addendum (own)
 

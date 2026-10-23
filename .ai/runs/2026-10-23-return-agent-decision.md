@@ -1,6 +1,6 @@
 # Execution plan: return agent decision
 
-Source doc: .ai/specs/2026-10-22-return-agent-decision.md
+Source doc: .ai/specs/implemented/2026-10-22-return-agent-decision.md
 
 ## Goal
 Replace the unconstrained status select on `/admin/returns` with a nine-status workflow: enforced state machine, RMA numbers, per-request timeline, inbox with a two-business-day due marker, and a decision card. The public form keeps working.
