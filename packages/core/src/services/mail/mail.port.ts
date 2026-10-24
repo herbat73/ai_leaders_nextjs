@@ -1,4 +1,4 @@
-export type MailTemplate = "return_submitted" | "return_status_changed";
+export type MailTemplate = "return_submitted" | "return_status_changed" | "agent_invite";
 
 export interface MailMessage {
   template: MailTemplate;

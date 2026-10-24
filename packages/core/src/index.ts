@@ -41,3 +41,6 @@ export * from "./validators/returns/return-status-update.schema";
 export * from "./services/agents/password-hasher";
 export * from "./services/agents/agent-session.service";
 export * from "./services/agents/types";
+export * from "./services/agents/agent.service";
+export * from "./services/agents/hash-limiter";
+export * from "./validators/agents";
