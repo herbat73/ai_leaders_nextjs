@@ -11,14 +11,14 @@ Engine: om-auto-create-pr-loop (steps: 21, --loop: no, threshold exceeded)
 
 | Phase | Step | Title | Exec | Status | Commit |
 |-------|------|-------|------|--------|--------|
-| 1 | 1.1 | Password hashing (PasswordHasher port + scrypt adapter) | inline | done | — |
-| 1 | 1.2 | Agent session service and secret resolution | inline | done | — |
-| 1 | 1.3 | Agent entity and migration | inline | done | — |
-| 1 | 1.4 | Agent repository | inline | done | — |
-| 1 | 1.5 | Agent service and validators | inline | done | — |
-| 1 | 1.6 | Composition and login/logout/accept routes | inline | done | — |
-| 1 | 1.7 | First-agent command (agent:create) | inline | done | — |
-| 1 | 1.8 | Login and invite pages | inline | done | — |
+| 1 | 1.1 | Password hashing (PasswordHasher port + scrypt adapter) | inline | done | c3e115d |
+| 1 | 1.2 | Agent session service and secret resolution | inline | done | 4bf803a |
+| 1 | 1.3 | Agent entity and migration | inline | done | 11630ed |
+| 1 | 1.4 | Agent repository | inline | done | 746ead6 |
+| 1 | 1.5 | Agent service and validators | inline | done | bf8230e |
+| 1 | 1.6 | Composition and login/logout/accept routes | inline | done | 24ddb45 |
+| 1 | 1.7 | First-agent command (agent:create) | inline | done | 14f9884 |
+| 1 | 1.8 | Login and invite pages | inline | done | df71011 |
 | 2 | 2.1 | authenticate hook in apiHandler and makeCrudRoute | inline | todo | — |
 | 2 | 2.2 | agent-auth.ts guards and open-redirect sanitizer | inline | todo | — |
 | 2 | 2.3 | Guard the existing admin surface | inline | todo | — |
