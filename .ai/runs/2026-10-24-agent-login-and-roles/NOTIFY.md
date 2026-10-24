@@ -16,3 +16,6 @@
 - Phase 2 complete; guard, proxy, identity on events verified (checkpoint-2-checks.md).
 - Blocker for merge, not for the run: human QA by a reviewer is required (risk-high, `needs-qa`); the run does not add `qa-approved`.
 - Decision: `ReturnService.transition(id, status, note, agent)` takes the note as `string | undefined` (required position) so the agent can follow it.
+
+## 2026-10-24 — checkpoint 3
+- Phase 3 complete (checkpoint-3-checks.md). Lesson: Turbopack HMR can serve a stale server component; restart `next dev` when a nav/shell edit does not show.
