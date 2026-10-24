@@ -6,6 +6,12 @@ export function isMutatingMethod(method: string): boolean {
   return MUTATING_METHODS.has(method.toUpperCase());
 }
 
+export interface CsrfOptions {
+  trustProxy?: boolean;
+  /** Extra origins (lowercase, no trailing slash) accepted as same-site, for a public host no header reveals (chained proxies). */
+  allowedOrigins?: readonly string[];
+}
+
 /** The host the client addressed: `Host`, or the first `x-forwarded-host` entry only when the proxy is trusted. */
 function requestHostOf(request: Request, trustProxy: boolean): string | undefined {
   const forwarded = trustProxy ? request.headers.get("x-forwarded-host")?.split(",")[0]?.trim() : undefined;
@@ -18,17 +24,18 @@ function requestHostOf(request: Request, trustProxy: boolean): string | undefine
  * simple request cannot set it) and, when `Origin` is sent, its host (with port) must equal the request host.
  * `Origin: null` and unparsable origins are rejected.
  */
-export function isSameOriginRequest(request: Request, { trustProxy = false }: { trustProxy?: boolean } = {}): boolean {
+export function isSameOriginRequest(request: Request, { trustProxy = false, allowedOrigins = [] }: CsrfOptions = {}): boolean {
   if (!request.headers.get("x-requested-with")) return false;
   const origin = request.headers.get("origin");
   if (origin === null) return true;
   if (!URL.canParse(origin)) return false;
+  if (allowedOrigins.includes(origin.toLowerCase())) return true;
   const requestHost = requestHostOf(request, trustProxy);
   return requestHost !== undefined && new URL(origin).host.toLowerCase() === requestHost;
 }
 
 /** Throws `ForbiddenError("csrf_rejected")` when `isSameOriginRequest` fails. */
-export function assertSameOrigin(request: Request, options: { trustProxy?: boolean } = {}): void {
+export function assertSameOrigin(request: Request, options: CsrfOptions = {}): void {
   if (!isSameOriginRequest(request, options)) throw new ForbiddenError("Cross-site request rejected");
 }
 
@@ -44,4 +51,13 @@ export function parseTrustProxy({ nodeEnv, value }: { nodeEnv: string | undefine
     throw new ConfigurationError("EASYRMS_TRUST_PROXY must be set to 'true' or 'false' in production");
   }
   return false;
+}
+
+/** Parses `EASYRMS_ALLOWED_ORIGINS`: comma-separated origins, normalized to lowercase `scheme://host[:port]`; unparsable entries are ignored. */
+export function parseAllowedOrigins(value: string | undefined): string[] {
+  return (value ?? "")
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter((entry) => URL.canParse(entry))
+    .map((entry) => new URL(entry).origin.toLowerCase());
 }

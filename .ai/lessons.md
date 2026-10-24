@@ -13,6 +13,8 @@ For a lesson with enough depth to need code samples, longer explanations, or mul
 
 Keep entries short — a few lines each. Newest entries at the top.
 
+- **2026-10-24 — CSRF 403 behind chained proxies.** In a cloud sandbox the browser `Origin` is the public host, but the app sees `Host: localhost:3000` and `x-forwarded-host` of the inner proxy, so `EASYRMS_TRUST_PROXY=true` cannot help and every POST answers 403 `csrf_rejected`; `EASYRMS_ALLOWED_ORIGINS` (exact origins) is the fix. Next loads `.env*` only from `packages/app` (the server's cwd), so a root `.env` is silently ignored: put app variables in `packages/app/.env.local`. To see what a proxy really sends, log the rejected request's headers to a file (the dev server's stdout is a pipe) and have the user retry, rather than guessing; `pkill -f next` also kills the calling shell (exit 144), so run it in its own call.
+
 - **2026-10-23 — Submit switch.** After `app/api/returns/submit/route.ts` is gone, `POST /api/returns/submit` answers 405, not 404: the dynamic `/api/returns/[id]` segment captures `submit` and has no POST. Moving or deleting a route leaves stale `.next/types/validator.ts` that breaks `npm run typecheck` in `app`; `rm -rf packages/app/.next` fixes it.
 
 - **2026-10-23 — Wizard page.** A page that must re-run its Server Component after a failure needs `router.refresh()` from a client button (a plain `<a href>` to the same route trips `no-html-link-for-pages`). Server `fieldErrors["items.<lineRef>"]` from quote/submit are applied by marking that line ineligible locally (deselected, reason shown on the line) because `LinePicker` has no per-line error slot. `conflict` has no customer error key; the wizard maps it itself.

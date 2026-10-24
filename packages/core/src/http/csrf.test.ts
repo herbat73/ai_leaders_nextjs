@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { ConfigurationError, ForbiddenError } from "../errors";
 import { apiHandler, okResponse } from "./api-handler";
-import { assertSameOrigin, isSameOriginRequest, parseTrustProxy } from "./csrf";
+import { assertSameOrigin, isSameOriginRequest, parseAllowedOrigins, parseTrustProxy } from "./csrf";
 import type { ApiLogger } from "./types";
 
 const context = { params: Promise.resolve({}) };
@@ -140,5 +140,28 @@ describe("apiHandler CSRF check and passthrough", () => {
     expect(response.status).toBe(202);
     expect(response.headers.get("set-cookie")).toBe("a=b; Path=/");
     expect(await response.json()).toEqual({ ok: true, data: { id: 1 } });
+  });
+});
+
+describe("allowed origins", () => {
+  const publicOrigin = "https://public.example.com";
+  const chained = { ...ok, origin: publicOrigin, host: "localhost:3000", "x-forwarded-host": "inner.proxy.test" };
+
+  it("rejects a public origin no header reveals, unless it is allow-listed", () => {
+    expect(isSameOriginRequest(post(chained), { trustProxy: true })).toBe(false);
+    expect(isSameOriginRequest(post(chained), { trustProxy: true, allowedOrigins: [publicOrigin] })).toBe(true);
+  });
+
+  it("does not allow other origins", () => {
+    const other = { ...chained, origin: "https://evil.example.com" };
+    expect(isSameOriginRequest(post(other), { allowedOrigins: [publicOrigin] })).toBe(false);
+  });
+
+  it("parses a comma-separated list, normalizing and dropping garbage", () => {
+    expect(parseAllowedOrigins(" https://A.example.com/ , nope,http://b.test:8080 ")).toEqual([
+      "https://a.example.com",
+      "http://b.test:8080",
+    ]);
+    expect(parseAllowedOrigins(undefined)).toEqual([]);
   });
 });

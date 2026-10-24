@@ -11,6 +11,7 @@ export interface ApiHandlerOptions {
    * mutating request, never at route creation, so a configuration error surfaces on first use and not during build.
    */
   trustProxy?: boolean | (() => boolean);
+  allowedOrigins?: readonly string[] | (() => readonly string[]);
 }
 
 const consoleLogger: ApiLogger = {
@@ -65,12 +66,15 @@ export function okResponse<T>(data: T, init?: ResponseInit): Response {
  */
 export function apiHandler<TContext extends RouteContext = RouteContext>(
   handler: (request: Request, context: TContext) => Promise<unknown>,
-  { status = 200, logger = consoleLogger, trustProxy = false }: ApiHandlerOptions = {},
+  { status = 200, logger = consoleLogger, trustProxy = false, allowedOrigins = [] }: ApiHandlerOptions = {},
 ): (request: Request, context: TContext) => Promise<Response> {
   return async (request, context) => {
     try {
       if (isMutatingMethod(request.method)) {
-        assertSameOrigin(request, { trustProxy: typeof trustProxy === "function" ? trustProxy() : trustProxy });
+        assertSameOrigin(request, {
+          trustProxy: typeof trustProxy === "function" ? trustProxy() : trustProxy,
+          allowedOrigins: typeof allowedOrigins === "function" ? allowedOrigins() : allowedOrigins,
+        });
       }
       const result = await handler(request, context);
       if (result instanceof Response) return result;

@@ -25,6 +25,7 @@ export interface CrudRouteConfig<
   logger?: ApiLogger;
   /** Forwarded to `apiHandler` (CSRF host check); the function form is evaluated per request. */
   trustProxy?: ApiHandlerOptions["trustProxy"];
+  allowedOrigins?: ApiHandlerOptions["allowedOrigins"];
   /** Parses the `[id]` route param for item operations. Defaults to a positive integer. */
   idSchema?: ZodType<TId>;
   list?: (service: TService) => Promise<unknown>;
@@ -64,7 +65,7 @@ export function makeCrudRoute<
 >(
   config: CrudRouteConfig<TService, TId, TCreate, TUpdate, TPatch> & { [P in K]: unknown },
 ): CrudHandlers<K> {
-  const options = { logger: config.logger, trustProxy: config.trustProxy };
+  const options = { logger: config.logger, trustProxy: config.trustProxy, allowedOrigins: config.allowedOrigins };
   const idSchema = (config.idSchema ?? defaultIdSchema) as ZodType<TId>;
   const readId = async (context: RouteContext): Promise<TId> => {
     const result = validateWith(idSchema, (await context.params).id);
