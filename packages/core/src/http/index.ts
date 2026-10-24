@@ -5,3 +5,4 @@ export * from "./make-crud-route";
 export * from "./parse";
 export * from "./types";
 export * from "./safe-redirect";
+export * from "./agent-routes";

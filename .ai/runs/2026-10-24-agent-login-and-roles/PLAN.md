@@ -23,7 +23,7 @@ Engine: om-auto-create-pr-loop (steps: 21, --loop: no, threshold exceeded)
 | 2 | 2.2 | agent-auth.ts guards and open-redirect sanitizer | inline | done | — |
 | 2 | 2.3 | Guard the existing admin surface | inline | done | — |
 | 2 | 2.4 | Identity on timeline events | inline | done | — |
-| 2 | 2.5 | proxy.ts optimistic check | inline | todo | — |
+| 2 | 2.5 | proxy.ts optimistic check | inline | done | — |
 | 2 | 2.6 | Close the blocker (README, platform-primitives) | inline | todo | — |
 | 3 | 3.1 | List and invite API | inline | todo | — |
 | 3 | 3.2 | Disable API | inline | todo | — |
