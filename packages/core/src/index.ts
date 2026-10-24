@@ -45,3 +45,4 @@ export * from "./services/agents/agent.service";
 export * from "./services/agents/hash-limiter";
 export * from "./validators/agents";
 export * from "./services/agents/permissions";
+export * from "./services/returns/approval";

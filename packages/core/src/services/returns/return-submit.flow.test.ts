@@ -40,6 +40,7 @@ function makeRepo(): FakeRepo {
     list: async () => repo.rows,
     findDetail: async () => null,
     findStatus: async (id) => repo.rows.find((row) => row.id === id)?.status ?? null,
+    findRequest: async (id) => repo.rows.find((row) => row.id === id) ?? null,
     transition: unsupported,
     listByOrder: async (orderNumber) => repo.rows.filter((row) => row.orderNumber === orderNumber),
     findByRma: async () => null,
@@ -114,6 +115,7 @@ function setup(options: { port?: OrderLookup; mailFails?: boolean } = {}) {
     rateLimiter: new RateLimiter({ clock: () => NOW }),
     eligibilityConfig: { windowDays: 30 },
     quoteConfig: { shippingFee: money(1000) },
+    approvalConfig: { refundApprovalLimit: money(200000) },
   });
   return { repo, service, sent, logger };
 }

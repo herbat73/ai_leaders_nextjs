@@ -1,4 +1,4 @@
-import { AppError } from "../errors";
+import { isAppError } from "../errors";
 import { assertSameOrigin, isMutatingMethod } from "./csrf";
 import type { ApiEnvelope, ApiLogger, RouteContext } from "./types";
 
@@ -87,7 +87,7 @@ export function apiHandler<TContext extends RouteContext = RouteContext, TPrinci
       if (result instanceof Response) return result;
       return envelope({ ok: true, data: result }, status);
     } catch (error) {
-      if (error instanceof AppError) {
+      if (isAppError(error)) {
         return envelope(
           { ok: false, error: { code: error.code, message: error.message, fieldErrors: error.fieldErrors } },
           error.status,

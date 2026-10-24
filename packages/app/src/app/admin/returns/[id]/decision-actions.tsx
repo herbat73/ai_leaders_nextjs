@@ -9,6 +9,7 @@ import { returnsCopy } from "../copy";
 
 const copy = returnsCopy.card;
 const REJECT_BUTTON_ID = "reject-open";
+const APPROVAL_REASON_ID = "approval-reason";
 const NOTE_FIELD_ID = "reject-note";
 const NOTE_HINT_ID = "reject-note-hint";
 const NOTE_COUNTER_ID = "reject-note-counter";
@@ -23,7 +24,16 @@ function statusLabel(status: string | undefined): string {
  * Client island of the decision card: one button per allowed move. Rejecting opens a required note field; this is a
  * bespoke form because `CrudForm` has no hook for the live counter or its `aria-live` announcement.
  */
-export function DecisionActions({ id, allowed }: { id: number; allowed: ReturnStatus[] }): ReactElement {
+export function DecisionActions({
+  id,
+  allowed,
+  approvalBlocked = false,
+}: {
+  id: number;
+  allowed: ReturnStatus[];
+  /** True when approving needs `MANAGE_RULES` this agent lacks (refund above the limit); the server stays authoritative. */
+  approvalBlocked?: boolean;
+}): ReactElement {
   const router = useRouter();
   const [isRefreshing, startTransition] = useTransition();
   const [pendingStatus, setPendingStatus] = useState<ReturnStatus | null>(null);
@@ -60,6 +70,8 @@ export function DecisionActions({ id, allowed }: { id: number; allowed: ReturnSt
         setError(copy.conflict(statusLabel(result.error.fieldErrors?.status)));
         setRejecting(false);
         startTransition(() => router.refresh());
+      } else if (result.error.code === "approval_required") {
+        setError(copy.approvalRequired);
       } else {
         setError(result.error.fieldErrors?.decisionNote ?? copy.genericError);
       }
@@ -83,17 +95,31 @@ export function DecisionActions({ id, allowed }: { id: number; allowed: ReturnSt
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-2">
-        {direct.map((status) => (
-          <Button key={status} disabled={isBusy} onClick={() => void move(status)}>
-            {returnsCopy.actionLabels[status]}
-          </Button>
-        ))}
+        {direct.map((status) => {
+          const blocked = status === "approved" && approvalBlocked;
+          return (
+            <Button
+              key={status}
+              disabled={isBusy || blocked}
+              aria-describedby={blocked ? APPROVAL_REASON_ID : undefined}
+              onClick={() => void move(status)}
+            >
+              {returnsCopy.actionLabels[status]}
+            </Button>
+          );
+        })}
         {canReject && !rejecting && (
           <Button id={REJECT_BUTTON_ID} variant="destructive" disabled={isBusy} onClick={() => setRejecting(true)}>
             {returnsCopy.actionLabels.rejected}
           </Button>
         )}
       </div>
+
+      {approvalBlocked && direct.includes("approved") && (
+        <p id={APPROVAL_REASON_ID} className="text-sm text-muted-foreground">
+          {copy.approvalRequired}
+        </p>
+      )}
 
       {canReject && rejecting && (
         <form onSubmit={submitRejection} className="space-y-3" aria-labelledby="reject-title">

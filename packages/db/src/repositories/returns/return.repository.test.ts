@@ -438,3 +438,17 @@ describe("agent identity on events", () => {
   });
 });
 
+describe("findRequest", () => {
+  it("returns the request with its resolution and amount but no decision note, and null for an unknown id", async () => {
+    const id = await createRequest("FIND-REQ");
+    await repository().transition(id, "submitted", "approved", NOTE, agentId);
+
+    const request = await repository().findRequest(id);
+
+    expect(request).toMatchObject({ id, status: "approved", resolution: "refund", hasDecisionNote: true });
+    expect(request?.resolutionAmount?.amountMinor).toBeGreaterThan(0);
+    expect(request).not.toHaveProperty("decisionNote");
+    expect(await repository().findRequest(987654)).toBeNull();
+  });
+});
+

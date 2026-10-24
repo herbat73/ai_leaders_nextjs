@@ -198,6 +198,11 @@ export class MikroOrmReturnRepository implements ReturnRepository {
     return row ? toReturnStatus(row.status) : null;
   }
 
+  async findRequest(id: number): Promise<ReturnRequest | null> {
+    const row = await this.em.findOne(ReturnRequestSchema, { id }, { refresh: true });
+    return row ? toDomain(row) : null;
+  }
+
   async createWithItems(input: NewReturnRequest): Promise<ReturnRequest> {
     try {
       return await this.em.transactional(async (tx) => {

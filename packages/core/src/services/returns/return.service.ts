@@ -2,6 +2,7 @@ import { dueAt, overdue } from "../../calendar";
 import { formatMoney, type Money } from "../../domain/money";
 import {
   ConflictError,
+  ForbiddenError,
   NotFoundError,
   ServiceUnavailableError,
   TooManyRequestsError,
@@ -10,9 +11,11 @@ import {
 import type { ApiLogger } from "../../http/types";
 import { CUSTOMER_RATE_RULES, rateKeys, type RateLimiter } from "../../security/rate-limiter";
 import type { ReturnSubmitBody } from "../../validators/returns/return-submit.schema";
+import { hasPermission } from "../agents/permissions";
 import type { AgentContext } from "../agents/types";
 import { maskEmail, type MailPort, type MailTemplate } from "../mail/mail.port";
 import type { OrderLookup, OrderLookupResult } from "../orders/order-lookup.port";
+import { requiresManagerApproval, type ApprovalConfig } from "./approval";
 import { checkDecisionNote } from "./decision-note";
 import { checkEligibility, type EligibilityConfig, type IneligibleReason } from "./eligibility";
 import { calculateQuote, validateQuoteLines, type QuoteConfig } from "./quote";
@@ -77,6 +80,7 @@ export class ReturnService {
   private readonly rateLimiter: RateLimiter;
   private readonly eligibilityConfig: EligibilityConfig;
   private readonly quoteConfig: QuoteConfig;
+  private readonly approvalConfig: ApprovalConfig;
 
   constructor(deps: {
     returnRepository: ReturnRepository;
@@ -87,6 +91,7 @@ export class ReturnService {
     rateLimiter: RateLimiter;
     eligibilityConfig: EligibilityConfig;
     quoteConfig: QuoteConfig;
+    approvalConfig: ApprovalConfig;
   }) {
     this.returnRepository = deps.returnRepository;
     this.clock = deps.clock;
@@ -96,6 +101,7 @@ export class ReturnService {
     this.rateLimiter = deps.rateLimiter;
     this.eligibilityConfig = deps.eligibilityConfig;
     this.quoteConfig = deps.quoteConfig;
+    this.approvalConfig = deps.approvalConfig;
   }
 
   async list(filter?: ReturnListFilter): Promise<ReturnListItem[]> {
@@ -129,10 +135,16 @@ export class ReturnService {
 
   /**
    * Moves a request along the state machine on behalf of `agent`, who is recorded on the timeline event. Checks run in
-   * the order the API documents: note rules (400), existence (404), allowed move (409); the repository's
-   * compare-and-set then settles a race between two agents (409). Authentication (401) happened before the call.
+   * the order the API documents: note rules (400), existence (404), allowed move (409), approval limit (403: approving a
+   * refund above `refundApprovalLimit` needs `MANAGE_RULES`, R11); the repository's compare-and-set then settles a race
+   * between two agents (409). Authentication (401) happened before the call.
    */
-  async transition(id: number, status: ReturnStatus, decisionNote: string | undefined, agent: Pick<AgentContext, "id">): Promise<ReturnListItem> {
+  async transition(
+    id: number,
+    status: ReturnStatus,
+    decisionNote: string | undefined,
+    agent: Pick<AgentContext, "id" | "permissions">,
+  ): Promise<ReturnListItem> {
     const check = checkDecisionNote(status, decisionNote);
     if (!check.ok) throw new ValidationError("Invalid input", { decisionNote: check.message });
 
@@ -141,6 +153,14 @@ export class ReturnService {
     returnStateMachine.assert(current, status);
     // `assert` only passes for a known status, so `current` is one of the nine here.
     const from = current as ReturnStatus;
+
+    if (status === "approved") {
+      const request = await this.returnRepository.findRequest(id);
+      if (!request) throw new NotFoundError(`Return ${id} not found`);
+      if (requiresManagerApproval(request, status, this.approvalConfig.refundApprovalLimit) && !hasPermission(agent, "MANAGE_RULES")) {
+        throw new ForbiddenError("Approving a refund above the limit needs the MANAGE_RULES permission", "approval_required");
+      }
+    }
 
     const outcome = await this.returnRepository.transition(id, from, status, check.note, agent.id);
     switch (outcome.result) {

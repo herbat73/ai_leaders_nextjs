@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { formatEventTime, formatMoney, type ReturnDetailView, type ReturnEvent } from "@easyrms/core";
+import { approvalBlockedFor, formatEventTime, formatMoney, type ReturnDetailView, type ReturnEvent } from "@easyrms/core";
 import { Badge, Card, CardContent, CardHeader, CardTitle, Timeline, type TimelineEvent } from "@easyrms/ui/admin";
 
 import { requireAgentPage } from "@/server/agent-auth";
 import { createRequestScope } from "@/server/container";
+import { getApprovalConfig } from "@/server/return-config";
 import { AdminShell } from "../../_shell/admin-shell";
 import { returnsCopy } from "../copy";
 import { statusBadgeVariant } from "../status-badge";
@@ -154,7 +155,11 @@ export default async function ReturnCardPage({ params }: { params: Promise<{ id:
                 {copy.unknownStatus}
               </p>
             ) : (
-              <DecisionActions id={request.id} allowed={request.allowedTransitions} />
+              <DecisionActions
+                id={request.id}
+                allowed={request.allowedTransitions}
+                approvalBlocked={approvalBlockedFor(agent, request, getApprovalConfig().refundApprovalLimit)}
+              />
             )}
           </CardContent>
         </Card>

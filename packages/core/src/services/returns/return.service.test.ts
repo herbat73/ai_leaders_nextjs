@@ -3,10 +3,11 @@ import { describe, expect, it, vi } from "vitest";
 import { createFakeOrderLookup } from "../../adapters/orders/fake-order-lookup";
 import { money } from "../../domain/money";
 import { RateLimiter } from "../../security/rate-limiter";
-import { ConflictError, NotFoundError, ValidationError } from "../../errors";
+import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "../../errors";
 import type { ApiLogger } from "../../http/types";
 import { returnListQuerySchema } from "../../validators/returns/return-list-query.schema";
 import { returnStatusUpdateSchema } from "../../validators/returns/return-status-update.schema";
+import type { AgentPermission } from "../agents/types";
 import { isReturnStatus, ReturnService, toReturnStatus } from "./return.service";
 import type { MailMessage, MailPort } from "../mail/mail.port";
 import { returnStateMachine } from "./transitions";
@@ -20,7 +21,8 @@ import {
 
 // Thursday 5 Nov 2026 10:00 Warsaw is UTC+1 all week, so due dates are easy to read.
 const CREATED = new Date("2026-11-05T10:00:00Z");
-const AGENT = { id: 7 };
+const AGENT = { id: 7, permissions: [] as AgentPermission[] };
+const MANAGER = { id: 8, permissions: ["MANAGE_RULES"] as AgentPermission[] };
 const LONG_NOTE = "Item was used and returned after the period ended";
 const SECRET_NOTE = "ZZ-secret-customer-note-ZZ ZZ-secret-customer-note-ZZ";
 
@@ -61,6 +63,7 @@ function makeRepository(initial: ReturnRequest[] = []): Fake {
     events: [],
     list: async (filter) => fake.rows.filter((row) => !filter?.status || row.status === filter.status),
     findStatus: async (id) => fake.rows.find((row) => row.id === id)?.status ?? null,
+    findRequest: async (id) => fake.rows.find((row) => row.id === id) ?? null,
     findDetail: async (id): Promise<ReturnDetail | null> => {
       const request = fake.rows.find((row) => row.id === id);
       return request ? { request, decisionNote: fake.notes.get(id) ?? null, items: [], events: [...fake.events] } : null;
@@ -117,6 +120,7 @@ function makeService(
     rateLimiter: new RateLimiter({ clock: () => now }),
     eligibilityConfig: { windowDays: 30 },
     quoteConfig: { shippingFee: money(1000) },
+    approvalConfig: { refundApprovalLimit: money(200000) },
   });
 }
 
@@ -478,7 +482,7 @@ describe("ReturnService.transition identity", () => {
   it("records the acting agent on the timeline event", async () => {
     const repository = makeRepository([makeRequest()]);
 
-    await makeService(repository).transition(1, "approved", LONG_NOTE, { id: 42 });
+    await makeService(repository).transition(1, "approved", LONG_NOTE, { id: 42, permissions: [] });
 
     expect(repository.events).toHaveLength(1);
     expect(repository.events[0]).toMatchObject({ actor: "agent", agentId: 42, toStatus: "approved" });
@@ -496,6 +500,81 @@ describe("ReturnService.transition identity", () => {
 
     await service.transition(1, "approved", undefined, AGENT);
     expect(spy).toHaveBeenCalledWith(1, "submitted", "approved", null, 7);
+  });
+});
+
+describe("ReturnService.transition approval limit (R11)", () => {
+  const refund = (amountMinor: number, overrides: Partial<ReturnRequest> = {}) =>
+    makeRequest({ resolution: "refund", resolutionAmount: money(amountMinor), ...overrides });
+
+  it("lets any agent approve a refund of exactly the limit", async () => {
+    const repository = makeRepository([refund(200000)]);
+
+    const item = await makeService(repository).transition(1, "approved", undefined, AGENT);
+
+    expect(item.status).toBe("approved");
+  });
+
+  it("refuses an agent without MANAGE_RULES one grosz above the limit with 403 approval_required, writing nothing", async () => {
+    const repository = makeRepository([refund(200001)]);
+    const spy = vi.spyOn(repository, "transition");
+
+    const error = await errorOf(makeService(repository).transition(1, "approved", undefined, AGENT));
+
+    expect(error).toBeInstanceOf(ForbiddenError);
+    expect(error).toMatchObject({ status: 403, code: "approval_required" });
+    expect(spy).not.toHaveBeenCalled();
+    expect(repository.events).toHaveLength(0);
+  });
+
+  it("lets a MANAGE_RULES agent approve above the limit", async () => {
+    const repository = makeRepository([refund(900000)]);
+
+    const item = await makeService(repository).transition(1, "approved", undefined, MANAGER);
+
+    expect(item.status).toBe("approved");
+    expect(repository.events[0]).toMatchObject({ agentId: 8 });
+  });
+
+  it("never gates store credit, exchange or a request without a resolution", async () => {
+    const repository = makeRepository([
+      makeRequest({ id: 1, resolution: "store_credit", resolutionAmount: money(900000) }),
+      makeRequest({ id: 2, resolution: "exchange", resolutionAmount: null }),
+      makeRequest({ id: 3 }),
+    ]);
+    const service = makeService(repository);
+
+    for (const id of [1, 2, 3]) expect((await service.transition(id, "approved", undefined, AGENT)).status).toBe("approved");
+  });
+
+  it("does not gate rejecting a large refund", async () => {
+    const repository = makeRepository([refund(900000)]);
+
+    const item = await makeService(repository).transition(1, "rejected", LONG_NOTE, AGENT);
+
+    expect(item.status).toBe("rejected");
+  });
+
+  it("follows the documented check order: note 400, existence 404, move 409, approval 403, then compare-and-set 409", async () => {
+    const repository = makeRepository([refund(900000), refund(900000, { id: 2, status: "approved" })]);
+    const service = makeService(repository);
+
+    // 400 first: a rejection without a note, even on a request the agent could not approve anyway.
+    expect(await errorOf(service.transition(1, "rejected", undefined, AGENT))).toBeInstanceOf(ValidationError);
+    // 404 before 403.
+    expect(await errorOf(service.transition(99, "approved", undefined, AGENT))).toBeInstanceOf(NotFoundError);
+    // 409 (move not allowed from approved) before 403.
+    expect(await errorOf(service.transition(2, "approved", undefined, AGENT))).toBeInstanceOf(ConflictError);
+    // 403 once the move is allowed.
+    expect(await errorOf(service.transition(1, "approved", undefined, AGENT))).toMatchObject({ code: "approval_required" });
+
+    // The manager passes the approval check, then a stale status is the repository's compare-and-set 409.
+    repository.beforeTransition = () => {
+      repository.rows[0].status = "rejected";
+    };
+    const stale = await errorOf(service.transition(1, "approved", undefined, MANAGER));
+    expect(stale).toBeInstanceOf(ConflictError);
+    expect(stale).toMatchObject({ code: "conflict" });
   });
 });
 

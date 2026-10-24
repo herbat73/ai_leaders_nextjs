@@ -26,7 +26,7 @@ import { getOrm, registerDb } from "@easyrms/db";
 
 import { getAgentSessionService } from "./agent-session";
 import { getGuestSessionService } from "./guest-session";
-import { getEligibilityConfig, getQuoteConfig } from "./return-config";
+import { getApprovalConfig, getEligibilityConfig, getQuoteConfig } from "./return-config";
 
 /** What can be resolved from a request scope. */
 export interface Cradle {
@@ -84,6 +84,7 @@ function getRootContainer(): Promise<AwilixContainer> {
       rateLimiter: asFunction(getRateLimiter).singleton(),
       eligibilityConfig: asFunction(getEligibilityConfig).singleton(),
       quoteConfig: asFunction(getQuoteConfig).singleton(),
+      approvalConfig: asFunction(getApprovalConfig).singleton(),
     });
     registerCore(container);
     registerDb(container, await getOrm());

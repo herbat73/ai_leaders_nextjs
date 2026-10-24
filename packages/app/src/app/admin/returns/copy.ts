@@ -80,6 +80,7 @@ export const returnsCopy = {
     rejectSubmit: "Odrzuć zgłoszenie",
     rejectCancel: "Anuluj",
     conflict: (status: string) => `Status zgłoszenia zmienił się w międzyczasie. Aktualny status: ${status}.`,
+    approvalRequired: "Zwrot pieniędzy powyżej limitu może zatwierdzić tylko agent z uprawnieniem do zarządzania agentami i regułami. Poproś go o decyzję.",
     genericError: "Nie udało się zapisać zmiany. Spróbuj ponownie.",
     eventLabels: { submitted: "Zgłoszenie utworzone" },
     actors: { customer: "Klient", agent: "Agent", system: "System" },

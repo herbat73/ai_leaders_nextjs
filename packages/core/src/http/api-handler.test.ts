@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { ConflictError, ForbiddenError, UnauthorizedError, ValidationError } from "../errors";
+import { APP_ERROR_BRAND, ConflictError, ForbiddenError, isAppError, UnauthorizedError, ValidationError } from "../errors";
 import { apiHandler } from "./api-handler";
 import type { ApiLogger } from "./types";
 
@@ -155,6 +155,40 @@ describe("apiHandler", () => {
       const [logged] = contextsOf(logger);
       expect(logged.name).toBe("string");
       expect(JSON.stringify(logged)).not.toContain(NOTE);
+    });
+  });
+
+  describe("AppError from another copy of the module", () => {
+    /** What a second bundled copy of `errors.ts` produces: same shape and brand, different class identity. */
+    class ForeignAppError extends Error {
+      readonly [APP_ERROR_BRAND] = true;
+      constructor(readonly status: number, readonly code: string) {
+        super("from another bundle");
+      }
+    }
+
+    it("maps it like a native AppError instead of an opaque 500", async () => {
+      const handler = apiHandler(async () => {
+        throw new ForeignAppError(403, "approval_required");
+      });
+
+      const response = await handler(new Request("http://localhost/api/x"), context);
+
+      expect(response.status).toBe(403);
+      expect(await response.json()).toMatchObject({ ok: false, error: { code: "approval_required" } });
+    });
+
+    it("does not treat lookalikes without the brand, such as driver errors, as AppErrors", async () => {
+      const driver = Object.assign(new Error("duplicate key"), { code: "23505", status: 409 });
+      const logger = makeLogger();
+      const response = await apiHandler(async () => {
+        throw driver;
+      }, { logger })(new Request("http://localhost/api/x"), context);
+
+      expect(isAppError(driver)).toBe(false);
+      expect(isAppError(new ConflictError("x"))).toBe(true);
+      expect(response.status).toBe(500);
+      expect(logger.error).toHaveBeenCalledTimes(1);
     });
   });
 

@@ -139,6 +139,8 @@ export interface ReturnRepository {
   findDetail(id: number): Promise<ReturnDetail | null>;
   /** Status only, so the service can validate a move without reading the decision note. */
   findStatus(id: number): Promise<StoredReturnStatus | null>;
+  /** The request without its decision note (resolution and amount included), for the approval-limit check. */
+  findRequest(id: number): Promise<ReturnRequest | null>;
   /**
    * Assigns the RMA and writes the row, its items and the `submitted` event in one transaction (joins the caller's).
    * A duplicate `idempotencyKey` surfaces as `ConflictError` (409 `conflict`), never as an unmapped error.
