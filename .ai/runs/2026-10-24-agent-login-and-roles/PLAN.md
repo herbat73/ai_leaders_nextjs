@@ -25,7 +25,7 @@ Engine: om-auto-create-pr-loop (steps: 21, --loop: no, threshold exceeded)
 | 2 | 2.4 | Identity on timeline events | inline | done | 3139361 |
 | 2 | 2.5 | proxy.ts optimistic check | inline | done | eb303dc |
 | 2 | 2.6 | Close the blocker (README, platform-primitives) | inline | done | 3eba0fd |
-| 3 | 3.1 | List and invite API | inline | todo | — |
+| 3 | 3.1 | List and invite API | inline | done | — |
 | 3 | 3.2 | Disable API | inline | todo | — |
 | 3 | 3.3 | /admin/agents screen | inline | todo | — |
 | 4 | 4.1 | R11 refund approval limit | inline | todo | — |

@@ -122,6 +122,11 @@ export function resolveReturnService(): Promise<ReturnService> {
   return createRequestScope().then((scope) => scope.cradle.returnService);
 }
 
+/** Resolver for agent management routes: one request scope per call. */
+export function resolveAgentService(): Promise<AgentService> {
+  return createRequestScope().then((scope) => scope.cradle.agentService);
+}
+
 /** Resolved from the core-only container, so it never builds the ORM. */
 export function resolveCaseSampleService(): CaseSampleService {
   return (getCoreContainer() as AwilixContainer<Cradle>).cradle.caseSampleService;
