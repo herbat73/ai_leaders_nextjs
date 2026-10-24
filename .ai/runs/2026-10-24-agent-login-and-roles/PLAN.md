@@ -32,7 +32,7 @@ Engine: om-auto-create-pr-loop (steps: 21, --loop: no, threshold exceeded)
 | 4 | 4.2 | Shared tracker view | inline | done | 7e20233 |
 | 4 | 4.3 | Customer-view preview route | inline | done | 347ee68 |
 | 4 | 4.4 | Close-out (docs, lessons, run log, spec moved) | inline | done | 37b6cc8 |
-| 4 | 4.4-review-fix | Review fixes: per-account and accept throttles, fail-closed approval, route coverage test | inline | done | — |
+| 4 | 4.4-review-fix | Review fixes: per-account and accept throttles, fail-closed approval, route coverage test | inline | done | e4a75f5 |
 
 ## Goal
 Agents sign in with e-mail and password; admin pages and decision APIs require a session; timeline events name the agent; managers invite/disable agents; refunds above 2000 zł need `MANAGE_RULES`; agents get a read-only customer-view preview.
