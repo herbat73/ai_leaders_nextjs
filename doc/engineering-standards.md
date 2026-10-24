@@ -90,7 +90,7 @@ Apply as the relevant feature appears.
 - **Now:** no raw SQL concatenation (MikroORM APIs only; the only raw statements are parameterised and inside `db`: `nextval('return_rma_seq')`, `pg_advisory_xact_lock(hashtext(?))` in `withOrderLock`, and migrations); never spread a raw request body into
   `em.create()`/`em.assign()` — go through the parsed Zod output; no secrets, tokens or passwords in logs,
   responses or commits; secrets only via env (documented in README); `npm run audit` (high+, expiring allowlist in `audit-allowlist.json`) must pass.
-- **(when auth exists)** bcrypt/bcryptjs cost ≥ 12 (upgrade path argon2id); JWT HS256+ with ≥ 32-byte env secret
+- **(when auth exists)** bcrypt/bcryptjs cost ≥ 12 (upgrade path argon2id); agent passwords use dependency-free `node:crypto` scrypt (N=2^16, r=8, p=2, parameters stored in the hash) as accepted by the agent login spec; JWT HS256+ with ≥ 32-byte env secret
   and short expiry; `httpOnly`, `secure` in production, `sameSite=lax|strict` cookies, never `localStorage`;
   CSRF custom-header check on state-changing routes; rate limiting on login/register/reset; generic auth error
   messages; auth enforced server-side on every non-public route; per-record ownership checks (a missing

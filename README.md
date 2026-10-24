@@ -46,7 +46,19 @@ core ->  (no internal packages)
 
 A return request moves through a fixed path, enforced by a state machine in `@easyrms/core`: `submitted` → `approved` → `in_transit` → `received` → `resolved`, or `submitted` → `rejected` (a rejection needs a reason of at least 30 characters). Other statuses (`awaiting_customer`, `in_service`, `cancelled`) exist for later work and have no moves yet. Every request gets an RMA number (`RMA-YYYY-NNNNN`, from a Postgres sequence, year in `Europe/Warsaw`) and a timeline of events. `/admin/returns` is the inbox (status filter, due marker for requests still `submitted` after two business days) and `/admin/returns/[id]` is the decision card.
 
-> **Do not expose the app publicly yet.** Agents are anonymous: `/admin` and `PATCH /api/returns/[id]` have no authentication, so anyone who can reach them can approve or reject returns. An agent login spec is a recorded blocker (product brief, Q15).
+### Agent login
+
+The back office needs a signed-in agent. `/admin/**` pages, `PATCH /api/returns/[id]`, `/api/discovery/**` and `/api/agents/**` (except login and invite acceptance) answer with a redirect to `/admin/login` (pages) or `401` (APIs) without a valid session. Agents sign in with e-mail and password (stored as `scrypt` hashes in the `agents` table); a session is a signed 8-hour cookie (`easyrms_agent`, secret `EASYRMS_AGENT_SESSION_SECRET`, see Configuration), separate from the customer's guest cookie. `proxy.ts` rejects requests without a validly signed token, and every page and route then loads the agent from the database, so disabling an agent takes effect on their next request. Each decision on the timeline names the agent (agents see the name, the customer tracker still says "team"). Login is throttled (10 attempts per minute per IP, 5 failures per 10 minutes per e-mail and IP) and every failure answers the same `invalid_credentials`.
+
+**First agent and upgrades.** Nobody can sign in to invite the first agent, so create one from the command line (it prints a single-use invite link, valid 72 hours, to open in the browser and set a password):
+
+```bash
+npm run agent:create -- --email you@example.com --name "Your Name" [--base-url https://rms.example]
+```
+
+Run it before opening `/admin` on any database that already ran the older anonymous version, after `npm run db:migrate`. The same command re-invites an existing invited or disabled e-mail, which clears the password and ends its sessions (there is no self-service password reset). Invite links are also handed over on screen by an agent with the `MANAGE_RULES` permission (agent management arrives with the agents screen) and sent through the `MailPort`, which only logs today.
+
+> **Before exposing the app publicly:** set `EASYRMS_AGENT_SESSION_SECRET`, terminate TLS in front of the app (the session cookie is `Secure` in production), and note the limits that remain: no password reset, no MFA, no login audit trail, and the login throttle is in memory per process (a multi-instance deployment needs a shared store). The product brief asks for a security review of this login before public deployment.
 
 ### Customer portal
 
