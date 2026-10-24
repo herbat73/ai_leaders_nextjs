@@ -1,13 +1,17 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { createFakeOrderLookup } from "../../adapters/orders/fake-order-lookup";
+import { money } from "../../domain/money";
+import { RateLimiter } from "../../security/rate-limiter";
 import { ConflictError, NotFoundError, ValidationError } from "../../errors";
+import type { ApiLogger } from "../../http/types";
 import { returnListQuerySchema } from "../../validators/returns/return-list-query.schema";
 import { returnStatusUpdateSchema } from "../../validators/returns/return-status-update.schema";
 import { isReturnStatus, ReturnService, toReturnStatus } from "./return.service";
+import type { MailMessage, MailPort } from "../mail/mail.port";
 import { returnStateMachine } from "./transitions";
 import {
   RETURN_STATUSES,
-  type NewReturnRequest,
   type ReturnDetail,
   type ReturnEvent,
   type ReturnRepository,
@@ -43,6 +47,11 @@ interface Fake extends ReturnRepository {
   beforeTransition?: () => void;
 }
 
+/** The portal methods are exercised by later flow tests; this fake only covers the agent workflow. */
+const unsupported = (): never => {
+  throw new Error("not implemented in this fake");
+};
+
 /** In-memory stand-in for the `db` repository port, with the same compare-and-set and note semantics. */
 function makeRepository(initial: ReturnRequest[] = []): Fake {
   const fake: Fake = {
@@ -53,13 +62,14 @@ function makeRepository(initial: ReturnRequest[] = []): Fake {
     findStatus: async (id) => fake.rows.find((row) => row.id === id)?.status ?? null,
     findDetail: async (id): Promise<ReturnDetail | null> => {
       const request = fake.rows.find((row) => row.id === id);
-      return request ? { request, decisionNote: fake.notes.get(id) ?? null, events: [...fake.events] } : null;
+      return request ? { request, decisionNote: fake.notes.get(id) ?? null, items: [], events: [...fake.events] } : null;
     },
-    create: async (input: NewReturnRequest) => {
-      const row = makeRequest({ ...input, id: fake.rows.length + 1, rma: `RMA-2026-${fake.rows.length + 1}` });
-      fake.rows.push(row);
-      return row;
-    },
+    createWithItems: unsupported,
+    listByOrder: unsupported,
+    findByRma: unsupported,
+    findByIdempotencyKey: unsupported,
+    claimedQuantities: unsupported,
+    withOrderLock: unsupported,
     transition: async (id, from, to, note) => {
       fake.beforeTransition?.();
       const row = fake.rows.find((candidate) => candidate.id === id);
@@ -85,8 +95,27 @@ function makeRepository(initial: ReturnRequest[] = []): Fake {
   return fake;
 }
 
-function makeService(repository: ReturnRepository, now = new Date("2026-11-06T10:00:00Z")): ReturnService {
-  return new ReturnService({ returnRepository: repository, clock: () => now });
+function makeMailPort(): MailPort & { sent: MailMessage[] } {
+  const port = { sent: [] as MailMessage[], send: (message: MailMessage): void => void port.sent.push(message) };
+  return port;
+}
+
+function makeService(
+  repository: ReturnRepository,
+  now = new Date("2026-11-06T10:00:00Z"),
+  mailPort: MailPort = makeMailPort(),
+  logger: ApiLogger = { error: vi.fn() },
+): ReturnService {
+  return new ReturnService({
+    returnRepository: repository,
+    clock: () => now,
+    mailPort,
+    logger,
+    orderLookup: createFakeOrderLookup({ clock: () => now }),
+    rateLimiter: new RateLimiter({ clock: () => now }),
+    eligibilityConfig: { windowDays: 30 },
+    quoteConfig: { shippingFee: money(1000) },
+  });
 }
 
 async function errorOf(promise: Promise<unknown>): Promise<unknown> {
@@ -176,18 +205,6 @@ describe("ReturnService.list", () => {
 
     expect((await service.list({ status: "approved" })).map((item) => item.id)).toEqual([2]);
     expect(await service.list({ status: "resolved" })).toEqual([]);
-  });
-});
-
-describe("ReturnService.create", () => {
-  it("creates a request through the repository", async () => {
-    const created = await makeService(makeRepository()).create({
-      orderNumber: "ORD-2",
-      customerEmail: "a@example.com",
-      reason: "Damaged",
-    });
-
-    expect(created).toMatchObject({ id: 1, orderNumber: "ORD-2", status: "submitted", kind: "return" });
   });
 });
 
@@ -402,5 +419,55 @@ describe("returnListQuerySchema", () => {
 
   it("rejects anything else", () => {
     for (const status of ["requested", "", "SUBMITTED", "all"]) expect(parse({ status }).success).toBe(false);
+  });
+});
+
+describe("ReturnService.transition mail", () => {
+  const NOW = new Date("2026-11-06T10:00:00Z");
+
+  it("sends exactly one return_status_changed with the RMA and new status", async () => {
+    const mail = makeMailPort();
+    const service = makeService(makeRepository([makeRequest()]), NOW, mail);
+    await service.transition(1, "approved", LONG_NOTE);
+    expect(mail.sent).toEqual([
+      {
+        template: "return_status_changed",
+        to: "customer@example.com",
+        data: { rma: "RMA-2026-00001", status: "approved" },
+      },
+    ]);
+  });
+
+  it("sends nothing when the transition is rejected", async () => {
+    const mail = makeMailPort();
+    const service = makeService(makeRepository([makeRequest()]), NOW, mail);
+    await errorOf(service.transition(1, "resolved"));
+    expect(mail.sent).toHaveLength(0);
+  });
+
+  const failures: [string, MailPort][] = [
+    [
+      "throws synchronously",
+      {
+        send: () => {
+          throw new Error("smtp down for customer@example.com");
+        },
+      },
+    ],
+    ["rejects", { send: () => Promise.reject(new Error("smtp down for customer@example.com")) }],
+  ];
+
+  it.each(failures)("swallows and logs a port that %s", async (_name, port) => {
+    const error = vi.fn();
+    const service = makeService(makeRepository([makeRequest()]), NOW, port, { error });
+    const item = await service.transition(1, "approved", LONG_NOTE);
+    expect(item.status).toBe("approved");
+    expect(error).toHaveBeenCalledTimes(1);
+    expect(error).toHaveBeenCalledWith("mail send failed", {
+      template: "return_status_changed",
+      to: "c***@example.com",
+      error: "Error",
+    });
+    expect(JSON.stringify(error.mock.calls)).not.toContain("customer@example.com");
   });
 });

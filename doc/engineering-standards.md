@@ -17,12 +17,12 @@ Where this file and `AGENTS.md` disagree, `AGENTS.md` wins. Sections marked **(w
 | Service | `<Name>Service`, file `core/src/services/<concept>/<name>.service.ts` | `ReturnService` |
 | Port (external integration) | `<Name>Gateway`/`Port`, file `<name>.port.ts`; adapters under `adapters/` | **(when needed)** |
 | DI cradle key | camelCase, one explicit registration per dependency (no `loadModules`) | `returnService` |
-| Zod schema | camelCase + `Schema`, file `core/src/validators/<concept>/<name>-<action>.schema.ts`, shared client/server | `returnRequestCreateSchema` |
+| Zod schema | camelCase + `Schema`, file `core/src/validators/<concept>/<name>-<action>.schema.ts`, shared client/server | `returnSubmitSchema` |
 | Event ID | `concept.entity.action`, past tense | `returns.return.created` **(when needed)** |
 | API route | one `route.ts` per resource under `app/src/app/api/<concept>/` | `api/returns/route.ts` |
 | Domain error | `<Name>Error` extending `AppError`, in `core/src/errors.ts` | `NotFoundError` |
 | Route builder | `makeCrudRoute` or `apiHandler` from `@easyrms/core` | |
-| Client fetch | `apiCall`/`apiCallOrThrow` from `@easyrms/ui/admin`, never raw `fetch` | |
+| Client fetch | `apiCall`/`apiCallOrThrow` from `@easyrms/ui/api` (public pages) or `@easyrms/ui/admin`, never raw `fetch` | |
 
 Create a concept folder only when its first file is added. No `modules/` directory, no per-concept
 setup/auto-discovery.
@@ -85,7 +85,7 @@ the smaller, more explicit change.
 
 Apply as the relevant feature appears.
 
-- **Now:** no raw SQL concatenation (MikroORM APIs only); never spread a raw request body into
+- **Now:** no raw SQL concatenation (MikroORM APIs only; the only raw statements are parameterised and inside `db`: `nextval('return_rma_seq')`, `pg_advisory_xact_lock(hashtext(?))` in `withOrderLock`, and migrations); never spread a raw request body into
   `em.create()`/`em.assign()` — go through the parsed Zod output; no secrets, tokens or passwords in logs,
   responses or commits; secrets only via env (documented in README); `npm run audit` (high+, expiring allowlist in `audit-allowlist.json`) must pass.
 - **(when auth exists)** bcrypt/bcryptjs cost ≥ 12 (upgrade path argon2id); JWT HS256+ with ≥ 32-byte env secret

@@ -1,8 +1,10 @@
 import { makeCrudRoute, returnStatusUpdateSchema } from "@easyrms/core";
 
+import { httpOptions } from "@/server/http-options";
 import { resolveReturnService } from "@/server/container";
 
 export const { PATCH } = makeCrudRoute({
+  ...httpOptions,
   resolve: resolveReturnService,
   patch: {
     schema: returnStatusUpdateSchema,

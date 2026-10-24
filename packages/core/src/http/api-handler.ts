@@ -1,10 +1,17 @@
 import { AppError } from "../errors";
+import { assertSameOrigin, isMutatingMethod } from "./csrf";
 import type { ApiEnvelope, ApiLogger, RouteContext } from "./types";
 
 export interface ApiHandlerOptions {
   /** Status for a successful response. */
   status?: number;
   logger?: ApiLogger;
+  /**
+   * Whether `x-forwarded-host` may be used as the request host in the CSRF check. The function form is evaluated per
+   * mutating request, never at route creation, so a configuration error surfaces on first use and not during build.
+   */
+  trustProxy?: boolean | (() => boolean);
+  allowedOrigins?: readonly string[] | (() => readonly string[]);
 }
 
 const consoleLogger: ApiLogger = {
@@ -47,17 +54,31 @@ function envelope<T>(body: ApiEnvelope<T>, status: number): Response {
   return Response.json(body, { status });
 }
 
+/** The standard success envelope with optional extra init (status, headers such as `set-cookie`). */
+export function okResponse<T>(data: T, init?: ResponseInit): Response {
+  return Response.json({ ok: true, data } satisfies ApiEnvelope<T>, init);
+}
+
 /**
- * Wraps a route function: the return value becomes `{ ok: true, data }`, a thrown `AppError` becomes
+ * Wraps a route function: mutating requests (POST/PUT/PATCH/DELETE) first pass the CSRF check (403 `csrf_rejected`),
+ * a returned `Response` is passed through unchanged, any other return value becomes `{ ok: true, data }`, a thrown `AppError` becomes
  * `{ ok: false, error }` with its status, and anything else is logged and returned as an opaque 500.
  */
 export function apiHandler<TContext extends RouteContext = RouteContext>(
   handler: (request: Request, context: TContext) => Promise<unknown>,
-  { status = 200, logger = consoleLogger }: ApiHandlerOptions = {},
+  { status = 200, logger = consoleLogger, trustProxy = false, allowedOrigins = [] }: ApiHandlerOptions = {},
 ): (request: Request, context: TContext) => Promise<Response> {
   return async (request, context) => {
     try {
-      return envelope({ ok: true, data: await handler(request, context) }, status);
+      if (isMutatingMethod(request.method)) {
+        assertSameOrigin(request, {
+          trustProxy: typeof trustProxy === "function" ? trustProxy() : trustProxy,
+          allowedOrigins: typeof allowedOrigins === "function" ? allowedOrigins() : allowedOrigins,
+        });
+      }
+      const result = await handler(request, context);
+      if (result instanceof Response) return result;
+      return envelope({ ok: true, data: result }, status);
     } catch (error) {
       if (error instanceof AppError) {
         return envelope(

@@ -3,6 +3,7 @@ import { z, type ZodType } from "zod";
 import { apiHandler } from "./api-handler";
 import { ValidationError } from "../errors";
 import { parseJsonBody, validateWith } from "./parse";
+import type { ApiHandlerOptions } from "./api-handler";
 import type { ApiLogger, RouteContext } from "./types";
 
 type Handler = (request: Request, context: RouteContext) => Promise<Response>;
@@ -22,6 +23,9 @@ export interface CrudRouteConfig<
   /** Resolves the request-scoped service; supplied by `app` so `core` never touches the container. */
   resolve: () => Promise<TService>;
   logger?: ApiLogger;
+  /** Forwarded to `apiHandler` (CSRF host check); the function form is evaluated per request. */
+  trustProxy?: ApiHandlerOptions["trustProxy"];
+  allowedOrigins?: ApiHandlerOptions["allowedOrigins"];
   /** Parses the `[id]` route param for item operations. Defaults to a positive integer. */
   idSchema?: ZodType<TId>;
   list?: (service: TService) => Promise<unknown>;
@@ -61,7 +65,7 @@ export function makeCrudRoute<
 >(
   config: CrudRouteConfig<TService, TId, TCreate, TUpdate, TPatch> & { [P in K]: unknown },
 ): CrudHandlers<K> {
-  const options = { logger: config.logger };
+  const options = { logger: config.logger, trustProxy: config.trustProxy, allowedOrigins: config.allowedOrigins };
   const idSchema = (config.idSchema ?? defaultIdSchema) as ZodType<TId>;
   const readId = async (context: RouteContext): Promise<TId> => {
     const result = validateWith(idSchema, (await context.params).id);

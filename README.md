@@ -48,6 +48,10 @@ A return request moves through a fixed path, enforced by a state machine in `@ea
 
 > **Do not expose the app publicly yet.** Agents are anonymous: `/admin` and `PATCH /api/returns/[id]` have no authentication, so anyone who can reach them can approve or reject returns. An agent login spec is a recorded blocker (product brief, Q15).
 
+### Customer portal
+
+Customer routes: `/` (order number and e-mail lookup), `/returns` (overview of the order's requests), `/returns/new` (return wizard) and `/returns/[rma]` (status tracker). They rely on a signed guest session cookie and the `OrderLookup` port. **Production has no working customer flow yet:** the fake order adapter fails closed in production, the real platform adapter is unscheduled, and agents have no authentication. Customer flows run under `next dev` until a real adapter exists.
+
 ### Case sample lab
 
 `/admin/discovery/case-sample` takes an anonymised CSV of ~50 recent mail/phone cases (template at `/case-sample-template.csv`), computes the follow-up share, message counts and time to resolution, dry-runs rules R08–R10 (with what-if thresholds for R08/R09) and produces the `[DATA]` research note to commit under `.ai/specs/research/`. Nothing is stored and it needs no database. API: `POST /api/discovery/case-sample`. Needs no new configuration.
@@ -95,7 +99,7 @@ NODE_ENV=production npm run build
 
 ### Database tests
 
-`npm run test:db` runs Vitest in `@easyrms/db` against the local PostgreSQL from `npm run db:start` (or the database in `EASYRMS_DATABASE_URL`). Every test file creates a throwaway schema (selected through `search_path`) and drops it afterwards, so your data is untouched. It covers the migration (status mapping, RMA backfill order, `down` refusal) and the repository (compare-and-set transitions, events). It is not part of `npm test` or the CI gate until CI has a Postgres service, so record its result in `.ai/runs/` for each PR that touches `packages/db`.
+`npm run test:db` runs Vitest in `@easyrms/db` against the local PostgreSQL from `npm run db:start` (or the database in `EASYRMS_DATABASE_URL`). Every test file creates a throwaway schema (selected through `search_path`) and drops it afterwards, so your data is untouched. It covers the migrations (status mapping, RMA backfill order, `down` refusal, the items table) and the repository (compare-and-set transitions, events, concurrent submits under the order lock). It is not part of `npm test` or the CI gate until CI has a Postgres service, so record its result in `.ai/runs/` for each PR that touches `packages/db`.
 
 ### Storybook
 
@@ -112,6 +116,12 @@ panel to check WCAG issues. Stories pass props only: no database, container or `
 | `EASYRMS_DATABASE_URL` | `postgres://easyrms:easyrms@localhost:5433/easyrms` | PostgreSQL connection string |
 | `EASYRMS_DB_POOL_MIN` / `EASYRMS_DB_POOL_MAX` | `2` / `10` | Connection pool size |
 | `EASYRMS_DB_DEBUG` | `false` | Set to `true` to log SQL |
+| `EASYRMS_TRUST_PROXY` | unset (`false` in development and tests) | `true` or `false`; **required in production** (unset or any other value makes the first mutating request fail with an opaque 500 and a logged configuration error; `next build` is unaffected). `true` means a reverse proxy in front of the app overwrites `x-forwarded-host` (and `x-forwarded-for`): the CSRF check compares the `Origin` host with `x-forwarded-host`, and the client IP used for rate limiting (from the guest-session work) is the first `x-forwarded-for` entry. `false` means the `Host` header is used and all clients share one rate-limit bucket. A proxy that rewrites `Host` while the value is `false` makes every mutation (POST/PUT/PATCH/DELETE) return 403 `csrf_rejected` |
+| `EASYRMS_ALLOWED_ORIGINS` | unset (none) | Comma-separated extra origins (`https://host[:port]`) the CSRF check accepts for mutating requests, in addition to the `Origin`-equals-host rule. Needed when chained proxies (e.g. a cloud sandbox URL in front of the dev server) hide the public host from both `Host` and `x-forwarded-host`, which otherwise makes every POST return 403 `csrf_rejected`. Read only by `app` (`server/http-options.ts`); put it in `packages/app/.env.local`, since Next does not load the root `.env` |
+| `EASYRMS_ORDER_SOURCE` | `fake` in development and tests | Which order platform adapter looks up orders for returns. Only `fake` (seeded in-memory orders) exists today. **Required in production**, where `fake` always fails closed (no override): unset, `fake` or an unknown value is a configuration error on the first customer request (opaque 500, logged); `next build` is unaffected |
+| `EASYRMS_GUEST_SESSION_SECRET` | unset | HMAC secret (at least 32 bytes) signing the 2-hour guest session cookie `easyrms_guest` (HttpOnly, SameSite=Lax, `Secure` in production). **Required outside development**: unset or shorter than 32 bytes is a configuration error on the first session request (opaque 500, logged; `next build` is unaffected). In development an unset value gives an ephemeral per-process secret with one console warning, so sessions end when the dev server restarts; to keep sessions across restarts, put a value in the git-ignored `packages/app/.env.local` (e.g. `EASYRMS_GUEST_SESSION_SECRET=$(openssl rand -hex 32)`) |
+| `EASYRMS_RETURN_WINDOW_DAYS` | `30` | Days after delivery during which a line can be returned, counted in calendar days in `Europe/Warsaw` (delivery day is day 0, so with 30 the last returnable day is delivery date + 30). Clamped to 14-365; a non-numeric value falls back to 30 |
+| `EASYRMS_RETURN_SHIPPING_FEE` | `0` | Flat return shipping fee in PLN (`12,50` or `12.50`), deducted from refunds for the `parcel_locker` and `courier` return methods only; `store` drop-off and store credit are free. An invalid value is a configuration error (opaque 500, logged) |
 
 > **Status:** the monorepo, database (MikroORM), DI (Awilix) and UI (Tailwind, shadcn/ui) foundations are in place, with a first return-request flow. See `.ai/specs/implemented/`.
 

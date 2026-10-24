@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { compareMoney, formatMoney, money, multiplyMoney, parseMoney } from "./money";
+import { addMoney, applyRate, compareMoney, formatMoney, money, multiplyMoney, parseMoney } from "./money";
 
 describe("parseMoney", () => {
   it.each([
@@ -53,5 +53,48 @@ describe("formatMoney", () => {
     expect(formatMoney(money(129900))).toBe("1 299,00 zł");
     expect(formatMoney(money(123456789))).toBe("1 234 567,89 zł");
     expect(formatMoney(money(5))).toBe("0,05 zł");
+  });
+});
+
+describe("addMoney", () => {
+  it("adds amounts of one currency", () => {
+    expect(addMoney(money(150), money(275))).toEqual(money(425));
+  });
+
+  it("throws beyond the safe integers", () => {
+    expect(() => addMoney(money(Number.MAX_SAFE_INTEGER), money(1))).toThrow(RangeError);
+  });
+
+  it("throws on a currency mismatch", () => {
+    expect(() => addMoney(money(1), { amountMinor: 1, currency: "EUR" as "PLN" })).toThrow(RangeError);
+  });
+});
+
+describe("applyRate", () => {
+  it("applies +10 % exactly", () => {
+    expect(applyRate(money(10000), 11000)).toEqual(money(11000));
+    expect(applyRate(money(0), 11000)).toEqual(money(0));
+  });
+
+  it("rounds 0.5 minor units up", () => {
+    expect(applyRate(money(5), 11000)).toEqual(money(6)); // 5.5 -> 6
+    expect(applyRate(money(15), 11000)).toEqual(money(17)); // 16.5 -> 17
+    expect(applyRate(money(1), 5000)).toEqual(money(1)); // 0.5 -> 1
+  });
+
+  it("rounds below 0.5 down", () => {
+    expect(applyRate(money(1), 4999)).toEqual(money(0));
+    expect(applyRate(money(14), 11000)).toEqual(money(15)); // 15.4 -> 15
+  });
+
+  it("has no float drift on large amounts", () => {
+    expect(applyRate(money(123456789012), 11000)).toEqual(money(135802467913)); // 135802467913.2
+  });
+
+  it("rejects bad input", () => {
+    expect(() => applyRate(money(-1), 11000)).toThrow(RangeError);
+    expect(() => applyRate(money(1), 1.5)).toThrow(RangeError);
+    expect(() => applyRate(money(1), -1)).toThrow(RangeError);
+    expect(() => applyRate(money(Number.MAX_SAFE_INTEGER), 20000)).toThrow(RangeError);
   });
 });

@@ -25,6 +25,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./admin": "./src/admin/index.ts",
+    "./api": "./src/admin/api/api-call.ts",
     "./public": "./src/public/index.ts",
     "./lib/utils": "./src/lib/utils.ts",
     "./styles.css": "./src/styles.css"

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { formatEventTime, type ReturnDetailView, type ReturnEvent } from "@easyrms/core";
+import { formatEventTime, formatMoney, type ReturnDetailView, type ReturnEvent } from "@easyrms/core";
 import { Badge, Card, CardContent, CardHeader, CardTitle, Timeline, type TimelineEvent } from "@easyrms/ui/admin";
 
 import { createRequestScope } from "@/server/container";
@@ -45,7 +45,7 @@ export default async function ReturnCardPage({ params }: { params: Promise<{ id:
   const id = Number(rawId);
   if (!/^\d+$/.test(rawId) || !Number.isSafeInteger(id) || id < 1) notFound();
 
-  const { request, decisionNote, events } = await loadDetail(id);
+  const { request, decisionNote, items, events } = await loadDetail(id);
 
   return (
     <main className="mx-auto max-w-3xl space-y-6 p-8">
@@ -64,10 +64,37 @@ export default async function ReturnCardPage({ params }: { params: Promise<{ id:
             <dd className="break-words">{request.orderNumber}</dd>
             <dt className="text-muted-foreground">{copy.customer}</dt>
             <dd className="break-words">{request.customerEmail}</dd>
-            {request.reason && (
+            {(items.length === 0 || request.reason !== null) && (
               <>
                 <dt className="text-muted-foreground">{copy.reason}</dt>
-                <dd className="whitespace-pre-wrap break-words">{request.reason}</dd>
+                <dd className="whitespace-pre-wrap break-words">{request.reason ?? "—"}</dd>
+              </>
+            )}
+            {request.resolution && (
+              <>
+                <dt className="text-muted-foreground">{copy.resolution}</dt>
+                <dd>{copy.resolutions[request.resolution]}</dd>
+                {request.resolution === "exchange" ? (
+                  request.exchangeNote && (
+                    <>
+                      <dt className="text-muted-foreground">{copy.exchangeNote}</dt>
+                      <dd className="whitespace-pre-wrap break-words">{request.exchangeNote}</dd>
+                    </>
+                  )
+                ) : (
+                  request.resolutionAmount && (
+                    <>
+                      <dt className="text-muted-foreground">{copy.resolutionAmount}</dt>
+                      <dd>{formatMoney(request.resolutionAmount)}</dd>
+                    </>
+                  )
+                )}
+              </>
+            )}
+            {request.returnMethod && (
+              <>
+                <dt className="text-muted-foreground">{copy.returnMethod}</dt>
+                <dd>{copy.returnMethods[request.returnMethod]}</dd>
               </>
             )}
             <dt className="text-muted-foreground">{copy.due}</dt>
@@ -80,6 +107,37 @@ export default async function ReturnCardPage({ params }: { params: Promise<{ id:
           </dl>
         </CardContent>
       </Card>
+
+      {items.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>{copy.items}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="divide-y text-sm">
+              {items.map((item) => (
+                <li key={item.lineRef} className="space-y-1 py-3 first:pt-0 last:pb-0">
+                  <p className="font-medium break-words">{item.name}</p>
+                  <p className="text-muted-foreground">
+                    {copy.itemSku(item.sku)} · {copy.itemQuantity(item.quantity)} · {formatMoney(item.unitPrice)}{" "}
+                    {copy.itemUnitPrice}
+                  </p>
+                  <p>
+                    <span className="text-muted-foreground">{copy.itemReason}: </span>
+                    {copy.reasonCodes[item.reasonCode]}
+                  </p>
+                  {item.comment && (
+                    <p className="whitespace-pre-wrap break-words">
+                      <span className="text-muted-foreground">{copy.itemComment}: </span>
+                      {item.comment}
+                    </p>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>

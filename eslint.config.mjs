@@ -50,7 +50,7 @@ const eslintConfig = defineConfig([
         "error",
         {
           selector: "CallExpression[callee.name='fetch']",
-          message: "Use apiCall from @easyrms/ui/admin; it is the only sanctioned fetch call site.",
+          message: "Use apiCall from @easyrms/ui/api (or @easyrms/ui/admin); it is the only sanctioned fetch call site.",
         },
       ],
     },

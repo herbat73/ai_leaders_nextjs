@@ -40,3 +40,32 @@ export class PayloadTooLargeError extends AppError {
     super(message, 413, "payload_too_large");
   }
 }
+
+export class UnauthorizedError extends AppError {
+  constructor(message = "Unauthorized") {
+    super(message, 401, "unauthorized");
+  }
+}
+
+export class ForbiddenError extends AppError {
+  constructor(message = "Forbidden", code = "csrf_rejected") {
+    super(message, 403, code);
+  }
+}
+
+export class TooManyRequestsError extends AppError {
+  constructor(message = "Too many requests") {
+    super(message, 429, "rate_limited");
+  }
+}
+
+/**
+ * Missing or invalid server configuration. Deliberately not an `AppError`: `apiHandler` logs it and returns an opaque
+ * 500, so the client never learns which setting is wrong.
+ */
+export class ConfigurationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ConfigurationError";
+  }
+}
