@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactElement, ReactNode } from "react";
-import type { AgentContext } from "@easyrms/core";
+import { hasPermission, type AgentContext } from "@easyrms/core";
 
 import { shellCopy as copy } from "./copy";
 import { LogoutButton } from "./logout-button";
@@ -18,6 +18,11 @@ export function AdminShell({ agent, children }: { agent: AgentContext; children:
             <Link href="/admin/returns" className="font-medium underline-offset-4 hover:underline">
               {copy.returns}
             </Link>
+            {hasPermission(agent, "MANAGE_RULES") && (
+              <Link href="/admin/agents" className="font-medium underline-offset-4 hover:underline">
+                {copy.agents}
+              </Link>
+            )}
           </nav>
           <div className="flex items-center gap-3 text-sm">
             <span className="text-muted-foreground">{copy.signedInAs(agent.displayName)}</span>

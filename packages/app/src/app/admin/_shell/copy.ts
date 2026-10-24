@@ -2,6 +2,7 @@
 export const shellCopy = {
   navLabel: "Nawigacja panelu",
   returns: "Zwroty",
+  agents: "Agenci",
   signedInAs: (name: string) => `Zalogowano: ${name}`,
   logout: "Wyloguj",
   loggingOut: "Wylogowywanie…",
