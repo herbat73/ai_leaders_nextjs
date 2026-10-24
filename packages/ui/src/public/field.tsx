@@ -44,7 +44,7 @@ export function Field({ label, hint, error, children }: FieldProps): ReactElemen
         )}
         {children}
         {error && (
-          <p id={errorId} role="alert" className="mt-1 text-sm text-red-600 dark:text-red-400">
+          <p id={errorId} role="alert" className="mt-1 text-sm text-destructive">
             {error}
           </p>
         )}

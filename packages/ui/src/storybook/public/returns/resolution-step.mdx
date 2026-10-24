@@ -1,0 +1,106 @@
+import { Canvas, Controls, Meta } from "@storybook/addon-docs/blocks";
+
+import { DoDont } from "../../docs/blocks";
+import * as ResolutionStepStories from "./resolution-step.stories";
+
+<Meta of={ResolutionStepStories} />
+
+# ResolutionStep
+
+Czwarty krok kreatora zwrotu: wybór formy rozliczenia (zwrot pieniędzy, kredyt, wymiana) z wyliczeniem kwoty na żywo i polem notatki dla wymiany.
+
+<Canvas of={ResolutionStepStories.QuoteShown} />
+
+## Kiedy użyć
+
+- Klient wybiera, **co chce dostać** za zwrot (krok `resolution`), a serwer liczy kwotę (wycenę) zależną od wybranych pozycji, sposobu zwrotu i rozliczenia.
+- Wymiana wymaga opisu tego, co klient chce w zamian (`exchange`).
+
+ResolutionStep kontra `MethodStep`: oba wybierają jedną opcję, ale tylko ten pokazuje wycenę i notatkę o wymianie.
+
+## Kiedy nie użyć
+
+- Dla wyboru sposobu zwrotu — `MethodStep`.
+- Poza kreatorem zwrotu — użyj `ChoiceGroup`.
+- Do liczenia pieniędzy po stronie klienta: kwotę i opłatę liczy serwer, komponent pokazuje gotowe teksty.
+
+## Jak złożyć
+
+Kolejność kreatora: `LinePicker` → `ReasonsStep` → `MethodStep` → **ResolutionStep** → `SummaryStep`.
+
+Wejście: `legend`, `options`, `value`, `error?`, `quote` (`ResolutionQuoteView`) i opcjonalnie `exchange` (tylko gdy wybrano wymianę). Wyjście: `onChange(value)` oraz `exchange.onChange(text)`. Wycenę pobiera `Wizard` z `app/returns/new/wizard.tsx` przez `apiCall` do `/api/returns/quote`, gdy krok jest otwarty i zmienia się sposób, rozliczenie lub pozycje, a wynik mapuje na `ResolutionQuoteView`:
+
+| `quote.status` | Znaczenie | Pola |
+|---|---|---|
+| `idle` | brak wyceny (nic nie wybrano albo wymiana bez kwoty) | — |
+| `pending` | trwa liczenie | `pendingText` |
+| `ready` | wycena gotowa | `title`, `amountLabel`, `amountText`, opcjonalnie `feeLabel` i `feeText` |
+| `error` | wyliczenie się nie powiodło | `errorText` |
+
+```tsx
+<ResolutionStep
+  legend={copy.resolution.legend}
+  options={RETURN_RESOLUTIONS.map((r) => ({ value: r, label: copy.resolution.options[r].label, description: copy.resolution.options[r].description }))}
+  value={resolution}
+  onChange={(value) => setResolution(value as ReturnResolution)}
+  error={shown((p) => p.problem === "resolution_missing")}
+  quote={quoteView()}
+  exchange={resolution === "exchange" ? { label: copy.resolution.exchangeLabel, value: exchangeNote, onChange: setExchangeNote } : undefined}
+/>
+```
+
+Kwota i opłata (`amountText`, `feeText`) są pokazywane dosłownie: formatuje je `core`/`app`, `ui` nie robi arytmetyki.
+
+<Canvas of={ResolutionStepStories.Exchange} />
+
+## Tokeny
+
+Wycena: `border-border`, `bg-muted`, `rounded-lg`, etykiety `text-muted-foreground`, kwota `font-semibold text-foreground`. Tekst oczekiwania `text-muted-foreground`. Błąd wyceny to `Banner` w tonie `error` (`bg-destructive-subtle`…). Wybór i notatka dziedziczą po `ChoiceGroup`, `Field`, `TextInput`.
+
+## Stany
+
+| Stan wyceny | Wygląd i zachowanie | Jak wywołać |
+|---|---|---|
+| idle | nic pod wyborem | `quote.status: "idle"` |
+| pending | tekst oczekiwania, `aria-busy="true"` na regionie | `"pending"` + `pendingText` |
+| ready | karta z tytułem, kwotą i opcjonalną opłatą | `"ready"` |
+| error | `Banner` `error` pod krokiem | `"error"` + `errorText` |
+| invalid (wybór) | błąd pod grupą radio | `error` |
+| wymiana | dodatkowe pole tekstowe z etykietą, podpowiedzią i błędem | `exchange` |
+
+<Canvas of={ResolutionStepStories.QuotePending} />
+
+<Canvas of={ResolutionStepStories.QuoteError} />
+
+## Dostępność
+
+- Wybór to `ChoiceGroup` (`fieldset`, `legend`, `aria-describedby`).
+- Wycena jest w regionie `aria-live="polite"` z `aria-atomic="true"`, więc czytnik ekranu ogłasza „Liczymy…” i potem kwotę bez przenoszenia fokusu; `aria-busy` jest ustawione w stanie `pending`. Region istnieje zawsze, więc zmiany są ogłaszane.
+- Kwota i opłata to lista opisów `dl` (etykieta i wartość).
+- Błąd wyceny to `Banner` `error` z `role="alert"` (poza regionem live, ogłaszany natychmiast).
+- Pole wymiany jest opisane przez `Field` (etykieta, podpowiedź, błąd).
+- Deweloper dostarcza wszystkie teksty (`pendingText`, `title`, etykiety, `errorText`) i dba, by `amountText` zawierał walutę.
+
+## Rób i nie rób
+
+<DoDont
+  rob={[
+    "Pokazuj kwotę wyłącznie z odpowiedzi serwera, jako gotowy tekst.",
+    "Przy `pending` pokaż tekst „Liczymy…”, nie pustkę.",
+    "Przekaż `exchange` tylko wtedy, gdy wybrano wymianę.",
+  ]}
+  nieRob={[
+    "Liczenia kwoty ani opłaty w przeglądarce.",
+    "Pokazywania starej wyceny, gdy zmieniły się pozycje lub sposób zwrotu.",
+    "Błędu wyceny bez możliwości poprawy: napisz, co zrobić.",
+  ]}
+/>
+
+## API
+
+<Controls of={ResolutionStepStories.Default} />
+
+| Prop | Znaczenie |
+|---|---|
+| `quote` | `ResolutionQuoteView`: `idle`, `pending`, `ready` albo `error`. |
+| `exchange` | `label`, `hint?`, `value`, `onChange`, `error?`; tylko dla wymiany. |

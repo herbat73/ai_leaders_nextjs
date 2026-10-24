@@ -1,17 +1,18 @@
 import type { ReactElement, ReactNode } from "react";
 
-export type BannerTone = "info" | "warning" | "error";
+export type BannerTone = "info" | "success" | "warning" | "error";
 
 const toneClass: Record<BannerTone, string> = {
-  info: "border-sky-300 bg-sky-50 text-sky-900 dark:border-sky-800 dark:bg-sky-950 dark:text-sky-100",
-  warning: "border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-100",
-  error: "border-red-300 bg-red-50 text-red-900 dark:border-red-800 dark:bg-red-950 dark:text-red-100",
+  info: "border-info-subtle-border bg-info-subtle text-info-subtle-foreground",
+  success: "border-success-subtle-border bg-success-subtle text-success-subtle-foreground",
+  warning: "border-warning-subtle-border bg-warning-subtle text-warning-subtle-foreground",
+  error: "border-destructive-subtle-border bg-destructive-subtle text-destructive-subtle-foreground",
 };
 
-/** Info is a polite `status`, warning and error are an assertive `alert`. */
+/** Info and success are a polite `status`, warning and error are an assertive `alert`. */
 export function Banner({ tone, children }: { tone: BannerTone; children: ReactNode }): ReactElement {
   return (
-    <div role={tone === "info" ? "status" : "alert"} className={`rounded-lg border px-4 py-3 text-sm ${toneClass[tone]}`}>
+    <div role={tone === "info" || tone === "success" ? "status" : "alert"} className={`rounded-lg border px-4 py-3 text-sm ${toneClass[tone]}`}>
       {children}
     </div>
   );

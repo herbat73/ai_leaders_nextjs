@@ -1,0 +1,84 @@
+import { Canvas, Controls, Meta } from "@storybook/addon-docs/blocks";
+
+import { DoDont } from "../docs/blocks";
+import * as InputStories from "./input.stories";
+
+<Meta of={InputStories} />
+
+# Input
+
+Jednoliniowe pole tekstowe na stronach admina (shadcn): natywny `input` ze stylem systemu.
+
+<Canvas of={InputStories.Default} />
+
+<Canvas of={InputStories.Filled} />
+
+## Kiedy użyć
+
+- Krótka wartość: nazwa, numer zamówienia, e-mail, liczba (`type="email"`, `type="number"` itd.).
+- Pole w `CrudForm` — formularz generuje je automatycznie dla każdego pola.
+
+Alternatywy: wiele linii to `Textarea`; wybór z listy to `Select`; wybór tak/nie to `Checkbox`; na stronach publicznych `TextInput`.
+
+## Kiedy nie użyć
+
+- Do dłuższych opisów i notatek — użyj `Textarea`.
+- Do wyboru ze skończonej listy — użyj `Select`.
+- Na stronach publicznych — tam jest `TextInput` (Tailwind).
+- Do wyszukiwania z podpowiedziami — komponent nie ma takiej logiki.
+
+## Jak złożyć
+
+```tsx
+import { ErrorMessage, Input, Label } from "@easyrms/ui/admin";
+
+<div className="space-y-1">
+  <Label htmlFor="order">Numer zamówienia</Label>
+  <Input id="order" name="order" aria-invalid={!!error} aria-describedby="order-error" />
+  {error ? <p id="order-error"><ErrorMessage message={error} /></p> : null}
+</div>
+```
+
+- Zawsze `Label` z `htmlFor` zgodnym z `id` pola (tak robią `CrudForm` i karta decyzji).
+- Błąd pola: `ErrorMessage` pod polem.
+- Pole bez widocznej etykiety (np. w pasku wyszukiwania) wymaga `aria-label` (patrz historia `Email`).
+
+## Tokeny
+
+`border-input`, `bg-transparent`, `text-sm`, `placeholder:text-muted-foreground`, `ring-ring` (fokus), `rounded-md`, `shadow-sm`, wysokość `h-9`.
+
+## Stany
+
+| Stan | Zachowanie | Jak wywołać |
+|---|---|---|
+| default | Ramka `border-input`, placeholder w `text-muted-foreground`. | domyślnie |
+| filled | Wartość w kolorze tekstu. | `value` lub `defaultValue` |
+| focus-visible | Pierścień 2 px `ring-ring`. | klawiatura lub kliknięcie |
+| disabled | `opacity-50`; przeglądarka blokuje edycję. | `disabled` |
+| invalid | Obramowanie `border-destructive` i pierścień `ring-destructive/20` przy `aria-invalid`; tekst błędu pokaż w `ErrorMessage` (sam kolor nie wystarczy). | `aria-invalid` |
+
+## Dostępność
+
+- To natywny `input`, więc dziedziczy klawiaturę i autouzupełnianie przeglądarki; ustaw właściwy `type`, `name` i `autoComplete`.
+- Etykieta: `Label` z `htmlFor` lub `aria-label`. Sam placeholder nie jest etykietą.
+- `aria-invalid="true"` i `aria-describedby` łączące pole z `ErrorMessage` (ma `role="alert"`) ogłoszą błąd.
+- Jeśli pole jest wymagane, ustaw `required` i zaznacz to w etykiecie tekstem.
+
+## Rób i nie rób
+
+<DoDont
+  rob={[
+    "Łącz z `Label` przez `htmlFor` i `id`.",
+    "Ustaw właściwy `type` (`email`, `number`) dla klawiatury i walidacji.",
+    "Błąd pokaż pod polem w `ErrorMessage`.",
+  ]}
+  nieRob={[
+    "Placeholdera zamiast etykiety.",
+    "Pola bez `id` i `name` w formularzu.",
+    "Nadpisywania ramki kolorem (`border-red-500`) — błąd pokazuje `ErrorMessage`.",
+  ]}
+/>
+
+## API
+
+<Controls of={InputStories.Default} />

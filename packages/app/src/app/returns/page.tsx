@@ -2,6 +2,7 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { formatDatePl } from "@easyrms/core";
+import { actionClassName } from "@easyrms/ui/public";
 
 import { createRequestScope } from "@/server/container";
 import { GUEST_SESSION_COOKIE, getGuestSessionService } from "@/server/guest-session";
@@ -51,10 +52,7 @@ export default async function ReturnsOverviewPage() {
         )}
       </section>
 
-      <Link
-        href="/returns/new"
-        className="inline-block rounded-lg bg-foreground px-4 py-2 font-medium text-background shadow-sm hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
-      >
+      <Link href="/returns/new" className={actionClassName()}>
         {copy.start}
       </Link>
     </main>

@@ -1,0 +1,75 @@
+import { Canvas, Controls, Meta } from "@storybook/addon-docs/blocks";
+
+import { DoDont } from "../docs/blocks";
+import * as ButtonStories from "./button.stories";
+
+<Meta of={ButtonStories} />
+
+# Button
+
+Przycisk akcji na stronach admina (shadcn). Jedna akcja = jeden `Button`; wariant mówi, jak ważna i jak ryzykowna jest akcja.
+
+<Canvas of={ButtonStories.Default} />
+
+## Kiedy użyć
+
+| Potrzeba | Wariant |
+|---|---|
+| Główna akcja ekranu lub formularza (zapisz, zatwierdź). Najwyżej **jedna** na widok. | `default` |
+| Akcja poboczna obok głównej (np. „Dodaj notatkę”). | `secondary` |
+| Anuluj, wróć, akcja neutralna w toolbarze. | `outline` |
+| Akcja nieodwracalna lub negatywna decyzja (odrzuć zwrot, usuń). Zawsze po potwierdzeniu w `Dialog`. | `destructive` |
+| Wywołanie nawigacji, która ma wyglądać jak przycisk | `asChild` + `<Link>` |
+
+Rozmiary: `default` (h-9) wszędzie; `sm` (h-8) tylko w gęstych miejscach: wiersz tabeli, toolbar.
+
+## Kiedy nie użyć
+
+- Na stronach publicznych (klient) — tam jest `ActionButton` (Tailwind, bez shadcn).
+- Do nawigacji w tekście — użyj zwykłego linku z `underline underline-offset-4`.
+- Jako przełącznika dwustanowego — użyj `Checkbox`.
+
+## Jak złożyć
+
+- Para akcji w formularzu: `default` (zapisz) po lewej, `outline` (anuluj) po prawej, w `flex gap-2` — tak robi `CrudForm`.
+- Akcja destrukcyjna: `Button variant="destructive"` jako `DialogTrigger asChild`, potwierdzenie w `DialogFooter` (patrz wzorzec „Potwierdzenie akcji nieodwracalnej”).
+- Link jako przycisk: `<Button asChild><Link href="/admin/returns">Wróć do listy</Link></Button>`.
+- Etykieta to czasownik w trybie rozkazującym i mówi, co się stanie: „Zatwierdź zwrot”, nie „OK”.
+
+## Tokeny
+
+`bg-primary` / `text-primary-foreground` (default), `bg-secondary` (secondary), `border-input` + `bg-background` (outline), `bg-destructive` / `text-destructive-foreground` (destructive), `ring-ring` (fokus), promień `rounded-md`. Nie nadpisuj kolorów przez `className`.
+
+## Stany
+
+| Stan | Zachowanie |
+|---|---|
+| default / hover | `hover:bg-primary/90` (secondary `/80`, outline `bg-secondary`) |
+| focus-visible | pierścień 2 px `ring-ring`; nie usuwaj |
+| disabled | `opacity-50`, brak zdarzeń wskaźnika; zmień też etykietę na opisującą trwającą akcję („Zapisuję…”) |
+| pending | brak osobnego wariantu: ustaw `disabled` i etykietę „…”; blokuje to podwójne wysłanie |
+
+## Dostępność
+
+- To natywny `<button>`; domyślnie `type="button"` **nie** jest ustawiony — w formularzu `type="submit"` jest domyślne, więc przycisk anuluj ustaw jawnie jako `type="button"`.
+- Przycisk bez widocznego tekstu wymaga `aria-label`.
+- Cel dotyku: `size="sm"` (32 px) tylko na desktopie admina.
+
+## Rób i nie rób
+
+<DoDont
+  rob={[
+    "Jedna akcja `default` na widok.",
+    "Destrukcyjną akcję poprzedź `Dialog` z nazwą obiektu w pytaniu.",
+    "Pokaż stan oczekiwania przez `disabled` i zmianę etykiety.",
+  ]}
+  nieRob={[
+    "Dwóch przycisków `default` obok siebie.",
+    "Nadpisywania koloru klasami (`bg-red-500`) — użyj wariantu.",
+    "Etykiet „OK”, „Tak”, „Kliknij tutaj”.",
+  ]}
+/>
+
+## API
+
+<Controls of={ButtonStories.Default} />

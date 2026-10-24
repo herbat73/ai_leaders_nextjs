@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Script from "next/script";
 import type { ReactNode } from "react";
 
 import { ThemeToggle } from "@easyrms/ui";
@@ -22,8 +21,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pl" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body>
-        <Script id="theme-init" strategy="beforeInteractive">{themeScript}</Script>
         <ThemeToggle />
         {children}
       </body>

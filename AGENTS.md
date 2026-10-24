@@ -83,6 +83,16 @@ Every route and page reuses two shared layers instead of re-implementing fetch/v
 
 Before building a new cross-cutting primitive (rules engine, money, state machine, ports, limiter, import, stat/rule components, …), check `doc/platform-primitives.md`: it maps which primitives exist, which spec builds them and which are non-binding design sketches. Reuse a built one; start from a sketch rather than a parallel mechanism; update its row when a spec lands.
 
+### Design system (Storybook is the manual)
+
+Before building or changing any screen, read `packages/ui/src/storybook/agent/dla-agenta-ai.mdx` (component picker, allowed
+tokens, forbidden list) and copy a skeleton from `storybook/patterns/ekrany.stories.tsx`. Every `ui` component has a docs
+page `storybook/<component path>.mdx` (Polish; sections Kiedy użyć, Kiedy nie użyć, Jak złożyć, Tokeny, Stany, Dostępność,
+Rób i nie rób, API) next to its stories: read it before using the component. Colours come only from the semantic tokens in
+`packages/ui/src/styles.css` (never palette classes, hex, `text-white`, or `dark:` for token colours); a new token or
+component updates the docs page in the same change. `npm run docs:check` (in the validation gate) fails on a component
+without story/page/sections and on raw palette colours.
+
 Data flow is hybrid: Server Components for reads; mutations and client-initiated reads go through `apiCall` to API
 routes. Do not add Server Actions. New reusable components: shadcn primitive → `ui/src/admin/` (via
 `npx shadcn@latest add`); generic pattern → `ui/src/admin/<category>/`; concept-specific →
@@ -103,7 +113,7 @@ The monorepo structure is in place (npm workspaces, `packages/{app,core,db,ui}`,
 
 Practical notes:
 
-- Run commands from the repo root: `npm run dev | build | lint | typecheck | test | test:db | audit | storybook | storybook:build`. Storybook (config in `packages/app/.storybook/`) catalogs components; every reusable `ui` component ships a `*.stories.tsx` covering its states, and all stories live in `packages/ui/src/storybook/` mirroring the component path (e.g. `storybook/admin/button.stories.tsx` for `admin/button.tsx`), never next to the component. `storybook:build` is in the validation gate. `ui` stories import from `@storybook/react` (never `@storybook/nextjs-vite`) to keep `ui` Next-free. `test` runs Vitest in `@easyrms/core` (pure unit tests in `src/**/*.test.ts`, no database or React). `test:db` runs Vitest in `@easyrms/db` against the local Postgres (`npm run db:start`) on a throwaway schema per test file (it includes the portal migration and concurrency tests); the `@easyrms/db` script is also named `test:db` (never `test`), so root `npm test` and the gate do not pull it in until CI has a Postgres service; record its result in `.ai/runs/` per PR. `app` and `ui` have no runner yet. `lint` (root `eslint.config.mjs`) covers all packages and enforces the dependency direction; `audit` (`scripts/audit.mjs`) fails on high+ advisories except those in `audit-allowlist.json` (each with a reason and expiry) and is part of the validation gate.
+- Run commands from the repo root: `npm run dev | build | lint | typecheck | test | test:db | audit | docs:check | storybook | storybook:build`. Storybook (config in `packages/app/.storybook/`) catalogs components; every reusable `ui` component ships a `*.stories.tsx` covering its states, and all stories live in `packages/ui/src/storybook/` mirroring the component path (e.g. `storybook/admin/button.stories.tsx` for `admin/button.tsx`), never next to the component. `storybook:build` is in the validation gate. `ui` stories import from `@storybook/react` (never `@storybook/nextjs-vite`) to keep `ui` Next-free. `test` runs Vitest in `@easyrms/core` (pure unit tests in `src/**/*.test.ts`, no database or React). `test:db` runs Vitest in `@easyrms/db` against the local Postgres (`npm run db:start`) on a throwaway schema per test file (it includes the portal migration and concurrency tests); the `@easyrms/db` script is also named `test:db` (never `test`), so root `npm test` and the gate do not pull it in until CI has a Postgres service; record its result in `.ai/runs/` per PR. `app` and `ui` have no runner yet. `lint` (root `eslint.config.mjs`) covers all packages and enforces the dependency direction; `audit` (`scripts/audit.mjs`) fails on high+ advisories except those in `audit-allowlist.json` (each with a reason and expiry) and is part of the validation gate.
 - Internal packages ship TypeScript source (no build step); `packages/app/next.config.ts` lists them in `transpilePackages`. Add any new internal package there.
 - Add a dependency to the workspace that uses it (`npm install <pkg> -w @easyrms/<name>`), not the root.
 - If the shell sets `NODE_ENV=development`, `next build` fails prerendering `/_global-error`; run it as `NODE_ENV=production npm run build`.

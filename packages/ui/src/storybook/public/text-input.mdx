@@ -1,0 +1,86 @@
+import { Canvas, Controls, Meta } from "@storybook/addon-docs/blocks";
+
+import { DoDont } from "../docs/blocks";
+import * as TextInputStories from "./text-input.stories";
+
+<Meta of={TextInputStories} />
+
+# TextInput
+
+Jednowierszowe pole tekstowe strony publicznej (natywny `input`). W środku `Field` samo pobiera `id`, opisy i stan błędu.
+
+<Canvas of={TextInputStories.Default} />
+
+## Kiedy użyć
+
+- Krótki tekst lub liczba w jednym wierszu: numer zamówienia, e-mail, notatka o wymianie.
+- Zawsze wewnątrz `Field`, który daje etykietę, podpowiedź i błąd.
+
+TextInput kontra sąsiedzi: dłuższy tekst to `Textarea`; wybór z gotowej listy to `ChoiceGroup`; ilość produktu to pole liczbowe w `LinePicker`.
+
+## Kiedy nie użyć
+
+- Dla dłuższego opisu (komentarz do pozycji) — użyj `Textarea`.
+- Dla wyboru jednej opcji z kilku — `ChoiceGroup`.
+- W panelu admina — tam są komponenty z `@easyrms/ui/admin`.
+
+## Jak złożyć
+
+```tsx
+import { Field, TextInput } from "@easyrms/ui/public";
+
+<Field label={copy.emailLabel} error={fieldErrors.email}>
+  <TextInput type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+</Field>
+```
+
+- Domyślny `type` to `text`; dla e-maila podaj `type="email"` i `autoComplete`.
+- Przyjmuje wszystkie atrybuty `input` (`name`, `value`, `maxLength`, `disabled`…). Twoje `id` i `aria-describedby` mają pierwszeństwo przed tymi z `Field`.
+- Wartość walidujesz w `core` (schematy Zod); komponent niczego nie sprawdza.
+- Klasa `publicControlClass` to wspólny wygląd pól publicznych; używa jej też `Textarea`.
+
+## Tokeny
+
+`border-input`, `bg-background`, `text-foreground`, `placeholder:text-muted-foreground`, `focus:border-ring`, fokus `ring-ring/60`, błąd `border-destructive` i `ring-destructive/40` (przy `aria-invalid="true"`), `rounded-lg`, `shadow-sm`, disabled `opacity-60`.
+
+## Stany
+
+| Stan | Wygląd i zachowanie | Jak wywołać |
+|---|---|---|
+| default | obramowanie `border-input`, placeholder `text-muted-foreground` | — |
+| focus | obramowanie `border-ring` i pierścień 2 px | klik / Tab |
+| invalid | obramowanie `border-destructive`, pierścień w kolorze `destructive` przy fokusie, tekst błędu pod polem | `error` w `Field` (lub `aria-invalid="true"`) |
+| disabled | `opacity-60`, kursor `not-allowed` | `disabled` |
+
+<Canvas of={TextInputStories.Invalid} />
+
+<Canvas of={TextInputStories.Disabled} />
+
+## Dostępność
+
+- Natywny `input`; w `Field` ma `id` powiązane z `label` oraz `aria-describedby` (podpowiedź, błąd) i `aria-invalid`.
+- Błąd jest też tekstem pod polem, nie tylko czerwoną ramką.
+- Placeholder nie zastępuje etykiety (znika po wpisaniu i ma niski kontrast).
+- Deweloper dostarcza: właściwy `type`, `autoComplete` dla danych osobowych, `name`, etykietę przez `Field`.
+- Użyty bez `Field` nie ma etykiety — dodaj ją sam.
+
+## Rób i nie rób
+
+<DoDont
+  rob={[
+    "Zawsze w `Field` z widoczną etykietą.",
+    "Ustaw `type` i `autoComplete` zgodnie z danymi.",
+    "Placeholder jako przykład formatu, np. „np. EZ-10234”.",
+  ]}
+  nieRob={[
+    "Placeholdera zamiast etykiety.",
+    "Własnej czerwonej ramki klasami; stan błędu daje `Field`.",
+    "TextInput do długich opisów.",
+  ]}
+/>
+
+## API
+
+<Controls of={TextInputStories.Default} />
+
+Typ `TextInputProps` to `InputHTMLAttributes<HTMLInputElement>`.

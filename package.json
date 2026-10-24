@@ -20,6 +20,7 @@
     "db:migrate": "npm run db:migrate -w @easyrms/db",
     "db:migration:create": "npm run db:migration:create -w @easyrms/db",
     "audit": "node scripts/audit.mjs",
+    "docs:check": "node scripts/check-design-docs.mjs",
     "setup": "node scripts/setup.mjs"
   }
 }

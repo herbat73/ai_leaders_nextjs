@@ -1,0 +1,101 @@
+import { Canvas, Controls, Meta } from "@storybook/addon-docs/blocks";
+
+import { DoDont } from "../docs/blocks";
+import * as AlertStories from "./alert.stories";
+
+<Meta of={AlertStories} />
+
+# Alert
+
+Blok komunikatu na stronach admina (shadcn): tonalna ramka z opcjonalną ikoną, tytułem i opisem, która informuje o stanie widoku lub wyniku akcji.
+
+<Canvas of={AlertStories.Info} />
+
+<Canvas of={AlertStories.Warning} />
+
+## Kiedy użyć
+
+| Potrzeba | Wybierz |
+|---|---|
+| Komunikat blokowy o ważności tonalnej (info, sukces, ostrzeżenie, błąd), widoczny nad treścią lub formularzem. | `Alert` |
+| Krótka etykieta statusu w wierszu tabeli lub nagłówku (np. „resolved”). | `Badge` |
+| Jednolinijkowy błąd pola formularza lub błąd ładowania listy. | `ErrorMessage` |
+| Komunikat dla klienta na stronie publicznej. | `Banner` (public) |
+| Treść wymagająca decyzji użytkownika (potwierdź / anuluj). | `Dialog` |
+
+Wariant dobierz do znaczenia: `info` (neutralna wiadomość), `success` (akcja się udała), `warning` (uwaga, wymaga reakcji wkrótce), `destructive` (akcja nie powiodła się lub jest ryzykowna), `default` (zwykła karta bez tonu).
+
+## Kiedy nie użyć
+
+- Do statusu obiektu w wierszu — użyj `Badge`.
+- Do błędu pojedynczego pola — użyj `ErrorMessage` pod polem.
+- Do komunikatu, który musi zatrzymać użytkownika i wymusić wybór — użyj `Dialog`.
+- Na stronach publicznych — tam jest `Banner` (Tailwind, bez shadcn).
+
+## Jak złożyć
+
+`Alert` składa się z opcjonalnej ikony (`svg` jako pierwsze dziecko), `AlertTitle` i `AlertDescription`. Ikona jest ustawiana automatycznie w siatce i dziedziczy kolor tonu.
+
+```tsx
+import { Alert, AlertDescription, AlertTitle } from "@easyrms/ui/admin";
+
+<Alert variant="warning">
+  <AlertTitle>Zwrot czeka na klienta</AlertTitle>
+  <AlertDescription>
+    <p>Klient ma 7 dni na dosłanie zdjęć. Po tym terminie zwrot zostanie zamknięty.</p>
+  </AlertDescription>
+</Alert>
+```
+
+- Sam `AlertTitle` wystarcza dla krótkiego komunikatu (patrz historia `TitleOnly`).
+- Tytuł jest ograniczony do jednej linii (`line-clamp-1`); szczegóły wstaw do `AlertDescription`.
+- Akcję towarzyszącą (np. „Spróbuj ponownie”) umieść w `AlertDescription` jako `Button`; nie wstawiaj kilku akcji.
+
+<Canvas of={AlertStories.TitleOnly} />
+
+## Tokeny
+
+- `info`: `bg-info-subtle`, `text-info-subtle-foreground`, `border-info-subtle-border`.
+- `success`: `bg-success-subtle`, `text-success-subtle-foreground`, `border-success-subtle-border`.
+- `warning`: `bg-warning-subtle`, `text-warning-subtle-foreground`, `border-warning-subtle-border`.
+- `destructive`: `bg-destructive-subtle`, `text-destructive-subtle-foreground`, `border-destructive-subtle-border`.
+- `default`: `bg-card`, `text-card-foreground`, domyślna ramka `border`.
+- Promień `rounded-lg`. W wariantach tonalnych opis przyjmuje kolor tonu; w `default` `text-muted-foreground`.
+
+## Stany
+
+| Stan | Zachowanie |
+|---|---|
+| default | Ramka `border`, tło `bg-card`; rola `status`. |
+| info / success | Tonalne tło; rola `status` (uprzejme ogłoszenie, nie przerywa czytnika ekranu). |
+| warning / destructive | Tonalne tło; rola `alert` (asertywne ogłoszenie). |
+| z ikoną | `svg` jako pierwsze dziecko powiększa siatkę do dwóch kolumn (rozmiar `size-4`). |
+| title only | Sam `AlertTitle`, bez `AlertDescription`. |
+
+`Alert` nie ma stanów hover, focus ani disabled: nie jest interaktywny.
+
+## Dostępność
+
+- Domyślna rola to `status` dla `default`, `info`, `success` oraz `alert` dla `warning` i `destructive`. Można ją nadpisać propem `role` (np. `role="status"` dla ostrzeżenia, które nie jest pilne).
+- Rola `alert` ogłasza się natychmiast tylko wtedy, gdy komunikat pojawia się dynamicznie. Dla komunikatów obecnych od wczytania strony nie przecinaj czytnika ekranu; rozważ `role="status"`.
+- Ton nie może być jedynym nośnikiem znaczenia: tytuł lub opis ma wprost nazwać sytuację („Błąd zapisu”, nie sam czerwony blok).
+- Ikona jest dekoracyjna; jeśli niesie znaczenie, dodaj to samo w tekście.
+
+## Rób i nie rób
+
+<DoDont
+  rob={[
+    "Wybieraj wariant po znaczeniu: `destructive` dla błędu, `warning` dla ostrzeżenia.",
+    "Zaczynaj od krótkiego tytułu, szczegóły daj w `AlertDescription`.",
+    "Umieść komunikat blisko miejsca, którego dotyczy (nad formularzem, nad tabelą).",
+  ]}
+  nieRob={[
+    "Układania kilku `Alert` jeden pod drugim — zbierz je w jeden.",
+    "Używania `Alert` jako etykiety statusu w wierszu — to rola `Badge`.",
+    "Nadpisywania kolorów klasami (`bg-red-100`) — użyj wariantu.",
+  ]}
+/>
+
+## API
+
+<Controls of={AlertStories.Info} />

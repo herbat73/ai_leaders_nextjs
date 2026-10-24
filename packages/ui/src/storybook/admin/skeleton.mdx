@@ -1,0 +1,85 @@
+import { Canvas, Controls, Meta } from "@storybook/addon-docs/blocks";
+
+import { DoDont } from "../docs/blocks";
+import * as SkeletonStories from "./skeleton.stories";
+
+<Meta of={SkeletonStories} />
+
+# Skeleton
+
+Pulsujący blok zastępujący treść w trakcie ładowania (shadcn): kształt wypełniacza ustawiasz klasami wysokości i szerokości.
+
+<Canvas of={SkeletonStories.Line} />
+
+<Canvas of={SkeletonStories.TableRows} />
+
+## Kiedy użyć
+
+- Ładowanie, gdy znasz kształt treści: wiersze tabeli, karta, linia tekstu.
+- Aby uniknąć skoku układu po załadowaniu.
+
+Alternatywy: gdy kształt jest nieznany, użyj `LoadingMessage`; gdy lista jest skonfigurowana przez `DataTable`, ona sama obsługuje stan ładowania, błędu i pustej listy.
+
+## Kiedy nie użyć
+
+- Gdy nie wiesz, jak będzie wyglądać treść — użyj `LoadingMessage`.
+- Dla pustej listy po załadowaniu — użyj `EmptyState`.
+- Dla błędu — użyj `ErrorMessage`.
+- Na stronach publicznych, jeśli komponent nie jest dostępny w pakiecie `public`.
+- Dla krótkich operacji (poniżej ułamka sekundy) — pulsowanie rozprasza.
+
+## Jak złożyć
+
+`Skeleton` nie ma własnego rozmiaru; zawsze podaj `h-*` i `w-*`. Opakuj grupę w kontener z rolą stanu i nazwą.
+
+```tsx
+import { Skeleton } from "@easyrms/ui/admin";
+
+<div role="status" aria-label="Ładowanie listy" className="space-y-3">
+  <Skeleton className="h-9 w-full" />
+  <Skeleton className="h-9 w-full" />
+  <Skeleton className="h-9 w-3/4" />
+</div>
+```
+
+- Wymiary dopasuj do docelowej treści (wiersz tabeli ma `h-9`..`h-10`).
+- Ostatni wiersz węższy (`w-3/4`) naśladuje naturalny koniec tekstu.
+
+## Tokeny
+
+`bg-accent`, `rounded-md`, animacja `animate-pulse`.
+
+## Stany
+
+| Stan | Zachowanie |
+|---|---|
+| animowany | Ciągłe pulsowanie (`animate-pulse`). |
+| hover / focus / disabled | Brak — element nieinteraktywny. |
+| poza ładowaniem | Zastąp prawdziwą treścią; nie zostawiaj skeletona. |
+
+Przy `prefers-reduced-motion` pulsowanie jest wyłączone (`motion-reduce:animate-none`).
+
+## Dostępność
+
+- `Skeleton` to goły `div` bez roli i bez tekstu. Czytnik ekranu nic nie ogłosi, dopóki nie dodasz opakowania.
+- Opakowanie: `role="status"` i `aria-label` (np. „Ładowanie listy”), jak w historii `TableRows`.
+- Po załadowaniu usuń kontener ze skeletonami, żeby nie zostawić nieaktualnego statusu.
+- Pulsowanie jest ruchem: komponent sam je wyłącza dla użytkowników z `prefers-reduced-motion`.
+
+## Rób i nie rób
+
+<DoDont
+  rob={[
+    "Dopasuj wymiary do docelowej treści.",
+    "Opakuj grupę w `role=status` z `aria-label`.",
+  ]}
+  nieRob={[
+    "Skeletona bez wymiarów — jest niewidoczny.",
+    "Skeletona przy nieznanym kształcie — użyj `LoadingMessage`.",
+    "Zostawiania skeletonów po wczytaniu danych.",
+  ]}
+/>
+
+## API
+
+<Controls of={SkeletonStories.Line} />

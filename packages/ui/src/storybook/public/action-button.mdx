@@ -1,0 +1,102 @@
+import { Canvas, Controls, Meta } from "@storybook/addon-docs/blocks";
+
+import { DoDont } from "../docs/blocks";
+import * as ActionButtonStories from "./action-button.stories";
+
+<Meta of={ActionButtonStories} />
+
+# ActionButton
+
+Akcja na stronach publicznych (Tailwind, bez shadcn). `primary` to jedyna główna akcja ekranu, `secondary` jej cicha alternatywa (np. Wstecz), `link` to akcja tekstowa.
+
+<Canvas of={ActionButtonStories.Primary} />
+
+## Kiedy użyć
+
+| Potrzeba | Wariant |
+|---|---|
+| Główna akcja ekranu lub formularza klienta (sprawdź zamówienie, rozpocznij zwrot). Najwyżej **jedna** na widok. | `primary` |
+| Alternatywa obok akcji głównej (Wstecz, Anuluj). | `secondary` |
+| Cicha akcja pomocnicza w tekście lub nagłówku (wyloguj, spróbuj ponownie). | `link` |
+| Wyższy przycisk kroku kreatora lub wysłania zgłoszenia. | `size="lg"` |
+| Formularz z jedną akcją, która ma zająć całą szerokość kontenera. | `fullWidth` |
+| Nawigacja (`<a>`, Next `<Link>`), która ma wyglądać jak przycisk. | `actionClassName()` na elemencie |
+
+## Kiedy nie użyć
+
+- W panelu admina — tam jest `Button` z `@easyrms/ui/admin`. Strony publiczne nie importują z `@easyrms/ui/admin`.
+- Do przejść Wstecz/Dalej w kreatorze zwrotu — robi je `WizardShell` (używa `ActionButton size="lg"` w środku).
+- Dla akcji destrukcyjnych: po stronie klienta nie ma takiego wariantu; użyj `link` i potwierdź w osobnym kroku.
+
+## Jak złożyć
+
+- Przycisk wysyłający formularz: `ActionButton type="submit" fullWidth disabled={pending}` (tak robi formularz wyszukiwania zamówienia w `app/_lookup/lookup-form.tsx`).
+- Cicha akcja: `ActionButton variant="link" onClick={logout} disabled={pending}` (wylogowanie w `app/returns/logout-button.tsx`).
+- Link wyglądający jak przycisk: `ui` nie zna Next, więc klasę dajemy ręcznie.
+
+```tsx
+import Link from "next/link";
+import { actionClassName } from "@easyrms/ui/public";
+
+<Link href="/returns/new" className={actionClassName()}>
+  {copy.startReturn}
+</Link>
+```
+
+- Etykieta pochodzi z pliku copy aplikacji (prop `children` to tekst), nie z komponentu. Etykieta to czasownik: „Sprawdź zamówienie”, nie „OK”.
+
+<Canvas of={ActionButtonStories.AsAnchor} />
+
+## Tokeny
+
+`primary`: `bg-primary` / `text-primary-foreground`, `rounded-lg`, `shadow-sm`, `hover:opacity-90`. `secondary`: `border-input`, `bg-background`, `text-foreground`, `hover:bg-muted`. Rozmiary: `default` `px-4 py-2`, `lg` `px-4 py-3 text-sm font-semibold`. `link`: `underline underline-offset-4`, `text-sm`. Wspólne: `ring-ring/60` (fokus), `opacity-60` (disabled). Klasy żyją w jednym miejscu: `actionClassName`.
+
+## Stany
+
+| Stan | Zachowanie | Jak wywołać |
+|---|---|---|
+| default / hover | `primary` `hover:opacity-90`, `secondary` `hover:bg-muted` | — |
+| focus-visible | pierścień 2 px `ring-ring/60`, bez domyślnego outline | klawisz Tab |
+| disabled / pending | `opacity-60`, kursor `not-allowed`; zmień też etykietę na opisującą trwającą akcję („Sprawdzamy…”) | `disabled` |
+| pełna szerokość | `w-full` | `fullWidth` |
+
+<Canvas of={ActionButtonStories.Pending} />
+
+Wariant `secondary` i rozmiar `lg`:
+
+<Canvas of={ActionButtonStories.Secondary} />
+
+<Canvas of={ActionButtonStories.Large} />
+
+Wariant `link`:
+
+<Canvas of={ActionButtonStories.Link} />
+
+## Dostępność
+
+- To natywny `<button>`; komponent domyślnie ustawia `type="button"`, więc w formularzu przycisk wysyłający musi mieć jawnie `type="submit"`.
+- Stan oczekiwania sygnalizuj tekstem etykiety, nie samym przygaszeniem.
+- `disabled` blokuje fokus i podwójne wysłanie; jeśli klient ma wiedzieć, dlaczego akcja jest niedostępna, powiedz to tekstem obok.
+- Przycisk bez widocznego tekstu wymaga `aria-label`.
+- Dla `<a>` stylowanego przez `actionClassName` pamiętaj, że to link: aktywuje się Enterem, nie spacją.
+
+## Rób i nie rób
+
+<DoDont
+  rob={[
+    "Jedna akcja `primary` na widok.",
+    "Pending pokaż przez `disabled` i zmianę etykiety.",
+    "Link jako przycisk przez `actionClassName()`, nie przez kopiowanie klas.",
+  ]}
+  nieRob={[
+    "Dwóch przycisków `primary` obok siebie (drugi to `secondary`).",
+    "Importu `Button` z `@easyrms/ui/admin` na stronie publicznej.",
+    "Nadpisywania kolorów przez `className` (np. `bg-red-500`).",
+  ]}
+/>
+
+## API
+
+<Controls of={ActionButtonStories.Primary} />
+
+Poza tym przyjmuje wszystkie atrybuty `button`. Funkcja `actionClassName(variant, fullWidth, size)` zwraca ten sam ciąg klas dla elementów niebędących `button`.

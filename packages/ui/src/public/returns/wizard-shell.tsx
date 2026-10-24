@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, type ReactElement, type ReactNode } from "react";
 
+import { ActionButton } from "../action-button";
 import { Stepper, type StepperStep } from "../stepper";
 
 export interface WizardShellProps {
@@ -39,9 +40,6 @@ export function WizardShell(props: WizardShellProps): ReactElement {
     }
     headingRef.current?.focus();
   }, [focusKey]);
-
-  const buttonClass =
-    "rounded-lg px-4 py-3 text-sm font-semibold focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60";
   return (
     <div className="space-y-6">
       <Stepper steps={steps} currentId={currentId} label={stepperLabel} doneLabel={stepDoneLabel} />
@@ -52,16 +50,16 @@ export function WizardShell(props: WizardShellProps): ReactElement {
       {(showBack || showNext) && (
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-between">
           {showBack ? (
-            <button type="button" onClick={onBack} disabled={backDisabled} className={`${buttonClass} border border-input text-foreground`}>
+            <ActionButton variant="secondary" size="lg" onClick={onBack} disabled={backDisabled}>
               {backLabel}
-            </button>
+            </ActionButton>
           ) : (
             <span />
           )}
           {showNext && (
-            <button type="button" onClick={onNext} disabled={nextDisabled} className={`${buttonClass} bg-primary text-primary-foreground`}>
+            <ActionButton size="lg" onClick={onNext} disabled={nextDisabled}>
               {nextLabel}
-            </button>
+            </ActionButton>
           )}
         </div>
       )}

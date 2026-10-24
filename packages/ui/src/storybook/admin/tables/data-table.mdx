@@ -1,0 +1,107 @@
+import { Canvas, Controls, Meta } from "@storybook/addon-docs/blocks";
+
+import { DoDont } from "../../docs/blocks";
+import * as DataTableStories from "./data-table.stories";
+
+<Meta of={DataTableStories} />
+
+# DataTable
+
+Lista danych sterowana konfiguracją kolumn, z wbudowanymi stanami ładowania, błędu i pustym wynikiem.
+
+<Canvas of={DataTableStories.WithRows} />
+
+<Canvas of={DataTableStories.Captioned} />
+
+## Kiedy użyć
+
+| Potrzeba | Komponent |
+|---|---|
+| Lista rekordów z jednej tablicy, która może się ładować, zawieść lub być pusta (inbox zwrotów, błędy wierszy importu). | `DataTable` |
+| Rozkład „kategoria, liczba, udział” | `BreakdownTable` (zbudowany na `DataTable`) |
+| Statyczna tabela o niestandardowym układzie: scalone komórki, wiersz sumy, treść nietablicowa. | `Table` (prymityw shadcn) |
+| Kilka kluczowych liczb. | `StatTile` w `StatRow` |
+
+Wybierz `DataTable`, gdy chcesz mieć jednakowe stany bez powtarzania `if (loading) …` w każdym widoku.
+
+## Kiedy nie użyć
+
+- Gdy potrzebujesz sortowania, filtrowania po kolumnach, paginacji lub zaznaczania — komponent tego nie ma. Filtr zrób osobno (np. nawigacja z linkami nad tabelą jak w `/admin/returns`).
+- Do układu formularza lub kart.
+- Na stronach publicznych — komponent jest z pakietu `admin`.
+
+## Jak złożyć
+
+Kolumny to `key`, `header` (gotowy tekst) i `cell` (funkcja zwracająca `ReactNode`). Daty, kwoty i liczby mnogie sformatuj w `app`/`core` — `ui` nie formatuje. Komórki mogą zawierać `Badge` (status) lub link.
+
+```tsx
+import { Badge, Card, CardContent, DataTable, type DataTableColumn } from "@easyrms/ui/admin";
+
+const columns: DataTableColumn<ReturnRow>[] = [
+  { key: "rma", header: copy.rma, className: "font-medium", cell: (row) => <Link href={row.href}>{row.rma}</Link> },
+  { key: "status", header: copy.status, cell: (row) => <Badge variant={row.tone}>{row.statusLabel}</Badge> },
+  { key: "createdAt", header: copy.createdAt, cell: (row) => row.createdAtText },
+];
+
+<Card>
+  <CardContent>
+    <DataTable columns={columns} rows={rows} getRowKey={(row) => row.id} caption={copy.title} emptyMessage={copy.empty} />
+  </CardContent>
+</Card>;
+```
+
+`DataTable` nie pobiera danych. Gdy dane pobierasz po stronie klienta, przez `apiCall`, przekaż `loading` i `error` ze stanu; w Server Component zwykle wystarczą `rows` i `emptyMessage`.
+
+## Tokeny
+
+Dziedziczy po `Table`: `border-b` wierszy, `hover:bg-muted/50`, nagłówek `text-muted-foreground`, podpis `text-muted-foreground`. Stany: `LoadingMessage` i `EmptyState` (`text-muted-foreground`), `ErrorMessage` (`text-destructive`). Dodatkową klasę komórki podaj w `column.className` (np. `font-medium`), nie kolory.
+
+## Stany
+
+| Stan | Co renderuje | Jak wywołać |
+|---|---|---|
+| z wierszami | Tabela z nagłówkiem i wierszami; `caption` jako podpis tabeli. | Story `WithRows`, `Captioned`. |
+| loading | Tylko `LoadingMessage` (domyślny, angielski `Loading…`); tabela i podpis są ukryte. | `loading` (story `Loading`). |
+| error | Tylko `ErrorMessage` z podanym tekstem. Ma pierwszeństwo przed pustym wynikiem, ale loading ma pierwszeństwo przed błędem. | `error` (story `Error`). |
+| pusty | `EmptyState` z `emptyMessage`. | `rows` puste (story `Empty`). |
+| pusty z podpisem | Pusta `Table` z samym `caption` i pod nią `EmptyState`. | `rows` puste plus `caption` (story `CaptionedEmpty`). |
+
+Kolejność rozstrzygania: `loading`, potem `error`, potem pusty, potem wiersze. Domyślny `emptyMessage` to angielskie `Nothing to show yet.` — w aplikacji zawsze go przekaż.
+
+## Dostępność
+
+- Renderuje semantyczne `table`, `thead`, `th`, `tbody`, `td`. Nagłówki kolumn to `th`.
+- `caption` to `caption` tabeli: daje czytnikom ekranu nazwę tabeli. Podawaj ją zawsze, gdy na stronie jest więcej niż jedna tabela albo nagłówek nie nazywa tabeli.
+- Stan ładowania ogłasza `role="status"`, błąd `role="alert"`; pusty wynik nie jest ogłaszany.
+- Link w komórce musi mieć sensowny tekst (numer RMA), nie „Szczegóły”.
+- Brak sortowania i zaznaczania, więc nie ma dodatkowych wzorców klawiatury.
+
+## Rób i nie rób
+
+<DoDont
+  rob={[
+    "Podawaj `getRowKey` ze stabilnym identyfikatorem rekordu (id), nie indeksem.",
+    "Przekazuj `emptyMessage` i `caption` z `app`, po polsku.",
+    "Formatuj daty i kwoty przed renderem; w `cell` zwracaj gotowy tekst.",
+    "Pokazuj status przez `Badge` z tekstem, nie samym kolorem.",
+  ]}
+  nieRob={[
+    "Składać `if (loading)` ręcznie obok `DataTable` — użyj propsów `loading` i `error`.",
+    "Dodawać własnych kolorów w `column.className`.",
+    "Używać go dla scalonych komórek lub niestandardowego układu — to zadanie dla `Table`.",
+  ]}
+/>
+
+## API
+
+<Controls of={DataTableStories.WithRows} />
+
+| Prop | Typ | Opis |
+|---|---|---|
+| `columns` | `DataTableColumn<T>[]` | `key`, `header`, `cell(row)`, opcjonalnie `className` komórki. |
+| `rows` | `T[]` | Dane. |
+| `getRowKey` | `(row) => string or number` | Stabilny klucz wiersza. |
+| `loading` | `boolean` | Pokazuje `LoadingMessage`. |
+| `error` | `string` | Pokazuje `ErrorMessage`. |
+| `emptyMessage` | `string` | Tekst pustego stanu; domyślnie angielski. |
+| `caption` | `string` | Dostępny podpis tabeli; działa też przy pustych danych. |

@@ -1,0 +1,86 @@
+import { Canvas, Controls, Meta } from "@storybook/addon-docs/blocks";
+
+import { DoDont } from "../../docs/blocks";
+import * as MethodStepStories from "./method-step.stories";
+
+<Meta of={MethodStepStories} />
+
+# MethodStep
+
+Trzeci krok kreatora zwrotu: wybór sposobu odesłania towaru (np. paczkomat, kurier). Cienka nakładka na `ChoiceGroup`.
+
+<Canvas of={MethodStepStories.Default} />
+
+## Kiedy użyć
+
+- Klient wybiera **jeden sposób zwrotu** (krok `method`), a opłata za każdy sposób jest częścią opisu opcji.
+- Zawsze w `WizardShell`, po `ReasonsStep` i przed `ResolutionStep`.
+
+MethodStep kontra `ChoiceGroup`: nie dodaje niczego do zachowania; istnieje, by krok miał własną nazwę i typ w kreatorze. Dla innego wyboru jednej opcji użyj `ChoiceGroup` bezpośrednio.
+
+## Kiedy nie użyć
+
+- Dla wyboru formy rozliczenia — `ResolutionStep` (ma też wyliczenie kwoty).
+- Poza kreatorem zwrotu — użyj `ChoiceGroup`.
+
+## Jak złożyć
+
+Kolejność kreatora: `LinePicker` → `ReasonsStep` → **MethodStep** → `ResolutionStep` → `SummaryStep`.
+
+Wejście: `legend`, `options` (`ChoiceOption`: `value`, `label`, `description?`, `disabled?`, `disabledReason?`), `value` (wybrana wartość albo `null`), `error?`. Wyjście: `onChange(value)`. Kody metod (`RETURN_METHODS`) i walidacja (`method_missing`) pochodzą z `core`; etykiety i opisy (z opłatą jako gotowym tekstem) z pliku copy aplikacji.
+
+```tsx
+<MethodStep
+  legend={copy.method.legend}
+  options={RETURN_METHODS.map((m) => ({
+    value: m,
+    label: copy.method.options[m].label,
+    description: copy.method.options[m].description,
+  }))}
+  value={returnMethod}
+  onChange={(value) => setReturnMethod(value as ReturnMethod)}
+  error={shown((p) => p.problem === "method_missing")}
+/>
+```
+
+Tak wiąże go `Wizard` w `app/returns/new/wizard.tsx`.
+
+<Canvas of={MethodStepStories.Selected} />
+
+## Tokeny
+
+Dziedziczy po `ChoiceGroup`: `border-input`, `border-primary` (wybrana), `hover:bg-muted`, `text-muted-foreground` (opis), `text-destructive` (błąd), `ring-ring/60` (fokus).
+
+## Stany
+
+| Stan | Wygląd i zachowanie | Jak wywołać |
+|---|---|---|
+| default | karty bez zaznaczenia | `value={null}` |
+| selected | zaznaczona karta | `value` równe `value` opcji |
+| disabled | opcja z przyczyną jako tekstem | `disabled` + `disabledReason` w opcji |
+| invalid | tekst błędu pod grupą | `error` |
+
+<Canvas of={MethodStepStories.Invalid} />
+
+## Dostępność
+
+Taka sama jak `ChoiceGroup`: `fieldset` z `legend`, wspólne `name` radio, opis i przyczyna niedostępności w `aria-describedby`, błąd z `role="alert"`. Nagłówek kroku i przeniesienie fokusu zapewnia `WizardShell`. Deweloper dostarcza `legend`, etykiety, opisy z opłatą i komunikat błędu.
+
+## Rób i nie rób
+
+<DoDont
+  rob={[
+    "Opłatę za sposób zwrotu zapisz w `description` opcji jako gotowy tekst.",
+    "Pokaż błąd dopiero po próbie przejścia dalej.",
+    "Niedostępny sposób oznacz `disabledReason`.",
+  ]}
+  nieRob={[
+    "Liczenia ani formatowania opłaty w komponencie.",
+    "Pokazywania błędu przy pierwszym renderze.",
+    "MethodStep poza kreatorem.",
+  ]}
+/>
+
+## API
+
+<Controls of={MethodStepStories.Default} />

@@ -15,7 +15,7 @@ function fakeSourceActive(): boolean {
 export function DevSamples(): ReactElement | null {
   if (!fakeSourceActive()) return null;
   return (
-    <section aria-labelledby="dev-samples-title" className="space-y-3 rounded-md border border-dashed border-amber-400 bg-amber-50 p-4 text-sm">
+    <section aria-labelledby="dev-samples-title" className="space-y-3 rounded-md border border-dashed border-warning-subtle-border bg-warning-subtle text-warning-subtle-foreground p-4 text-sm">
       <h2 id="dev-samples-title" className="font-semibold">
         Dane testowe (tylko środowisko deweloperskie)
       </h2>

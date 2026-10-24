@@ -1,0 +1,26 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="Wprowadzenie/Znane luki" />
+
+# Znane luki systemu
+
+Rzeczy, które dziś **nie działają tak, jak byś oczekiwał**. Każda jest też opisana na stronie komponentu. Gdy ją naprawisz, usuń wiersz i zaktualizuj stronę.
+
+| Komponent | Luka | Obejście do czasu naprawy |
+|---|---|---|
+| `LoadingMessage`, `DataTable`, `CrudForm` | Domyślne teksty są po angielsku („Loading…”, „Nothing to show yet.”, „Save”, „Saving…”, „Cancel”). `Cancel` w `CrudForm` nie ma propsa. | Zawsze przekazuj polskie `message`, `emptyMessage`, `submitLabel`. Przycisk anulowania w `CrudForm` jest do poprawy. |
+| `ThemeToggle` | `aria-label` przełącznika jest po angielsku. | Do poprawy; nie powielaj wzorca. |
+| `CrudForm` | Brak `aria-invalid`/`aria-describedby` na polach, brak przeniesienia fokusu na pierwsze błędne pole, Cmd/Ctrl+Enter wysyła także w trakcie wysyłania, brak propsa `disabled`. Nie jest jeszcze używany w `app`. | Przed pierwszym użyciem w ekranie dodaj te zachowania w komponencie i zaktualizuj stronę. |
+| `DataTable` | W stanie `loading` caption jest ukryty; `loading` ma pierwszeństwo przed `error`. | Nie przekazuj obu naraz. |
+| `BreakdownTable` | Nie przekazuje `loading`/`error` do `DataTable`; kluczem wiersza jest `label` (duplikaty kolidują). | Używaj tylko z gotowymi danymi o unikalnych etykietach. |
+| `StatTile` | Renderuje `dt`/`dd`, więc poza `StatRow` to niepoprawny HTML. | Zawsze w `StatRow`. |
+| `Table` | `TableHead` bez `scope`, przewijany kontener bez `tabindex`. | Przy szerokich tabelach dodaj `scope="col"` ręcznie. |
+| `Label` | Nie przygasza się, gdy jego kontrolka jest `disabled`. | Dodaj tekstową informację o niedostępności, jeśli ma znaczenie. |
+| `Timeline` (admin i public) | Ten sam kod, zduplikowany typ `TimelineEvent`; czas jako zwykły tekst, nie `time`. Public nie ma `aria-label` ani nagłówka. | Importuj tylko jeden wariant w pliku; nagłówek dodaj nad listą. |
+| `StageList` | Nie ma ukrytego tekstu „ukończony” (ma go `Stepper` przez `doneLabel`). | Stan etapu podaje nagłówek strony i `aria-current`. |
+| `TextInput` vs `Textarea` | Własny `aria-describedby` w `TextInput` zastępuje opisy z `Field`, w `Textarea` je dopisuje. | Nie ustawiaj `aria-describedby` w polu wewnątrz `Field`. |
+| `ChoiceGroup` | Nie ustawia `aria-invalid` (błąd tylko przez `aria-describedby` i `role="alert"`). | Wystarczy dla czytników; nie polegaj na kolorze. |
+| `Stepper` | Nieznany `currentId` daje wszystkie kroki „przyszłe” bez ostrzeżenia. | Przekazuj id z listy `steps`. |
+| `Badge` | `destructive` jest pełnym tłem, a `success`/`warning`/`info` jasną powierzchnią. | Świadome: odrzucenie i „po terminie” mają się wyróżniać. Nie dodawaj kolejnych pełnych wariantów. |
+| Brak komponentów | Nie ma jeszcze: `Select` w `public`, `Checkbox` w `public`, przycisków ikon, menu rozwijanego, paginacji, powiadomień toast. | Nie buduj lokalnych wersji; zgłoś potrzebę (spec w `.ai/specs/`). |
+| Marka | Motyw jest neutralny; marka klienta (white-label) nie jest jeszcze zdefiniowana. | Nie wprowadzaj kolorów marki w ekranach; docelowo podmiana zmiennych w `styles.css`. |

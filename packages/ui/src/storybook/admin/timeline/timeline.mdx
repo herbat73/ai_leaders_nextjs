@@ -1,0 +1,100 @@
+import { Canvas, Controls, Meta } from "@storybook/addon-docs/blocks";
+
+import { DoDont } from "../../docs/blocks";
+import * as TimelineStories from "./timeline.stories";
+
+<Meta of={TimelineStories} />
+
+# Timeline
+
+Historia zdarzeń jako uporządkowana lista, od najstarszego (na górze) do najnowszego (na dole), z opcjonalną notatką do zdarzenia.
+
+<Canvas of={TimelineStories.SeveralEvents} />
+
+<Canvas of={TimelineStories.Empty} />
+
+## Kiedy użyć
+
+- Oś czasu zwrotu na karcie decyzji agenta (`/admin/returns/[id]`): kto, co i kiedy zmienił, wraz z notatką.
+- Każda chronologiczna historia, w której liczy się kolejność zdarzeń.
+
+Dwie wersje o tych samych propsach:
+
+| Wersja | Import | Gdzie |
+|---|---|---|
+| admin | `@easyrms/ui/admin` | back-office (shadcn). |
+| public | `@easyrms/ui/public` | tracker klienta `/returns/[rma]`. Tylko tekst `text-foreground` jest jawnie ustawiony. |
+
+Wybierz wersję po powierzchni strony, nie po treści. Obie mają ten sam wygląd i ten sam typ `TimelineEvent`; nie mieszaj ich w jednym pliku bez aliasu importu (nazwa jest taka sama).
+
+## Kiedy nie użyć
+
+- Do postępu procesu z góry znanymi etapami (przyszłe kroki) — na stronie publicznej służy `StageList`.
+- Do tabelarycznych danych z wieloma polami — `DataTable`.
+- Do zdarzeń w kolejności od najnowszego — komponent zawsze pokazuje oldest first; posortuj dane przed przekazaniem, jeśli potrzebujesz odwrotnie (zmienia to jednak konwencję, więc raczej tego nie rób).
+
+## Jak złożyć
+
+`Timeline` nie formatuje: `at` (data) i `label` (nazwa zdarzenia) przychodzą jako gotowe, polskie napisy z `app`/`core`. `emptyMessage` jest wymagany.
+
+```tsx
+import { Card, CardContent, CardHeader, CardTitle, Timeline } from "@easyrms/ui/admin";
+
+<Card>
+  <CardHeader>
+    <CardTitle>{copy.timeline}</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <Timeline events={events.map(toTimelineEvent)} emptyMessage={copy.timelineEmpty} />
+  </CardContent>
+</Card>;
+```
+
+`toTimelineEvent` mapuje rekord domenowy na `id`, `label`, `actor`, `at`, `note` i formatuje datę.
+
+## Tokeny
+
+Linia pionowa `border-l border-border`, kropka `bg-primary` (`size-2`, `rounded-full`), etykieta `text-sm font-medium`, aktor i data `text-xs text-muted-foreground`, notatka `bg-muted` w `rounded-md` z `whitespace-pre-wrap`.
+
+## Stany
+
+| Stan | Wygląd | Jak wywołać |
+|---|---|---|
+| pusty | Jedna przygaszona linia z `emptyMessage` (bez osi). | `events: []` (story `Empty`). |
+| jedno zdarzenie | Oś z jedną kropką. | Story `OneEvent`. |
+| wiele zdarzeń | Oś z kolejnymi kropkami, najnowsze na dole. | Story `SeveralEvents`. |
+| z notatką | Pod zdarzeniem pole `bg-muted`; zachowuje nowe linie. | `note` (story `LongNote`). |
+
+Brak stanów ładowania i błędu — obsłuż je wokół komponentu.
+
+## Dostępność
+
+- To `ol` z `li`: czytnik ekranu zapowiada liczbę zdarzeń i ich kolejność.
+- Kropka jest ozdobna (`aria-hidden="true"`); informacja jest w tekście: etykieta, aktor, czas.
+- Brak `role` i ogłaszania — dodanie zdarzenia po akcji nie jest czytane automatycznie.
+- Data jest zwykłym tekstem, bez elementu `time`; wartość maszynowa nie jest dostępna.
+- Notatka może być długa — zawija się i zachowuje akapity, nie jest obcinana.
+
+## Rób i nie rób
+
+<DoDont
+  rob={[
+    "Podawaj dane od najstarszego do najnowszego.",
+    "Przekazuj `at` jako sformatowany polski napis (np. „23.10.2026, 12:05”).",
+    "Używaj stabilnego `id` zdarzenia.",
+  ]}
+  nieRob={[
+    "Formatować dat w `ui` ani przekazywać `Date`.",
+    "Wkładać do `note` treści, które mają być klikalne — to zwykły tekst.",
+    "Mieszać wersji admin i public na jednej stronie.",
+  ]}
+/>
+
+## API
+
+<Controls of={TimelineStories.SeveralEvents} />
+
+| Prop | Typ | Opis |
+|---|---|---|
+| `events` | `TimelineEvent[]` | `id`, `label`, `actor`, `at` (sformatowany), opcjonalnie `note`. |
+| `emptyMessage` | `string` | Wymagany tekst, gdy `events` jest puste. |

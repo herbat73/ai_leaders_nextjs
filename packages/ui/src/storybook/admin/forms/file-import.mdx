@@ -1,0 +1,107 @@
+import { Canvas, Controls, Meta } from "@storybook/addon-docs/blocks";
+
+import { DoDont } from "../../docs/blocks";
+import * as FileImportStories from "./file-import.stories";
+
+<Meta of={FileImportStories} />
+
+# FileImport
+
+Strefa wczytania jednego pliku tekstowego w przeglądarce (klik lub upuszczenie). Plik jest czytany lokalnie; do rodzica trafia tekst, nie `File`.
+
+<Canvas of={FileImportStories.Idle} />
+
+<Canvas of={FileImportStories.Dragging} />
+
+<Canvas of={FileImportStories.Interactive} />
+
+## Kiedy użyć
+
+- Import danych tabelarycznych (CSV) do narzędzi admina, np. laboratorium próbki: `onText` dostaje zawartość i nazwę, resztę (parsowanie, walidację) robi `core`.
+- Gdy plik ma być sprawdzony przed użyciem: rozmiar (`maxBytes`) i kodowanie (wykrywa znak zastępczy U+FFFD, czyli tekst nie-UTF-8).
+
+## Kiedy nie użyć
+
+- Do wysyłania plików na serwer (zdjęcia, załączniki) — `FileImport` czyta tylko tekst w przeglądarce.
+- Do plików binarnych.
+- Do wielu plików naraz — bierze tylko pierwszy.
+- Na stronach publicznych — komponent jest z pakietu `admin`.
+
+## Jak złożyć
+
+Dwa poziomy: `FileImport` (stateful: rozmiar, kodowanie, nazwa pliku, błąd) i `FileImportView` (sama prezentacja, sterowana propsami — używana w stories i gdy sam obsługujesz stan). W aplikacji używaj `FileImport`. Wszystkie teksty (także błędy) przychodzą od wywołującego.
+
+```tsx
+import { ErrorMessage, FileImport, LoadingMessage } from "@easyrms/ui/admin";
+
+<FileImport
+  accept=".csv"
+  maxBytes={512 * 1024}
+  label={copy.upload.label}
+  hint={copy.upload.hint}
+  messages={copy.upload.messages}
+  disabled={loading}
+  onText={(text, fileName) => void analyse(text, fileName)}
+/>;
+{loading && <LoadingMessage message={copy.loading} />}
+{error && <ErrorMessage message={error} />}
+```
+
+`messages` ma trzy klucze: `tooLarge`, `wrongEncoding`, `readFailed`. Błąd parsowania zawartości (np. zła kolumna) pokazuj osobno przez `ErrorMessage` — `FileImport` go nie zna.
+
+## Tokeny
+
+Ramka `border-dashed` z `border-input`; po upuszczeniu `border-primary` i `bg-muted`; hover `bg-muted/50`; podpowiedź i nazwa pliku `text-muted-foreground`; błąd `text-destructive`; fokus `ring-ring`.
+
+## Stany
+
+| Stan | Wygląd i zachowanie | Jak wywołać |
+|---|---|---|
+| idle | Przerywana ramka, etykieta, opcjonalna podpowiedź. | Story `Idle`. |
+| dragging | Ramka `border-primary`, tło `bg-muted`. | Plik nad strefą (`dragging`, story `Dragging`). |
+| plik wybrany | Pod etykietą pojawia się nazwa pliku. | Poprawny plik (story `FileChosen`). |
+| za duży | Alert z `messages.tooLarge`; `onText` nie jest wołane. | Plik większy niż `maxBytes` (story `TooLarge`). |
+| złe kodowanie | Alert z `messages.wrongEncoding`. | Plik z U+FFFD po odczycie (story `WrongEncoding`). |
+| błąd odczytu | Alert z `messages.readFailed`. | `file.text()` rzuca wyjątek. |
+| disabled | Przycisk i input wyłączone, `opacity-50`, `cursor-not-allowed`; upuszczenie pliku jest ignorowane. | `disabled` (story `Disabled`). |
+
+Błąd jest czyszczony przy następnym wyborze pliku. Nazwa poprzedniego poprawnego pliku zostaje widoczna, gdy kolejny plik zostanie odrzucony.
+
+## Dostępność
+
+- Strefa to prawdziwy `button type="button"` — dostępna z klawiatury (`Enter`/`Spacebar` otwierają okno wyboru pliku) z widocznym fokusem `ring-ring`.
+- Obok jest ukryty wizualnie `input type="file"` (`sr-only`, `tabIndex=-1`) z `aria-label` równym `label`; dubluje przycisk dla technologii wspomagających.
+- Błąd ma `role="alert"` i jest ogłaszany od razu.
+- Upuszczanie pliku jest dodatkiem: ta sama czynność musi być wykonalna klawiaturą przez przycisk (jest).
+- Stan `dragging` to wyróżnienie koloru ramki — niesie ono tylko informację pomocniczą, bo etykieta tekstowa jest zawsze widoczna.
+
+## Rób i nie rób
+
+<DoDont
+  rob={[
+    "Podawaj `label`, `hint` (limit rozmiaru, kodowanie) i `messages` z `app`.",
+    "Ustaw `disabled` na czas analizy, żeby uniknąć podwójnego wczytania.",
+    "Parsuj i waliduj zawartość w `core`, a błędy pokazuj przez `ErrorMessage`.",
+  ]}
+  nieRob={[
+    "Zakładać, że `onText` dostanie plik binarny lub nie-UTF-8 — jest odrzucany wcześniej.",
+    "Wstawiać komunikatów błędów w `ui` — pozostają po stronie wywołującego.",
+    "Pomijać `maxBytes`: odczyt dużego pliku zablokuje kartę.",
+  ]}
+/>
+
+## API
+
+<Controls of={FileImportStories.Idle} />
+
+Powyższa tabela dotyczy `FileImportView`. Propsy `FileImport` (stateful):
+
+| Prop | Typ | Opis |
+|---|---|---|
+| `accept` | `string` | Atrybut `accept` inputa, np. `.csv`. |
+| `maxBytes` | `number` | Maksymalny rozmiar pliku w bajtach. |
+| `label` | `string` | Etykieta strefy i `aria-label` inputa. |
+| `hint` | `string` | Druga linia, np. limit rozmiaru. |
+| `disabled` | `boolean` | Wyłącza strefę i input. |
+| `messages` | `FileImportMessages` | Teksty błędów: `tooLarge`, `wrongEncoding`, `readFailed`. |
+| `onText` | `(text, fileName) => void` | Wołane po przejściu kontroli rozmiaru i kodowania. |

@@ -99,7 +99,7 @@ export function LinePicker({ legend, lines, decreaseLabel, increaseLabel, onTogg
               </label>
             </div>
             {!line.eligible && line.ineligibleReason && (
-              <p id={reasonId} className="mt-1 pl-7 text-sm font-medium text-amber-800 dark:text-amber-300">
+              <p id={reasonId} className="mt-1 pl-7 text-sm font-medium text-warning-subtle-foreground">
                 {line.ineligibleReason}
               </p>
             )}
@@ -141,7 +141,7 @@ export function LinePicker({ legend, lines, decreaseLabel, increaseLabel, onTogg
         );
       })}
       {error && (
-        <p id={errorId} role="alert" className="text-sm text-red-600 dark:text-red-400">
+        <p id={errorId} role="alert" className="text-sm text-destructive">
           {error}
         </p>
       )}

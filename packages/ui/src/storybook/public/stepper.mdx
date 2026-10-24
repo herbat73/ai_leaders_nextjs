@@ -1,0 +1,90 @@
+import { Canvas, Controls, Meta } from "@storybook/addon-docs/blocks";
+
+import { DoDont } from "../docs/blocks";
+import * as StepperStories from "./stepper.stories";
+
+<Meta of={StepperStories} />
+
+# Stepper
+
+Pasek postępu kreatora: uporządkowane kroki, bieżący oznaczony, ukończone z ✓.
+
+<Canvas of={StepperStories.Middle} />
+
+## Kiedy użyć
+
+- Klient przechodzi przez **kilka kroków formularza** i ma wiedzieć, gdzie jest i ile zostało (kreator zwrotu: produkty, powody, sposób, rozwiązanie, podsumowanie).
+- W praktyce nie składasz go sam: robi to `WizardShell`.
+
+Stepper kontra `StageList`:
+
+- `Stepper` jest poziomy, w `nav`, i opisuje postęp **klienta** w formularzu.
+- `StageList` jest pionowa i opisuje stan zgłoszenia nadany przez system (tracker).
+
+## Kiedy nie użyć
+
+- Do statusu już wysłanego zgłoszenia — `StageList`.
+- Dla 1–2 kroków — pasek postępu to nadmiar.
+- Jako klikalnej nawigacji: kroki nie są linkami ani przyciskami; przechodzi się Wstecz/Dalej.
+
+## Jak złożyć
+
+Kroki (identyfikatory) pochodzą z `core` (`WIZARD_STEPS`), etykiety z pliku copy aplikacji. Komponent sam wylicza stan kroku z pozycji `currentId` w tablicy: wcześniejsze są ukończone, późniejsze przyszłe.
+
+```tsx
+import { Stepper } from "@easyrms/ui/public";
+
+<Stepper
+  steps={WIZARD_STEPS.map((id) => ({ id, label: copy.steps[id] }))}
+  currentId={step}
+  label={copy.stepperLabel}
+  doneLabel={copy.stepDoneLabel}
+/>
+```
+
+`doneLabel` jest wymagany: to ukryty tekst czytany po etykiecie ukończonego kroku (np. „ukończony”).
+
+<Canvas of={StepperStories.First} />
+
+## Tokeny
+
+Znacznik: `border-primary bg-primary text-primary-foreground` (ukończony i bieżący), `border-border text-muted-foreground` (przyszły), `rounded-full`. Etykieta: `font-semibold text-foreground` (bieżący), `text-muted-foreground` (pozostałe).
+
+## Stany
+
+| Stan kroku | Wygląd | Jak wywołać |
+|---|---|---|
+| done | wypełnione kółko z ✓, ukryty tekst `doneLabel` | krok przed `currentId` |
+| current | wypełnione kółko z numerem, pogrubiona etykieta, `aria-current="step"` | `currentId` |
+| upcoming | puste kółko z numerem, przygaszona etykieta | krok po `currentId` |
+
+Kroki zawijają się do kolejnego wiersza na wąskim ekranie (`flex-wrap`).
+
+<Canvas of={StepperStories.Last} />
+
+## Dostępność
+
+- `nav` z `aria-label` (prop `label`) zawierający uporządkowaną listę `ol`.
+- Bieżący krok ma `aria-current="step"`; numer i ✓ są `aria-hidden`, a ukończenie komunikuje ukryty `doneLabel`.
+- Stan nie zależy od koloru: ✓ dla ukończonych, pogrubienie dla bieżącego.
+- Zmiana kroku przenosi fokus na nagłówek kroku — robi to `WizardShell`, nie sam `Stepper`.
+- Deweloper dostarcza `label` i `doneLabel`. Gdy `currentId` nie występuje w `steps`, żaden krok nie jest bieżący, a wszystkie wyglądają jak przyszłe; podawaj poprawny id.
+
+## Rób i nie rób
+
+<DoDont
+  rob={[
+    "Używaj przez `WizardShell`, który zadba o fokus i przyciski.",
+    "Krótkie etykiety kroków (1–2 słowa).",
+    "Zawsze podaj `label` i `doneLabel` z pliku copy.",
+  ]}
+  nieRob={[
+    "Stepper jako linków do dowolnego kroku.",
+    "Stepper do statusu zgłoszenia — to `StageList`.",
+    "Długich etykiet, które łamią pasek na wąskim ekranie.",
+  ]}
+/>
+
+## API
+
+<Controls of={StepperStories.Middle} />

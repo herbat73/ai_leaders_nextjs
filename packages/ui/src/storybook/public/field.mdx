@@ -1,0 +1,90 @@
+import { Canvas, Controls, Meta } from "@storybook/addon-docs/blocks";
+
+import { DoDont } from "../docs/blocks";
+import * as FieldStories from "./field.stories";
+
+<Meta of={FieldStories} />
+
+# Field
+
+Opakowanie jednego pola formularza klienta: etykieta, podpowiedź i błąd, automatycznie powiązane z kontrolką (`TextInput` lub `Textarea`) przez kontekst.
+
+<Canvas of={FieldStories.Default} />
+
+## Kiedy użyć
+
+- Zawsze, gdy `TextInput` lub `Textarea` ma etykietę (czyli zawsze): `Field` ustawia `id`, `htmlFor`, `aria-describedby` i `aria-invalid`, więc nie robisz tego ręcznie.
+- Gdy pole ma podpowiedź (format, po co pytamy) lub błąd walidacji.
+
+Field kontra sąsiedzi:
+
+- Błąd jednego pola to `error` w `Field`; błąd całej akcji to `Banner`.
+- Grupa wyboru (radio) ma własną `legend` i `error` w `ChoiceGroup`; nie opakowuj jej w `Field`.
+- W panelu admina formularze składa `CrudForm` z `@easyrms/ui/admin`.
+
+## Kiedy nie użyć
+
+- Dla `ChoiceGroup`, `LinePicker` i checkboxa potwierdzenia — mają własne etykiety i błędy.
+- Do kilku kontrolek pod jedną etykietą — `Field` wiąże etykietę z jedną kontrolką (jedno `id`).
+- Bez kontrolki w środku: etykieta wskazywałaby na nic.
+
+## Jak złożyć
+
+`Field` bierze tekst z propsów; teksty (etykieta, podpowiedź, komunikat błędu) pochodzą z pliku copy aplikacji. Błąd pola przekaż jako `string | undefined`, np. z `fieldErrors` odpowiedzi API.
+
+```tsx
+import { Field, TextInput } from "@easyrms/ui/public";
+
+<Field label={copy.orderNumberLabel} hint={copy.orderNumberHint} error={fieldErrors.orderNumber}>
+  <TextInput name="orderNumber" autoComplete="off" />
+</Field>
+```
+
+Tak wygląda formularz wyszukiwania zamówienia w `app/_lookup/lookup-form.tsx`.
+
+<Canvas of={FieldStories.WithHint} />
+
+## Tokeny
+
+Etykieta: `text-sm font-medium text-foreground`. Podpowiedź: `text-sm text-muted-foreground`. Błąd: `text-sm text-destructive`. Stan niepoprawny samej kontrolki pochodzi z `publicControlClass` (`border-destructive`).
+
+## Stany
+
+| Stan | Wygląd i zachowanie | Jak wywołać |
+|---|---|---|
+| default | etykieta nad kontrolką | tylko `label` |
+| z podpowiedzią | tekst pomocniczy między etykietą a kontrolką | `hint` |
+| invalid | tekst błędu pod kontrolką (`role="alert"`), `aria-invalid` na kontrolce, czerwone obramowanie | `error` |
+| disabled | ustawiasz na kontrolce (`disabled`), nie na `Field` | `disabled` na `TextInput` |
+
+<Canvas of={FieldStories.WithError} />
+
+## Dostępność
+
+- `label` jest powiązane z kontrolką przez `htmlFor` i `id` z `useId`; kliknięcie etykiety ustawia fokus w polu.
+- Podpowiedź i błąd trafiają do `aria-describedby` kontrolki (w tej kolejności), więc czytnik ekranu odczyta je po etykiecie.
+- `error` ustawia `aria-invalid="true"` na kontrolce i ma `role="alert"` — jest odczytywany po pojawieniu się.
+- Błąd to tekst, nie tylko kolor obramowania.
+- Deweloper dostarcza: `label` (wymagany), treść błędu mówiącą, jak poprawić („Podaj poprawny adres e-mail”), a nie samo „Błąd”.
+- Poza `Field` kontrolka działa, ale bez powiązań; wtedy sam podaj `id`, etykietę i opisy.
+
+## Rób i nie rób
+
+<DoDont
+  rob={[
+    "Jedno `Field` na jedną kontrolkę.",
+    "Błąd mówi, jak poprawić dane.",
+    "Podpowiedź na format lub cel pytania; krótka.",
+  ]}
+  nieRob={[
+    "Placeholdera zamiast etykiety.",
+    "Własnych `label` i `id` obok `Field`.",
+    "Komunikatu „Błąd” bez wskazówki.",
+  ]}
+/>
+
+## API
+
+<Controls of={FieldStories.Default} />
+
+`children` to kontrolka (`TextInput` lub `Textarea`). Hook `useFieldControl()` zwraca `id`, `aria-describedby` i `aria-invalid` z otaczającego `Field`; używają go `TextInput` i `Textarea`, własna kontrolka może zrobić to samo.

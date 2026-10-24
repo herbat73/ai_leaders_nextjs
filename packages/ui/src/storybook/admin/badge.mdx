@@ -1,0 +1,93 @@
+import { Canvas, Controls, Meta } from "@storybook/addon-docs/blocks";
+
+import { DoDont } from "../docs/blocks";
+import * as BadgeStories from "./badge.stories";
+
+<Meta of={BadgeStories} />
+
+# Badge
+
+Krótka etykieta statusu lub kategorii (shadcn): mała pigułka z tekstem, używana w wierszu tabeli, nagłówku karty lub widoku szczegółów.
+
+<Canvas of={BadgeStories.Success} />
+
+<Canvas of={BadgeStories.Warning} />
+
+## Kiedy użyć
+
+| Potrzeba | Wariant |
+|---|---|
+| Stan zakończony pozytywnie (np. `resolved`). | `success` |
+| Ktoś czeka na ruch (np. `submitted`, `awaiting_customer`). | `warning` |
+| Stan w toku (np. `approved`, `in_transit`). | `info` |
+| Zamknięcie negatywne (np. `rejected`). | `destructive` |
+| Stan neutralny lub anulowany (np. `cancelled`). | `secondary` |
+| Stan nieznany lub kategoria bez wagi (np. `unknown`, `requested`). | `outline` |
+| Akcent o wysokim kontraście (np. reguła rozstrzygająca). | `default` |
+
+Wybór wariantu dla statusów zwrotu jest zapisany w jednym miejscu: `statusBadgeVariant` w `packages/app/src/app/admin/returns/status-badge.ts` (ton = kto musi się ruszyć). Nie dobieraj kolorów ad hoc w każdym widoku.
+
+Badge czy sąsiedzi: `Alert` to blok komunikatu z tytułem i opisem; `Badge` to jedno słowo. `Alert` ma te same tony co `Badge`.
+
+## Kiedy nie użyć
+
+- Do komunikatu dłuższego niż 2–3 słowa — użyj `Alert`.
+- Jako przycisku lub linku — `Badge` nie jest interaktywny, nie ma stanów hover ani focus.
+- Do liczników powiadomień i wskaźników liczbowych — użyj `StatTile` (stats).
+- Na stronach publicznych — tam statusy pokazują komponenty publiczne (Tailwind).
+
+## Jak złożyć
+
+```tsx
+import { Badge } from "@easyrms/ui/admin";
+import { statusBadgeVariant } from "./status-badge";
+
+<Badge variant={statusBadgeVariant[request.status]}>{request.status}</Badge>
+```
+
+- W wierszu `Table` obok tekstu: `TableCell` z samym `Badge`.
+- W nagłówku `CardHeader` obok `CardTitle`, w `flex items-center gap-2`.
+- Tekst badge opisuje stan słowami (`resolved`, „Rozwiązany”); ton wspiera, ale nie zastępuje znaczenia.
+
+## Tokeny
+
+- `default`: `bg-primary`, `text-primary-foreground`.
+- `secondary`: `bg-secondary`, `text-secondary-foreground`.
+- `destructive`: `bg-destructive`, `text-destructive-foreground` (jednolity, nie subtelny).
+- `success`, `warning`, `info`: `bg-<ton>-subtle`, `text-<ton>-subtle-foreground`, `border-<ton>-subtle-border`.
+- `outline`: `text-foreground` na ramce `border`.
+- Kształt: `rounded-md`, `px-2 py-0.5`, `text-xs font-medium`.
+
+## Stany
+
+| Stan | Zachowanie |
+|---|---|
+| default | Pigułka w wybranym wariancie. |
+| hover / focus / disabled | Brak — `Badge` jest statycznym `span`. |
+| długi tekst | Nie zawija się specjalnie; trzymaj etykiety krótkie. |
+
+## Dostępność
+
+- To zwykły `span` bez roli. Znaczenie niesie tekst, nie kolor: nie używaj badge z pustym tekstem.
+- Para kolorów tekst/tło w wariantach subtelnych pochodzi z tokenów `-subtle-foreground` i zachowuje kontrast w jasnym i ciemnym motywie.
+- Jeśli badge opisuje element (np. wiersz), upewnij się, że tekst ma sens w kolejności czytania („Zwrot RMA-1 resolved”).
+- Skrót lub kod techniczny (np. `awaiting_customer`) rozważ zastąpić czytelną etykietą dla użytkownika.
+
+## Rób i nie rób
+
+<DoDont
+  rob={[
+    "Mapuj statusy na warianty w jednym obiekcie (`statusBadgeVariant`).",
+    "Używaj krótkiego tekstu opisującego stan.",
+    "Ten sam status ma ten sam wariant w całej aplikacji.",
+  ]}
+  nieRob={[
+    "Dwóch różnych kolorów dla tego samego statusu w różnych widokach.",
+    "Badge jako przycisku lub linku.",
+    "Polegania wyłącznie na kolorze — tekst musi nazywać stan.",
+  ]}
+/>
+
+## API
+
+<Controls of={BadgeStories.Success} />

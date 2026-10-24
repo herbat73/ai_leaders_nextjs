@@ -63,7 +63,7 @@ export function ChoiceGroup({ legend, options, value, onChange, error }: ChoiceG
                 </span>
               )}
               {option.disabled && option.disabledReason && (
-                <span id={reasonId} className="mt-1 block text-sm font-medium text-amber-800 dark:text-amber-300">
+                <span id={reasonId} className="mt-1 block text-sm font-medium text-warning-subtle-foreground">
                   {option.disabledReason}
                 </span>
               )}
@@ -72,7 +72,7 @@ export function ChoiceGroup({ legend, options, value, onChange, error }: ChoiceG
         );
       })}
       {error && (
-        <p id={errorId} role="alert" className="text-sm text-red-600 dark:text-red-400">
+        <p id={errorId} role="alert" className="text-sm text-destructive">
           {error}
         </p>
       )}

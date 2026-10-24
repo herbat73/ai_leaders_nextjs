@@ -1,0 +1,104 @@
+import { Canvas, Controls, Meta } from "@storybook/addon-docs/blocks";
+
+import { DoDont } from "../../docs/blocks";
+import * as ReasonsStepStories from "./reasons-step.stories";
+
+<Meta of={ReasonsStepStories} />
+
+# ReasonsStep
+
+Drugi krok kreatora zwrotu: dla każdej wybranej pozycji powód zwrotu (radio) i opcjonalny komentarz z licznikiem znaków.
+
+<Canvas of={ReasonsStepStories.TwoItems} />
+
+## Kiedy użyć
+
+- Po `LinePicker`, gdy klient wybrał pozycje: dla **każdej** z nich pytamy o powód i dajemy miejsce na komentarz (krok `reasons`).
+- Zawsze w `WizardShell`.
+
+ReasonsStep kontra składanie `ChoiceGroup` + `Field` ręcznie: ten krok już to robi dla wielu pozycji i spina licznik znaków z polem.
+
+## Kiedy nie użyć
+
+- Dla jednego powodu na całe zgłoszenie — to jest powód per pozycja; użyj `ChoiceGroup`.
+- Poza kreatorem zwrotu.
+
+## Jak złożyć
+
+Kolejność kreatora: `LinePicker` → **ReasonsStep** → `MethodStep` → `ResolutionStep` → `SummaryStep`.
+
+Wejście: `items` (po jednym `ReasonsStepItem` na wybraną pozycję: `lineId`, `title`, `reason`, `comment`, `reasonLegend`, `commentLabel`, `commentHint?`, `counterText`, `reasonError?`, `commentError?`), wspólne `reasonOptions` (`ChoiceOption` z kodami i etykietami powodów) i `maxCommentLength`. Wyjście: `onReasonChange(lineId, reason)` i `onCommentChange(lineId, comment)`. Komponent jest kontrolowany; stan trzyma `Wizard` w `app/returns/new/wizard.tsx`, a kody powodów (`RETURN_REASON_CODES`), limit (`MAX_ITEM_COMMENT_LENGTH`) i walidacja (`reason_missing`, `comment_too_long`) pochodzą z `core`.
+
+```tsx
+<ReasonsStep
+  reasonOptions={RETURN_REASON_CODES.map((code) => ({ value: code, label: copy.reasons.options[code] }))}
+  maxCommentLength={MAX_ITEM_COMMENT_LENGTH}
+  items={items.map((item) => ({
+    lineId: item.lineRef,
+    title: name,
+    reason: item.reasonCode,
+    comment: item.comment,
+    reasonLegend: copy.reasons.legend(name),
+    commentLabel: copy.reasons.commentLabel,
+    counterText: copy.reasons.counter(item.comment.length, MAX_ITEM_COMMENT_LENGTH),
+  }))}
+  onReasonChange={setReason}
+  onCommentChange={setComment}
+/>
+```
+
+Licznik (`counterText`, np. „120 / 500”) jest gotowym tekstem z `app`; komponent go nie liczy. Pole komentarza ma `maxLength`, więc przeglądarka nie pozwoli przekroczyć limitu.
+
+<Canvas of={ReasonsStepStories.Default} />
+
+## Tokeny
+
+Sekcja pozycji: `border-border`, `rounded-lg`, tytuł `text-foreground`. Reszta pochodzi z `ChoiceGroup`, `Field` i `Textarea`; licznik `text-muted-foreground`.
+
+## Stany
+
+| Stan | Wygląd i zachowanie | Jak wywołać |
+|---|---|---|
+| default | sekcja na pozycję: grupa powodów bez zaznaczenia, puste pole komentarza | `reason: null`, `comment: ""` |
+| powód wybrany | zaznaczona karta | `reason` równe kodowi |
+| komentarz z licznikiem | tekst „n / max” pod polem, wyrównany do prawej | `counterText` |
+| invalid (powód) | błąd pod grupą radio | `reasonError` |
+| invalid (komentarz) | błąd pod polem, czerwona ramka | `commentError` |
+| wiele pozycji | po jednej sekcji na pozycję, odstęp `space-y-6` | kilka `items` |
+
+<Canvas of={ReasonsStepStories.WithErrors} />
+
+## Dostępność
+
+- Każda pozycja to `section` z nagłówkiem `h3` (tytuł pozycji); powód to `fieldset` z własną `legend` (`reasonLegend` — podaj nazwę produktu, by legendy się różniły).
+- Pole komentarza ma etykietę, podpowiedź i błąd przez `Field`, a licznik jest dopisany do `aria-describedby` pola.
+- Błędy są tekstem z `role="alert"`; stan nie opiera się na kolorze.
+- Nagłówek kroku i przeniesienie fokusu po zmianie kroku zapewnia `WizardShell`.
+- Deweloper dostarcza: `reasonLegend` unikalną per pozycja, `commentLabel`, `counterText` i komunikaty błędów.
+
+## Rób i nie rób
+
+<DoDont
+  rob={[
+    "Unikalna `reasonLegend` z nazwą produktu dla każdej pozycji.",
+    "Pokaż błąd przy właściwej pozycji (`reasonError`, `commentError`) po próbie przejścia dalej.",
+    "Licznik jako tekst, razem z limitem.",
+  ]}
+  nieRob={[
+    "Tej samej legendy dla wszystkich pozycji.",
+    "Liczenia znaków w `ui`; przekaż `counterText`.",
+    "Jednego błędu zbiorczego zamiast błędów przy pozycjach.",
+  ]}
+/>
+
+## API
+
+<Controls of={ReasonsStepStories.Default} />
+
+| Prop | Znaczenie |
+|---|---|
+| `items` | Wybrane pozycje z bieżącym powodem i komentarzem oraz tekstami i błędami. |
+| `reasonOptions` | Wspólna lista powodów (`ChoiceOption`). |
+| `maxCommentLength` | Limit znaków komentarza (atrybut `maxLength`). |
+| `onReasonChange` | `(lineId, reason)`. |
+| `onCommentChange` | `(lineId, comment)`. |

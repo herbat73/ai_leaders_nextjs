@@ -1,0 +1,39 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="Fundamenty/Typografia" />
+
+# Typografia
+
+Jedna rodzina: systemowy sans-serif (`system-ui, sans-serif`, ustawiony na `body` w `globals.css`) plus `font-mono` dla identyfikatorów. Nie dodajemy fontów webowych. Strona ma `lang="pl"`.
+
+## Skala
+
+To jest skala, która faktycznie jest w kodzie. Nie wprowadzaj rozmiarów spoza niej.
+
+| Rola | Klasy | Gdzie |
+|---|---|---|
+| Tytuł strony publicznej (powitanie) | `text-3xl font-bold tracking-tight` | strona startowa `/` |
+| Tytuł strony (h1) | `text-2xl font-semibold` | `/returns`, `/returns/new`, `/returns/[rma]` |
+| Wartość kafelka statystyki | `text-2xl font-semibold` | `StatTile` |
+| Nagłówek kroku kreatora (h2) | `text-xl font-semibold` | `WizardShell` |
+| Nagłówek sekcji (h2) | `text-lg font-semibold` | tracker; w adminie `CardTitle` (`text-lg font-semibold leading-none tracking-tight`), `DialogTitle` |
+| Podnagłówek (h3) | `text-base font-semibold` | `SummaryStep`, `ReasonsStep` |
+| Tekst treści i kontrolki | `text-sm` (admin) / domyślny 16 px (public) | pola, tabele, przyciski admina |
+| Podpis, metadane | `text-xs text-muted-foreground` | `Timeline` (aktor · czas), `StatTile` hint |
+| Identyfikator (RMA, SKU) | `font-mono` | numery RMA w trackerze |
+
+Admin jest gęsty (`text-sm` jako rozmiar bazowy), strona publiczna czytelna (16 px bazowo, `text-sm` tylko na opisy i podpisy).
+
+## Grubości
+
+- `font-medium` (500): etykiety pól, etykiety opcji, przyciski, nagłówki kolumn tabeli.
+- `font-semibold` (600): nagłówki i wartości do zapamiętania.
+- `font-bold` tylko tytuł strony startowej. Nie używaj 400 dla nagłówków.
+
+## Reguły
+
+- **Jeden `h1` na stronę**, nagłówki bez przeskoków poziomów (h1 → h2 → h3). Rozmiar jest niezależny od poziomu: poziom wybierasz ze struktury dokumentu, rozmiar z tabeli.
+- **Linia tekstu** nie szersza niż `max-w-2xl` na stronach publicznych; w adminie `max-w-3xl` (szczegół) lub `max-w-5xl` (lista).
+- **Długie wartości** (e-mail, nazwa produktu, notatka): `break-words`; notatki wielolinijkowe `whitespace-pre-wrap`.
+- **Wielkie litery, kursywa i podkreślenie** nie niosą znaczenia. Podkreślenie jest tylko dla linków w tekście (`underline underline-offset-4`).
+- **Liczby i kwoty** przychodzą sformatowane z `core` (`formatMoney`, spacja nierozdzielająca przed `zł`), nie formatujesz ich w komponencie.

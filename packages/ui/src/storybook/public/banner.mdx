@@ -1,0 +1,109 @@
+import { Canvas, Controls, Meta } from "@storybook/addon-docs/blocks";
+
+import { DoDont } from "../docs/blocks";
+import * as BannerStories from "./banner.stories";
+
+<Meta of={BannerStories} />
+
+# Banner
+
+Komunikat dla klienta o stanie całej strony lub kroku: informacja, sukces, ostrzeżenie albo błąd. Wersja publiczna (Tailwind).
+
+<Canvas of={BannerStories.Info} />
+
+## Kiedy użyć
+
+| Sytuacja | Ton |
+|---|---|
+| Neutralna informacja o stronie (np. „Odpowiemy w ciągu 2 dni roboczych”, brak produktów do zwrotu). | `info` |
+| Potwierdzenie, że akcja się udała (np. numer RMA po wysłaniu). | `success` |
+| Zgłoszenie czeka na działanie klienta (np. „Potrzebujemy dodatkowych informacji”). | `warning` |
+| Akcja nie powiodła się albo usługa jest niedostępna (np. nie udało się wysłać zgłoszenia). | `error` |
+
+Banner kontra sąsiedzi:
+
+- Błąd jednego pola: nie Banner, tylko `error` w `Field` (tekst pod polem, podpięty do kontrolki).
+- Błąd grupy wyboru: `error` w `ChoiceGroup` lub `LinePicker`.
+- Błąd całej akcji (wysłanie, wyliczenie kwoty, niedostępność platformy): Banner `error`.
+- W panelu admina: `Alert` z `@easyrms/ui/admin`, nie `Banner`.
+
+## Kiedy nie użyć
+
+- Dla walidacji pojedynczego pola — użyj `Field`.
+- W panelu admina — użyj `Alert`.
+- Jako etykiety statusu zgłoszenia — status to `StageList`.
+- Kilku bannerów naraz w jednym miejscu; pokaż najważniejszy.
+
+## Jak złożyć
+
+- Banner na górze kroku lub strony, przed treścią, której dotyczy.
+- Treść to tekst z pliku copy aplikacji; może zawierać akapity i akcję (jak w niedostępności platformy w `app/returns/new/page.tsx`).
+
+```tsx
+import { Banner } from "@easyrms/ui/public";
+
+<Banner tone="error">
+  <p className="font-medium">{copy.unavailable.title}</p>
+  <p>{copy.unavailable.text}</p>
+</Banner>
+```
+
+- Ton ostrzeżenia zależny od stanu zgłoszenia: `view.banner === "awaiting_customer"` daje `warning` na stronie `/returns/[rma]`.
+- Komunikat o błędzie mówi, co się stało i co zrobić dalej („Spróbuj ponownie”).
+
+<Canvas of={BannerStories.Error} />
+
+## Tokeny
+
+Każdy ton to trzy tokeny `subtle`: tło, tekst i obramowanie.
+
+| Ton | Klasy |
+|---|---|
+| `info` | `bg-info-subtle` `text-info-subtle-foreground` `border-info-subtle-border` |
+| `success` | `bg-success-subtle` `text-success-subtle-foreground` `border-success-subtle-border` |
+| `warning` | `bg-warning-subtle` `text-warning-subtle-foreground` `border-warning-subtle-border` |
+| `error` | `bg-destructive-subtle` `text-destructive-subtle-foreground` `border-destructive-subtle-border` |
+
+Kształt: `rounded-lg border px-4 py-3 text-sm`.
+
+## Stany
+
+| Stan | Wygląd i zachowanie | Jak wywołać |
+|---|---|---|
+| info | niebieskawy, `role="status"` | `tone="info"` |
+| success | zielony, `role="status"` | `tone="success"` |
+| warning | bursztynowy, `role="alert"` | `tone="warning"` |
+| error | czerwony, `role="alert"` | `tone="error"` |
+
+Banner nie ma stanów interaktywnych (nie ma przycisku zamknięcia, fokusu ani disabled).
+
+<Canvas of={BannerStories.Success} />
+
+<Canvas of={BannerStories.Warning} />
+
+## Dostępność
+
+- `info` i `success` mają `role="status"` (uprzejme, czytnik ekranu czeka na koniec wypowiedzi); `warning` i `error` mają `role="alert"` (natychmiastowe odczytanie).
+- Komponent nie dodaje ikony ani etykiety tonu, więc znaczenie musi wynikać z **tekstu**: nie polegaj na samym kolorze. Zacznij treść od słowa, które niesie sens („Nie udało się…”, „Potrzebujemy…”).
+- Bannery z `role="alert"` pojawiające się po akcji klienta są odczytywane od razu; nie renderuj ich wstępnie na stronie bez potrzeby, bo odczytają się przy wczytaniu.
+- Kontrast tekstu i tła zapewniają pary `*-subtle` / `*-subtle-foreground` (tryb jasny i ciemny).
+
+## Rób i nie rób
+
+<DoDont
+  rob={[
+    "Wybierz ton według znaczenia: błąd akcji to `error`, prośba o działanie to `warning`.",
+    "Napisz treść, która działa bez koloru i mówi, co dalej.",
+    "Błąd pola pokaż przy polu przez `Field`.",
+  ]}
+  nieRob={[
+    "Bannera `error` dla błędu jednego pola.",
+    "Samego koloru jako nośnika znaczenia.",
+    "Kilku bannerów jeden pod drugim.",
+    "Klas `bg-red-500`, `bg-amber-100` itp. — używaj tokenów.",
+  ]}
+/>
+
+## API
+
+<Controls of={BannerStories.Info} />

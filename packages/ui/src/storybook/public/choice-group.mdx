@@ -1,0 +1,107 @@
+import { Canvas, Controls, Meta } from "@storybook/addon-docs/blocks";
+
+import { DoDont } from "../docs/blocks";
+import * as ChoiceGroupStories from "./choice-group.stories";
+
+<Meta of={ChoiceGroupStories} />
+
+# ChoiceGroup
+
+Wybór jednej opcji z kilku, pokazany jako karty z przyciskami radio w `fieldset`. Opcja może mieć opis i być niedostępna z podaną przyczyną.
+
+<Canvas of={ChoiceGroupStories.Default} />
+
+## Kiedy użyć
+
+- Klient wybiera **dokładnie jedną** z 2–6 opcji, a każda wymaga etykiety i krótkiego opisu (np. forma rozwiązania: zwrot pieniędzy, kredyt, wymiana; sposób zwrotu z opłatą w opisie).
+- Niektóre opcje bywają niedostępne i klient ma przeczytać dlaczego (`disabledReason`).
+
+ChoiceGroup kontra sąsiedzi:
+
+- Wybór wielu pozycji z ilością (produkty z zamówienia): `LinePicker`, nie ChoiceGroup.
+- Krok kreatora ze sposobem zwrotu / rozwiązaniem: gotowe `MethodStep` i `ResolutionStep` opakowują ChoiceGroup.
+- Tekst swobodny: `Field` + `TextInput`.
+- Po stronie admina: `Select` lub `Checkbox` z `@easyrms/ui/admin`.
+
+## Kiedy nie użyć
+
+- Dla zaznaczania wielu opcji — radio pozwala wybrać jedną.
+- Dla dłuższych list (powyżej kilku opcji) — karty zajmują za dużo miejsca.
+- Dla pojedynczego potwierdzenia „Rozumiem” — to checkbox (jak w `SummaryStep`).
+
+## Jak złożyć
+
+Komponent jest kontrolowany: `value` i `onChange` trzyma rodzic (`value` to `null`, dopóki nic nie wybrano). Opcje, ich etykiety i opisy przychodzą z pliku copy aplikacji; `ui` niczego nie formatuje.
+
+```tsx
+import { ChoiceGroup } from "@easyrms/ui/public";
+
+<ChoiceGroup
+  legend={copy.resolution.legend}
+  options={[
+    { value: "refund", label: "Zwrot pieniędzy", description: "Na to samo konto" },
+    { value: "store_credit", label: "Kredyt", disabled: true, disabledReason: "Niedostępny dla tego zamówienia" },
+  ]}
+  value={resolution}
+  onChange={setResolution}
+  error={showProblems ? copy.problems.resolution_missing : undefined}
+/>
+```
+
+Błąd przekazuj dopiero po próbie przejścia dalej, nie przy pierwszym renderze.
+
+<Canvas of={ChoiceGroupStories.DisabledWithReason} />
+
+## Tokeny
+
+`bg-background`, `border-input` (domyślnie), `border-border` (disabled), `hover:bg-muted`, wybrana karta: `border-primary` + `ring-primary`, fokus: `ring-ring/60`, opis: `text-muted-foreground`, przyczyna niedostępności: `text-warning-subtle-foreground`, błąd: `text-destructive`, `accent-primary` na radio, `rounded-lg`, `shadow-sm`.
+
+## Stany
+
+| Stan | Wygląd i zachowanie | Jak wywołać |
+|---|---|---|
+| default | karta z obramowaniem `border-input`, hover `bg-muted` | `value={null}` |
+| selected | `border-primary` i pierścień 1 px | `value` równe `value` opcji |
+| focus-visible | pierścień 2 px na całej karcie (`has-[:focus-visible]`) | strzałki / Tab |
+| disabled | `opacity-70`, kursor `not-allowed`, radio nieaktywne; przyczyna widoczna jako tekst | `disabled` + `disabledReason` |
+| invalid | tekst błędu pod grupą (`role="alert"`), grupa opisana przez `aria-describedby` | `error` |
+
+<Canvas of={ChoiceGroupStories.Selected} />
+
+<Canvas of={ChoiceGroupStories.Invalid} />
+
+## Dostępność
+
+- Grupa to `fieldset` z `legend` — `legend` jest wymagane i mówi, co klient wybiera.
+- Radio w jednej grupie dzielą `name` (z `useId`), więc strzałki przełączają opcje, a Tab wchodzi do grupy raz.
+- Opis opcji i przyczyna niedostępności są podpięte do radio przez `aria-describedby`; przyczyna jest tekstem, nie tylko przygaszeniem.
+- Błąd jest podpięty do `fieldset` i każdego radio przez `aria-describedby`, a sam tekst ma `role="alert"`.
+- Cała karta jest `label`, więc cel dotyku to cała karta.
+- Deweloper dostarcza: `legend`, `label` każdej opcji, `disabledReason` dla każdej opcji `disabled`, treść `error`.
+- Uwaga: komponent nie ustawia `aria-invalid` na radio; stan błędu przekazuje tekst i `aria-describedby`.
+
+## Rób i nie rób
+
+<DoDont
+  rob={[
+    "Podaj `disabledReason` przy każdej niedostępnej opcji.",
+    "Krótka etykieta, a szczegóły (opłata, termin) w `description`.",
+    "Błąd pokaż po próbie przejścia dalej.",
+  ]}
+  nieRob={[
+    "Niedostępnej opcji bez wyjaśnienia.",
+    "ChoiceGroup do wyboru wielu pozycji.",
+    "Pustego `legend` ani legendy typu „Wybierz”.",
+  ]}
+/>
+
+## API
+
+<Controls of={ChoiceGroupStories.Default} />
+
+| Prop | Znaczenie |
+|---|---|
+| `options` | Tablica `ChoiceOption`: `value`, `label`, `description?`, `disabled?`, `disabledReason?`. |
+| `value` | Wybrana wartość albo `null`. |
+| `onChange` | Wywoływane z `value` klikniętej opcji. |
+| `error` | Tekst błędu grupy. |

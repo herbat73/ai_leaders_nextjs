@@ -1,0 +1,40 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="Fundamenty/Dostępność" />
+
+# Dostępność
+
+Cel: WCAG 2.2 AA. Strona publiczna jest dla każdego klienta sklepu, więc to wymóg, nie dodatek. Panel „Accessibility” (axe) w Storybooku sprawdza każdą historię; zielony panel jest warunkiem, nie dowodem: reguły poniżej obejmują to, czego axe nie widzi.
+
+## Minimum dla każdego ekranu
+
+| Obszar | Reguła | Jak spełnia to system |
+|---|---|---|
+| Klawiatura | Wszystko działa bez myszy, kolejność fokusu = kolejność wizualna | natywne elementy (`button`, `a`, `input`); Radix w `Dialog`, `Select`, `Tabs` |
+| Fokus | Zawsze widoczny | pierścień `ring-ring` na każdej kontrolce; nie usuwaj |
+| Etykiety | Każde pole ma etykietę powiązaną `for`/`id` | `Label` + `Input`; `Field` łączy etykietę, podpowiedź i błąd automatycznie |
+| Błędy | Tekst obok pola, powiązany z polem, ogłoszony | `Field`: `aria-describedby` + `aria-invalid` + `role="alert"` |
+| Kolor | Znaczenie też tekstem lub ikoną | `Badge` ma etykietę, `Banner`/`Alert` mają treść; disabled opcja ma `disabledReason` |
+| Kontrast | 4,5:1 tekst, 3:1 duże elementy i obramowania kontrolek | tabela na stronie „Kolory i tokeny” |
+| Komunikaty | Wynik akcji ogłoszony czytnikowi | `info`/`success` = `role="status"` (uprzejmie), `warning`/`error` = `role="alert"` (natychmiast) |
+| Nagłówki | Jeden h1, bez przeskoków | zobacz „Typografia” |
+| Fokus po zmianie widoku | Przenieś fokus na nowy nagłówek | `WizardShell` robi to przy zmianie kroku (`focusKey`) |
+| Ruch | Brak animacji bez potrzeby | animacje Radix są krótkie (`tw-animate-css`); nie dodawaj własnych |
+| Język | `lang="pl"` na `html` | `layout.tsx` |
+
+## Częste błędy
+
+- **Placeholder zamiast etykiety.** Znika po wpisaniu tekstu i ma za niski kontrast.
+- **Przycisk-ikona bez nazwy.** Dodaj `aria-label` lub `sr-only` tekst (`DialogContent` robi to przez `closeLabel`).
+- **`div` z `onClick`.** Użyj `button` lub `Button asChild` z linkiem.
+- **Informacja tylko w `Tooltip`.** Nie działa na dotyk i dla części czytników. Tooltip może podpowiadać, nie może być jedynym nośnikiem.
+- **Kolor jako jedyny sygnał statusu** (czerwona kropka bez tekstu).
+- **Błąd bez wskazania pola.** „Popraw zaznaczone pola” musi iść w parze z błędem przy każdym polu.
+- **Cel dotykowy mniejszy niż 24×24 px** (WCAG 2.2); na stronie publicznej celuj w 40 px (`size-10` w `LinePicker`).
+
+## Jak testować ręcznie (3 minuty)
+
+1. Przejdź cały ekran klawiszem Tab i Shift+Tab: widzisz fokus, nic nie jest pominięte, nic nie „zapada się”.
+2. Wyślij formularz pusty: błędy są przy polach i ogłoszone, fokus nie ginie.
+3. Przełącz tryb ciemny i powtórz kontrolę wizualną.
+4. Powiększ stronę do 200% i zwęź okno do 320 px: brak poziomego przewijania treści.

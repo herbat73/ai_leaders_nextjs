@@ -1,0 +1,100 @@
+import { Canvas, Controls, Meta } from "@storybook/addon-docs/blocks";
+
+import { DoDont } from "../../docs/blocks";
+import * as SummaryStepStories from "./summary-step.stories";
+
+<Meta of={SummaryStepStories} />
+
+# SummaryStep
+
+Ostatni krok kreatora zwrotu: podsumowanie tylko do odczytu, zgoda klienta (checkbox) i przycisk wysłania ze stanami oczekiwania i błędu.
+
+<Canvas of={SummaryStepStories.Acknowledged} />
+
+## Kiedy użyć
+
+- Jako ostatni krok (`summary`), by klient przed wysłaniem zobaczył pozycje z ilością i powodem, sposób zwrotu, rozliczenie i kwotę oraz potwierdził zapoznanie się z warunkami.
+- Krok niesie własny przycisk wysłania, więc `WizardShell` ma wtedy `showNext={false}`.
+
+SummaryStep kontra `Banner`: błąd wysłania pokazuje sam jako `Banner` `error`; nie dodawaj drugiego.
+
+## Kiedy nie użyć
+
+- Do wyświetlania gotowego zgłoszenia po wysłaniu — to strona śledzenia (`StageList`, `Timeline`).
+- Dla formularzy bez zgody lub podsumowania — użyj `Field` i `ActionButton`.
+
+## Jak złożyć
+
+Kolejność kreatora: `LinePicker` → `ReasonsStep` → `MethodStep` → `ResolutionStep` → **SummaryStep**.
+
+Wejście: `itemsHeading`, `items` (`title`, `quantityText`, `reasonText`, `comment?`), `rows` (pary `label` i `value`: sposób, rozliczenie, kwota, opłata), `acknowledgement` (`label`, `checked`, `onChange`, `error?`), `submit` (`label`, `pendingLabel`, `pending`, `onSubmit`) i `errorText?`. Wyjście: `acknowledgement.onChange(checked)` i `submit.onSubmit()`. Wszystko jest już sformatowane przez `app` (`quantityText`, kwoty w `rows`); `ui` tylko układa. Wysłanie (`apiCall` do `POST /api/returns` z kluczem idempotentności) robi `Wizard` w `app/returns/new/wizard.tsx`; po sukcesie przekierowuje na `/returns/[rma]`.
+
+```tsx
+<SummaryStep
+  itemsHeading={copy.summary.itemsHeading}
+  items={items.map((item) => ({
+    title: name,
+    quantityText: copy.summary.quantity(item.quantity),
+    reasonText: `${copy.summary.reasonPrefix}: ${reasonLabel}`,
+    comment: item.comment.trim() || undefined,
+  }))}
+  rows={rows}
+  acknowledgement={{ label: copy.summary.acknowledgement, checked: acknowledged, onChange: setAcknowledged, error }}
+  submit={{ label: copy.summary.submit, pendingLabel: copy.summary.pending, pending: submitting, onSubmit: () => void submit() }}
+  errorText={failure?.text}
+/>
+```
+
+Po nieudanym wysłaniu zmień `submit.label` na „Spróbuj ponownie” (tak robi `Wizard`); dodatkowy link (np. do listy zgłoszeń) dodaj pod komponentem.
+
+<Canvas of={SummaryStepStories.Idle} />
+
+## Tokeny
+
+Pozycje: `border-border`, `rounded-lg`, tytuł `font-medium text-foreground`, ilość i powód `text-muted-foreground`. Wiersze: etykieta `text-muted-foreground`, wartość `font-medium text-foreground`. Checkbox `accent-primary`, błąd `text-destructive`. Przycisk wysłania: `bg-primary` / `text-primary-foreground`, `ring-ring/60`, disabled `opacity-60`. Błąd wysłania: `Banner` `error`.
+
+## Stany
+
+| Stan | Wygląd i zachowanie | Jak wywołać |
+|---|---|---|
+| idle | zgoda niezaznaczona, przycisk aktywny | `checked: false`, `pending: false` |
+| acknowledged | zaznaczony checkbox | `checked: true` |
+| acknowledgement missing | tekst błędu pod checkboxem, `aria-invalid` | `acknowledgement.error` |
+| pending | przycisk nieaktywny z etykietą `pendingLabel` | `submit.pending: true` |
+| submit error | `Banner` `error` nad przyciskiem | `errorText` |
+| focus-visible | pierścień 2 px na przycisku i checkboxie | Tab |
+
+Przycisk jest aktywny również przy niezaznaczonej zgodzie: walidacja zgody dzieje się po kliknięciu (w aplikacji `firstInvalidStep`), a błąd wraca przez `acknowledgement.error`.
+
+<Canvas of={SummaryStepStories.AcknowledgementMissing} />
+
+<Canvas of={SummaryStepStories.Pending} />
+
+<Canvas of={SummaryStepStories.SubmitError} />
+
+## Dostępność
+
+- Pozycje to lista `ul` pod nagłówkiem `h3`, a wiersze podsumowania to lista opisów `dl`.
+- Checkbox jest powiązany z etykietą (`htmlFor`); przy błędzie ma `aria-invalid="true"` i `aria-describedby` do tekstu błędu z `role="alert"`.
+- Przycisk w stanie `pending` ma `disabled` i `aria-disabled`, a jego tekst zmienia się na `pendingLabel` — stan jest tekstem, nie samym przygaszeniem.
+- Błąd wysłania to `Banner` `error` (`role="alert"`), odczytany od razu.
+- Deweloper dostarcza: teksty zgody i przycisku, `pendingLabel`, gotowe teksty pozycji i wierszy, komunikat błędu.
+
+## Rób i nie rób
+
+<DoDont
+  rob={[
+    "Pokaż w `rows` dokładnie to, co zostanie wysłane (sposób, rozliczenie, kwota).",
+    "Zablokuj przycisk i zmień etykietę przy `pending`, żeby nie dublować wysyłki.",
+    "Przy błędzie wysłania napisz, co zrobić dalej, i zachowaj dane klienta.",
+  ]}
+  nieRob={[
+    "Dodawania drugiego przycisku Dalej w `WizardShell` (`showNext` ma być `false`).",
+    "Formatowania kwot lub liczby mnogiej w `ui`.",
+    "Wymuszania zgody bez komunikatu — błąd musi być tekstem przy checkboxie.",
+  ]}
+/>
+
+## API
+
+<Controls of={SummaryStepStories.Idle} />

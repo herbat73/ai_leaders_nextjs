@@ -1,0 +1,81 @@
+import { Canvas, Controls, Meta } from "@storybook/addon-docs/blocks";
+
+import { DoDont } from "./docs/blocks";
+import * as ThemeToggleStories from "./theme-toggle.stories";
+
+<Meta of={ThemeToggleStories} />
+
+# ThemeToggle
+
+Okrągły przełącznik motywu jasny/ciemny, przypięty do prawego górnego rogu ekranu. Wspólny dla admina i strony publicznej.
+
+<Canvas of={ThemeToggleStories.Default} />
+
+## Kiedy użyć
+
+- Raz, w głównym układzie aplikacji (`app/layout.tsx`): przełącznik jest wtedy dostępny na każdej stronie, admina i klienta.
+- Import ze wspólnego wejścia pakietu: `import { ThemeToggle } from "@easyrms/ui"`.
+
+## Kiedy nie użyć
+
+- Wewnątrz strony lub karty — jest `position: fixed` i zawsze ląduje w rogu ekranu.
+- Dwa razy na jednej stronie.
+- Do innych przełączników dwustanowych (ustawienie, filtr) — użyj `Checkbox`.
+
+## Jak złożyć
+
+Komponent czyta i zapisuje klasę `dark` na `html`. Źródłem prawdy jest ta klasa, ustawiana przed pierwszym malowaniem przez skrypt w `app` (inaczej wystąpi błysk jasnego motywu). Wybór zapisuje się w `localStorage` pod kluczem `theme` (`dark` lub `light`).
+
+```tsx
+import { ThemeToggle } from "@easyrms/ui";
+
+<body>
+  <ThemeToggle />
+  {children}
+</body>;
+```
+
+Wszystkie tokeny w `styles.css` mają wartości jasne i ciemne, więc przełączenie klasy zmienia całą aplikację bez dodatkowej pracy. W Storybooku ten sam efekt daje przełącznik w pasku narzędzi.
+
+## Tokeny
+
+`border-border`, `bg-card`, `text-card-foreground`, hover `bg-secondary`, fokus `ring-ring`, `shadow-sm`, `rounded-full`, rozmiar 36 px (`h-9 w-9`), `z-50`.
+
+## Stany
+
+| Stan | Wygląd i zachowanie | Jak wywołać |
+|---|---|---|
+| motyw jasny | Ikona księżyca; `aria-label` „Switch to dark theme”. | Domyślny przy renderze serwerowym. |
+| motyw ciemny | Ikona słońca; `aria-label` „Switch to light theme”. | Klasa `dark` na `html`. |
+| hover | Tło `bg-secondary`. | Wskaźnik nad przyciskiem. |
+| focus-visible | Pierścień `ring-ring`. | Klawisz `Tab`. |
+| brak `localStorage` | Motyw nadal się przełącza w tej wizycie; wybór nie jest zapamiętany. | Tryb prywatny. |
+
+## Dostępność
+
+- Natywny `button type="button"`; obsługuje `Enter` i `Spacebar`.
+- `aria-label` opisuje akcję (dokąd przełączy), a ikona jest `aria-hidden`. Etykiety są na sztywno po angielsku — w polskiej aplikacji czytnik ekranu przeczyta je po angielsku.
+- Pozycja stała w prawym górnym rogu: sprawdź, że nie zasłania treści ani przycisków strony na wąskim ekranie.
+- Zmiana motywu nie jest ogłaszana; wynika z wyglądu.
+- Kontrast obu motywów jest weryfikowany w tokenach (patrz „Kolory i tokeny”).
+
+## Rób i nie rób
+
+<DoDont
+  rob={[
+    "Umieść jeden `ThemeToggle` w głównym układzie.",
+    "Ustawiaj klasę `dark` przed malowaniem, aby uniknąć błysku.",
+    "Pisz kolory przez tokeny semantyczne, żeby oba motywy działały.",
+  ]}
+  nieRob={[
+    "Dodawać drugiego przełącznika na stronie.",
+    "Przełączać motywu własnym kodem bez klasy `dark` na `html`.",
+    "Używać kolorów palety, które nie mają wersji ciemnej.",
+  ]}
+/>
+
+## API
+
+<Controls of={ThemeToggleStories.Default} />
+
+Komponent nie ma propsów.

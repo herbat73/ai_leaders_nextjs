@@ -1,0 +1,97 @@
+import { Canvas, Controls, Meta } from "@storybook/addon-docs/blocks";
+
+import { DoDont } from "../docs/blocks";
+import * as TimelineStories from "./timeline.stories";
+
+<Meta of={TimelineStories} />
+
+# Timeline
+
+Historia zdarzeń zgłoszenia dla klienta: lista od najstarszego do najnowszego, z opisem, autorem, czasem i opcjonalną notatką. Wersja publiczna.
+
+<Canvas of={TimelineStories.SeveralEvents} />
+
+## Kiedy użyć
+
+- Na stronie śledzenia zwrotu klient ma zobaczyć, **co się wydarzyło i kiedy** (przyjęte, zaakceptowane, paczka w drodze).
+- Notatka od obsługi (np. instrukcja odesłania) ma towarzyszyć zdarzeniu.
+
+Timeline publiczny kontra admin:
+
+- Oba mają te same propsy (`events`, `emptyMessage`; typ `TimelineEvent`), ale publiczny jest w Tailwindzie i bez shadcn; strony publiczne nie importują z `@easyrms/ui/admin`.
+- Publiczny dostaje dane już zredukowane do tego, co widzi klient (`trackerEventView` z `core`: autor to tylko klient albo zespół, notatka zostaje wyłącznie przy decyzji); admin pokazuje pełną historię.
+
+Timeline kontra `StageList`: lista etapów mówi, gdzie zgłoszenie jest teraz; Timeline zapisuje historię.
+
+## Kiedy nie użyć
+
+- Do pokazania bieżącego etapu — `StageList`.
+- W panelu admina — `Timeline` z `@easyrms/ui/admin`.
+- Dla danych, które klient nie powinien widzieć (notatki wewnętrzne, nazwiska agentów) — nie przekazuj ich w `events`.
+
+## Jak złożyć
+
+`ui` niczego nie formatuje: `at` to gotowy tekst daty, `label` i `actor` to przetłumaczone teksty z plików copy aplikacji.
+
+```tsx
+import { Timeline } from "@easyrms/ui/public";
+
+const timeline = events.map(trackerEventView).map((event) => ({
+  id: event.id,
+  label: copy.events[event.key],
+  actor: copy.actors[event.actor],
+  at: formatEventTime(event.at),
+  note: event.note ?? undefined,
+}));
+
+<Timeline events={timeline} emptyMessage={copy.timelineEmpty} />
+```
+
+- Kolejność zachowuje tablica z wejścia: podaj od najstarszego do najnowszego (najnowsze na końcu).
+- `emptyMessage` jest wymagany: komponent pokazuje go, gdy nie ma zdarzeń.
+- Umieść pod nagłówkiem sekcji (`h2`), bo sama lista go nie ma.
+
+<Canvas of={TimelineStories.Empty} />
+
+## Tokeny
+
+Oś: `border-l border-border`, kropka `bg-primary`, tytuł `text-foreground`, autor i czas `text-muted-foreground`, notatka `bg-muted` + `text-foreground` + `rounded-md`.
+
+## Stany
+
+| Stan | Wygląd i zachowanie | Jak wywołać |
+|---|---|---|
+| empty | pojedynczy akapit `text-muted-foreground` | `events` puste |
+| jedno zdarzenie | kropka, tytuł, linia „autor · czas” | jeden element |
+| z notatką | pole `bg-muted` pod zdarzeniem, zachowuje podziały wierszy (`whitespace-pre-wrap`) | `note` |
+
+<Canvas of={TimelineStories.OneEvent} />
+
+## Dostępność
+
+- To uporządkowana lista `ol`; kropki są `aria-hidden`, więc czytnik odczyta zdarzenia po kolei.
+- Komponent nie ustawia `aria-label` listy: nazwij ją nagłówkiem sekcji nad nią.
+- Czas to zwykły tekst; podaj go w formacie czytelnym dla klienta (z datą), nie samą godzinę.
+- Nic nie opiera się na kolorze.
+- Kolejność w DOM to kolejność czytania: najstarsze pierwsze.
+
+## Rób i nie rób
+
+<DoDont
+  rob={[
+    "Przekazuj sformatowany tekst daty z `app`.",
+    "Podawaj zdarzenia od najstarszego do najnowszego.",
+    "Dawaj nagłówek sekcji nad listą.",
+  ]}
+  nieRob={[
+    "Wewnętrznych notatek obsługi w `note`.",
+    "Formatowania dat wewnątrz `ui`.",
+    "Timeline jako jedynego wskaźnika bieżącego etapu.",
+  ]}
+/>
+
+## API
+
+<Controls of={TimelineStories.SeveralEvents} />
+
+Typ `TimelineEvent`: `id` (string lub number), `label`, `actor`, `at`, `note?`.

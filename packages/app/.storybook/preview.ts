@@ -8,6 +8,21 @@ const preview: Preview = {
   decorators: [withThemeByClassName({ themes: { light: "", dark: "dark" }, defaultTheme: "light" })],
   parameters: {
     nextjs: { appDirectory: true },
+    options: {
+      storySort: {
+        order: [
+          "Wprowadzenie",
+          "Fundamenty",
+          "Wzorce",
+          "Dla agenta AI",
+          "Dla designera",
+          "Admin",
+          ["Button", "Input", "Textarea", "Label", "Select", "Checkbox", "CrudForm", "Card", "Table", "DataTable", "Badge", "Alert", "Dialog", "Tabs", "Tooltip", "Skeleton", "Separator", "Feedback", "Stats", "Rules", "Timeline", "Forms"],
+          "Public",
+          "Shared",
+        ],
+      },
+    },
     controls: { matchers: { color: /(background|color)$/i, date: /Date$/i } },
   },
   tags: ["autodocs"],

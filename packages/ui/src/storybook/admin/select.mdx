@@ -1,0 +1,101 @@
+import { Canvas, Controls, Meta } from "@storybook/addon-docs/blocks";
+
+import { DoDont } from "../docs/blocks";
+import * as SelectStories from "./select.stories";
+
+<Meta of={SelectStories} />
+
+# Select
+
+Lista rozwijana oparta na Radix `Select` (shadcn): wybór jednej wartości ze skończonej listy.
+
+<Canvas of={SelectStories.Default} />
+
+<Canvas of={SelectStories.WithValue} />
+
+## Kiedy użyć
+
+- Wybór jednej opcji z kilku do kilkunastu (rozwiązanie zwrotu, powód, status).
+- Gdy wartości są znane z góry i mają czytelne etykiety.
+
+Alternatywy: tak/nie to `Checkbox`; wolny tekst to `Input`; dłuższe wyszukiwanie z filtrowaniem wymaga innego komponentu (nie istnieje w systemie).
+
+## Kiedy nie użyć
+
+- Dla 2 opcji tak/nie — użyj `Checkbox`.
+- Do wyboru wielokrotnego — użyj kilku `Checkbox`.
+- Do nawigacji między widokami — użyj `Tabs`.
+- Na stronach publicznych — tam jest `ChoiceGroup`.
+
+## Jak złożyć
+
+```tsx
+import {
+  Label, Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue,
+} from "@easyrms/ui/admin";
+
+<div className="w-64 space-y-1">
+  <Label htmlFor="resolution">Rozwiązanie</Label>
+  <Select onValueChange={setResolution}>
+    <SelectTrigger id="resolution" className="w-full">
+      <SelectValue placeholder="Wybierz rozwiązanie" />
+    </SelectTrigger>
+    <SelectContent>
+      <SelectGroup>
+        <SelectLabel>Dla klienta</SelectLabel>
+        <SelectItem value="refund">Zwrot środków</SelectItem>
+        <SelectItem value="exchange">Wymiana</SelectItem>
+      </SelectGroup>
+    </SelectContent>
+  </Select>
+</div>
+```
+
+- `id` idzie na `SelectTrigger`, aby `Label htmlFor` działał.
+- `SelectTrigger` ma domyślnie `w-fit`; dodaj `className="w-full"` dla pola formularza. Rozmiar `size="sm"` daje wysokość 32 px (domyślnie 36 px).
+- Wartość: `defaultValue` / `value` + `onValueChange`. W formularzu natywnym podaj `name` na `Select`.
+- Grupy: `SelectGroup` + `SelectLabel`; separator: `SelectSeparator`.
+- Błąd pola: `aria-invalid` na `SelectTrigger` i `ErrorMessage` pod polem.
+
+## Tokeny
+
+Wyzwalacz: `border-input`, `ring-ring` (fokus), `border-destructive` (invalid), `text-muted-foreground` (placeholder, ikona). Lista: `bg-popover`, `text-popover-foreground`, `border`, `shadow-md`. Opcja aktywna: `bg-accent`, `text-accent-foreground`. Etykieta grupy: `text-muted-foreground`. Separator: `bg-border`.
+
+## Stany
+
+| Stan | Zachowanie | Jak wywołać |
+|---|---|---|
+| default (placeholder) | Tekst `text-muted-foreground`. | brak wartości |
+| z wartością | Pokazuje etykietę wybranej opcji. | `defaultValue` lub `value` |
+| open | Lista w portalu z animacją, przewijana, ze wskaźnikiem zaznaczenia. | klik, `Enter`, `Space`, strzałki |
+| focus-visible | Pierścień 3 px `ring-ring/50`. | klawiatura |
+| opcja aktywna | `bg-accent`. | strzałki lub hover |
+| opcja disabled | `opacity-50`, brak zdarzeń. | `disabled` na `SelectItem` |
+| disabled | `opacity-50`, `cursor-not-allowed`. | `disabled` na `Select` |
+| invalid | `border-destructive`, pierścień `ring-destructive/20`. | `aria-invalid` na `SelectTrigger` |
+
+## Dostępność
+
+- Radix: wyzwalacz ma `role="combobox"`, `aria-expanded`, `aria-controls`; lista `role="listbox"`, opcje `role="option"`.
+- Klawiatura: `Enter`, `Space` lub strzałki otwierają; strzałki zmieniają opcję; wpisywanie liter szuka po etykiecie; `Esc` zamyka.
+- Deweloper musi podać nazwę: `Label` z `htmlFor` zgodnym z `id` wyzwalacza lub `aria-label` na `SelectTrigger`.
+- Placeholder nie zastępuje etykiety.
+
+## Rób i nie rób
+
+<DoDont
+  rob={[
+    "Łącz `Label` z `SelectTrigger` przez `id`.",
+    "Dawaj placeholder opisujący wybór („Wybierz rozwiązanie”).",
+    "Grupuj długie listy przez `SelectGroup` i `SelectLabel`.",
+  ]}
+  nieRob={[
+    "Używania `Select` dla dwóch opcji tak/nie.",
+    "Pomijania etykiety pola.",
+    "Wartości w `value` innych niż niepuste ciągi znaków — Radix nie przyjmuje pustego `value` dla opcji.",
+  ]}
+/>
+
+## API
+
+<Controls of={SelectStories.Default} />

@@ -1,0 +1,78 @@
+import { Canvas, Controls, Meta } from "@storybook/addon-docs/blocks";
+
+import { DoDont } from "../docs/blocks";
+import * as LabelStories from "./label.stories";
+
+<Meta of={LabelStories} />
+
+# Label
+
+Etykieta pola formularza (shadcn): natywny `label` ze stylem systemu, łączący tekst z kontrolką przez `htmlFor`.
+
+<Canvas of={LabelStories.WithInput} />
+
+## Kiedy użyć
+
+- Przy każdym `Input`, `Textarea`, `Select` (przez `SelectTrigger`) i `Checkbox`.
+- Gdy nazwa pola ma być widoczna dla wszystkich użytkowników.
+
+Alternatywa: pole bez miejsca na widoczny tekst (np. wyszukiwarka w toolbarze) dostaje `aria-label` zamiast `Label`.
+
+## Kiedy nie użyć
+
+- Jako nagłówka sekcji — użyj `CardTitle` lub nagłówka.
+- Jako opisu pomocniczego — użyj `CardDescription` lub zwykłego tekstu `text-muted-foreground`.
+- Na stronach publicznych — tam etykietę zapewnia komponent `Field`.
+- Do etykiety bez powiązanej kontrolki.
+
+## Jak złożyć
+
+```tsx
+import { Input, Label } from "@easyrms/ui/admin";
+
+<div className="space-y-1">
+  <Label htmlFor="email">Adres e-mail klienta</Label>
+  <Input id="email" type="email" />
+</div>
+```
+
+- `htmlFor` musi równać się `id` kontrolki. Dla `Select` `id` idzie na `SelectTrigger`, dla `Checkbox` na `Checkbox`.
+- Układ: etykieta nad polem z `space-y-1`; dla `Checkbox` w rzędzie `flex items-center gap-2` z etykietą po prawej.
+
+## Tokeny
+
+`text-sm`, `font-medium`, `leading-none`. Kolor tekstu dziedziczony z rodzica (`text-foreground`). Brak własnych kolorów.
+
+## Stany
+
+| Stan | Zachowanie |
+|---|---|
+| default | Tekst `text-sm font-medium`. |
+| kliknięcie | Natywnie przenosi fokus na powiązaną kontrolkę. |
+| hover / focus / disabled | Brak stylów; etykieta nie reaguje na `disabled` kontrolki (nie ma wariantu `peer-disabled`). |
+
+## Dostępność
+
+- To natywny `label`; poprawne `htmlFor` + `id` nadaje kontrolce dostępną nazwę i powiększa cel kliknięcia.
+- Etykieta nie może zastępować `aria-label` tam, gdzie kontrolka nie ma `id`.
+- Oznaczenie pola wymaganego dodaj tekstem w etykiecie, nie tylko gwiazdką.
+- Etykiety piszemy rzeczownikiem, krótko i jednoznacznie („Numer zamówienia”).
+
+## Rób i nie rób
+
+<DoDont
+  rob={[
+    "Zawsze ustaw `htmlFor` zgodny z `id` pola.",
+    "Pisz krótkie, jednoznaczne nazwy pól.",
+    "Pole bez widocznej etykiety oznacz `aria-label`.",
+  ]}
+  nieRob={[
+    "Etykiety bez `htmlFor` — nie jest powiązana z polem.",
+    "Używania `Label` do tytułów sekcji.",
+    "Zastępowania etykiety placeholderem.",
+  ]}
+/>
+
+## API
+
+<Controls of={LabelStories.Default} />

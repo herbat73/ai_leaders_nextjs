@@ -1,0 +1,95 @@
+import { Canvas, Controls, Meta } from "@storybook/addon-docs/blocks";
+
+import { DoDont } from "../../docs/blocks";
+import * as StatTileStories from "./stat-tile.stories";
+
+<Meta of={StatTileStories} />
+
+# StatTile i StatRow
+
+`StatTile` pokazuje jedną kluczową liczbę z etykietą i opcjonalną podpowiedzią; `StatRow` układa kilka kafelków w responsywną siatkę.
+
+<Canvas of={StatTileStories.WithHint} />
+
+<Canvas of={StatTileStories.Row} />
+
+## Kiedy użyć
+
+| Potrzeba | Komponent |
+|---|---|
+| 2–4 najważniejsze liczby na górze raportu (liczba spraw, odsetek, mediana). | `StatTile` w `StatRow` |
+| Rozkład po kategoriach z liczbą i udziałem. | `BreakdownTable` |
+| Lista rekordów. | `DataTable` |
+| Status pojedynczego rekordu. | `Badge` |
+
+`StatTile` ma jedno zadanie: pokazać gotowy tekst wartości. Nie liczy, nie formatuje, nie rysuje wykresu.
+
+## Kiedy nie użyć
+
+- Do więcej niż około czterech liczb obok siebie — siatka ma `lg:grid-cols-4`; dłuższe zestawienia to tabela.
+- Do wartości, które trzeba porównać wiersz do wiersza — użyj `BreakdownTable`.
+- Do stanu opisanego kolorem (np. czerwony kafelek). Wartość to tekst; kolor jest dekoracją, nie nośnikiem znaczenia.
+- Do przycisków i linków — kafelek nie jest interaktywny.
+
+## Jak złożyć
+
+`StatRow` renderuje `dl`, więc w środku mają być tylko `StatTile`. Wartości i podpowiedzi przychodzą sformatowane z `core`/`app` (liczby, procenty, przedziały ufności po polsku).
+
+```tsx
+import { StatRow, StatTile } from "@easyrms/ui/admin";
+
+<StatRow>
+  <StatTile label={copy.tiles.sample} value={String(report.sampleSize)} />
+  <StatTile label={copy.tiles.followUp} value={percent(report.followUp.share)} hint={interval(report.followUp)} />
+</StatRow>;
+```
+
+Pod `StatRow` zwykle stoi `BreakdownTable` lub `DataTable` ze szczegółami (tak jest w laboratorium próbki, `case-sample-lab.tsx`).
+
+## Tokeny
+
+`StatTile`: `bg-card`, `text-card-foreground`, `border`, `shadow-sm`, `rounded-lg`; etykieta i podpowiedź `text-muted-foreground`; wartość `text-2xl font-semibold`. `StatRow`: `grid gap-4`, 1 kolumna, `sm:grid-cols-2`, `lg:grid-cols-4`.
+
+## Stany
+
+| Stan | Wygląd | Jak wywołać |
+|---|---|---|
+| bez podpowiedzi | Etykieta, duża wartość. | Story `WithoutHint`. |
+| z podpowiedzią | Dodatkowa, mała linia pod wartością (np. przedział 95%). | `hint` (story `WithHint`). |
+| w rzędzie | 1, 2 lub 4 kolumny zależnie od szerokości. | Story `Row`. |
+
+Komponent nie ma stanu ładowania, błędu ani pustego. Gdy dane się ładują, nie renderuj kafelków — pokaż `LoadingMessage` lub `Skeleton`; gdy wartości brak, podaj w `value` tekst typu „—” z `app`.
+
+## Dostępność
+
+- Struktura to lista opisów: `dl` (w `StatRow`), `dt` (etykieta) i `dd` (wartość, podpowiedź). Czytnik ekranu czyta parę „etykieta, wartość”.
+- Podpowiedź to drugi `dd` tego samego `dt`, więc jest czytana po wartości.
+- Wartość jest tekstem, nie kolorem — spełnia zasadę „nie samym kolorem”.
+- Kafelek nie jest fokusowalny. Nie ma `role` ani ogłaszania zmian; jeśli wartość zmienia się dynamicznie, a zmiana ma być ogłoszona, dodaj osobny region `role="status"`.
+- `StatTile` używany poza `StatRow` (`dl`) daje nieprawidłowy HTML: `dt`/`dd` poza `dl`. Zawsze otaczaj go `StatRow`.
+
+## Rób i nie rób
+
+<DoDont
+  rob={[
+    "Otaczaj kafelki `StatRow` — to on dostarcza `dl`.",
+    "Przekazuj sformatowany tekst („75%”, „4”) i krótką etykietę.",
+    "Używaj `hint` na kontekst (przedział ufności, okres).",
+  ]}
+  nieRob={[
+    "Formatować liczb w `ui` ani przekazywać surowego `number` — `value` to `string`.",
+    "Stawiać więcej niż 4 kafelków w jednym `StatRow`.",
+    "Kodować znaczenia kolorem tła kafelka.",
+  ]}
+/>
+
+## API
+
+<Controls of={StatTileStories.WithHint} />
+
+| Komponent | Prop | Typ | Opis |
+|---|---|---|---|
+| `StatTile` | `label` | `string` | Krótka nazwa wskaźnika. |
+| `StatTile` | `value` | `string` | Gotowa, sformatowana wartość. |
+| `StatTile` | `hint` | `string` | Opcjonalna mała linia pod wartością. |
+| `StatRow` | `children` | `ReactNode` | Kafelki `StatTile`. |

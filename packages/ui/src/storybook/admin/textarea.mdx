@@ -1,0 +1,83 @@
+import { Canvas, Controls, Meta } from "@storybook/addon-docs/blocks";
+
+import { DoDont } from "../docs/blocks";
+import * as TextareaStories from "./textarea.stories";
+
+<Meta of={TextareaStories} />
+
+# Textarea
+
+Wieloliniowe pole tekstowe na stronach admina (shadcn): rośnie wraz z treścią.
+
+<Canvas of={TextareaStories.Default} />
+
+<Canvas of={TextareaStories.Invalid} />
+
+## Kiedy użyć
+
+- Dłuższy tekst: notatka agenta, powód odrzucenia, opis problemu.
+- Gdy odpowiedź może mieć kilka zdań.
+
+Alternatywy: krótka wartość w jednej linii to `Input`; wybór z listy to `Select`.
+
+## Kiedy nie użyć
+
+- Dla krótkich wartości (nazwa, numer, e-mail) — użyj `Input`.
+- Do edycji sformatowanego tekstu — komponent obsługuje tylko czysty tekst.
+- Na stronach publicznych — tam użyj odpowiednika z pakietu `public`.
+
+## Jak złożyć
+
+```tsx
+import { ErrorMessage, Label, Textarea } from "@easyrms/ui/admin";
+
+<div className="space-y-1">
+  <Label htmlFor="note">Notatka dla klienta</Label>
+  <Textarea id="note" name="note" aria-invalid={!!error} aria-describedby="note-error" />
+  {error ? <p id="note-error"><ErrorMessage message={error} /></p> : null}
+</div>
+```
+
+- Zawsze `Label` z `htmlFor` zgodnym z `id`.
+- Wysokość: minimum `min-h-16`, potem rośnie z treścią (`field-sizing-content`); aby ograniczyć, dodaj `max-h-*` w `className`.
+- Błąd: `aria-invalid` i `ErrorMessage` pod polem.
+
+## Tokeny
+
+`border-input`, `bg-transparent`, `placeholder:text-muted-foreground`, `ring-ring` (fokus), `border-destructive` i `ring-destructive` (invalid), `rounded-md`, `shadow-xs`; w ciemnym motywie `bg-input/30`. Rozmiar tekstu `text-base`, od `md` `text-sm`.
+
+## Stany
+
+| Stan | Zachowanie | Jak wywołać |
+|---|---|---|
+| default | Ramka `border-input`, placeholder przygaszony. | domyślnie |
+| filled | Wartość w kolorze tekstu; pole rośnie. | `value` lub `defaultValue` |
+| focus-visible | Obrys 3 px `ring-ring/50` i `border-ring`. | klawiatura lub kliknięcie |
+| disabled | `opacity-50`, `cursor-not-allowed`. | `disabled` |
+| invalid | `border-destructive`, pierścień `ring-destructive/20`. | `aria-invalid` |
+
+## Dostępność
+
+- To natywny `textarea`; klawiatura i autouzupełnianie pochodzą z przeglądarki.
+- Etykieta: `Label` z `htmlFor` lub `aria-label`; placeholder nie jest etykietą.
+- `aria-invalid="true"` zmienia wygląd; komunikat dołącz przez `aria-describedby` i `ErrorMessage` (`role="alert"`).
+- Gdy obowiązuje limit znaków, podaj go w tekście pomocniczym i ustaw `maxLength`.
+
+## Rób i nie rób
+
+<DoDont
+  rob={[
+    "Łącz z `Label` (`htmlFor` / `id`).",
+    "Komunikat błędu pokaż w `ErrorMessage` pod polem.",
+    "Ustaw `maxLength`, gdy jest limit, i powiedz o nim użytkownikowi.",
+  ]}
+  nieRob={[
+    "Placeholdera zamiast etykiety.",
+    "Używania `Textarea` do jednej linii tekstu.",
+    "Nadpisywania ramki kolorem (`border-red-500`).",
+  ]}
+/>
+
+## API
+
+<Controls of={TextareaStories.Default} />

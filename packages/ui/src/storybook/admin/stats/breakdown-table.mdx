@@ -1,0 +1,96 @@
+import { Canvas, Controls, Meta } from "@storybook/addon-docs/blocks";
+
+import { DoDont } from "../../docs/blocks";
+import * as BreakdownTableStories from "./breakdown-table.stories";
+
+<Meta of={BreakdownTableStories} />
+
+# BreakdownTable
+
+Trzykolumnowa tabela rozkładu: kategoria, liczba i udział w procentach. Cienka nakładka na `DataTable`.
+
+<Canvas of={BreakdownTableStories.Rows} />
+
+<Canvas of={BreakdownTableStories.EmptyWithCaption} />
+
+## Kiedy użyć
+
+| Potrzeba | Komponent |
+|---|---|
+| Rozkład „etykieta, liczba, udział” (sprawy według rodzaju, powodu zwrotu). | `BreakdownTable` |
+| Jedna lub kilka kluczowych liczb. | `StatTile` w `StatRow` |
+| Dowolne kolumny i komórki. | `DataTable` |
+
+`BreakdownTable` po to, by udział zawsze liczył się i wyglądał tak samo (`Math.round(share * 100)` i znak `%`).
+
+## Kiedy nie użyć
+
+- Gdy kolumny są inne niż etykieta, liczba, udział — użyj `DataTable` z własnymi kolumnami.
+- Gdy potrzebny jest wykres lub pasek udziału — komponent pokazuje tylko liczby.
+- Gdy udział ma przedział ufności lub miejsca po przecinku — zaokrągla do pełnych procent; dołóż taką informację w `StatTile` (`hint`).
+
+## Jak złożyć
+
+Wszystkie teksty (podpis, nagłówki kolumn, komunikat pustego stanu) podajesz sam: `ui` nie ma domyślnych napisów dla tego komponentu. `share` to liczba od 0 do 1. Nazwy kategorii muszą być unikalne, bo `label` jest kluczem wiersza.
+
+```tsx
+import { BreakdownTable, StatRow, StatTile } from "@easyrms/ui/admin";
+
+<StatRow>
+  <StatTile label={copy.tiles.sample} value={String(report.sampleSize)} />
+</StatRow>;
+<BreakdownTable
+  caption={copy.byType.title}
+  columnLabels={copy.byType.columns}
+  rows={report.byType}
+  emptyMessage={copy.byType.empty}
+/>;
+```
+
+Umieszczaj ją pod `StatRow` w `Card`, z nagłówkiem sekcji (`CardTitle`) nad tabelą.
+
+## Tokeny
+
+Dziedziczy po `DataTable` i `Table`: wiersze `border-b`, `hover:bg-muted/50`, nagłówek `text-muted-foreground`; pierwsza kolumna `font-medium`. Pusty stan `text-muted-foreground`. Nie dodaje własnych kolorów.
+
+## Stany
+
+| Stan | Co renderuje | Jak wywołać |
+|---|---|---|
+| z wierszami | Tabela z podpisem, nagłówkami i wierszami; udział jako zaokrąglony procent (0,1667 daje 17%). | Story `Rows`. |
+| pusty | Pusta `Table` z samym podpisem i pod nią `EmptyState` z `emptyMessage`. | `rows` puste (story `EmptyWithCaption`). |
+
+Komponent nie przekazuje `loading` ani `error` do `DataTable`, więc nie ma tych stanów; pokaż je wokół komponentu (`LoadingMessage`, `ErrorMessage`).
+
+## Dostępność
+
+- Semantyczna tabela z `caption` (wymagany prop `caption`) i `th` w nagłówku — czytniki ekranu zapowiadają nazwę tabeli.
+- Udział jest tekstem z `%`, nie paskiem ani kolorem.
+- Pusty wynik nie jest ogłaszany (to `p` bez `role`).
+- Brak interakcji, więc brak specjalnej obsługi klawiatury.
+
+## Rób i nie rób
+
+<DoDont
+  rob={[
+    "Przekazuj `share` jako ułamek 0–1 (0,5 dla 50%).",
+    "Podawaj `caption`, `columnLabels` i `emptyMessage` po polsku z `app`.",
+    "Dbaj o unikalne `label` — to klucz wiersza.",
+  ]}
+  nieRob={[
+    "Przekazywać udziału jako procent (50) — wynik byłby 5000%.",
+    "Używać dla tabel o innym układzie niż etykieta, liczba, udział.",
+    "Zostawiać pustego `emptyMessage` — `ui` nie ma tu tekstu domyślnego.",
+  ]}
+/>
+
+## API
+
+<Controls of={BreakdownTableStories.Rows} />
+
+| Prop | Typ | Opis |
+|---|---|---|
+| `caption` | `string` | Wymagany podpis tabeli. |
+| `columnLabels` | `label`, `count`, `share` (stringi) | Nagłówki trzech kolumn. |
+| `rows` | `BreakdownRow[]` | `label`, `count`, `share` (0–1). |
+| `emptyMessage` | `string` | Wymagany tekst pustego stanu. |
