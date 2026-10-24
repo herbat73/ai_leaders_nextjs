@@ -40,3 +40,4 @@ export * from "./validators/returns/return-submit.schema";
 export * from "./validators/returns/return-status-update.schema";
 export * from "./services/agents/password-hasher";
 export * from "./services/agents/agent-session.service";
+export * from "./services/agents/types";

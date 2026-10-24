@@ -4,3 +4,4 @@ export * from "./entities";
 export * from "./orm";
 export * from "./register";
 export * from "./repositories/returns/return.repository";
+export * from "./repositories/agents/agent.repository";
