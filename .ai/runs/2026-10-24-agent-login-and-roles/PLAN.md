@@ -1,0 +1,54 @@
+# Execution plan — agent-login-and-roles
+
+Date: 2026-10-24
+Branch: feat/agent-login-and-roles
+Source spec: .ai/specs/2026-10-24-agent-login-and-roles.md
+Engine: om-auto-create-pr-loop (steps: 21, --loop: no, threshold exceeded)
+
+## Tasks
+
+> Authoritative status table. `Status` is one of `todo` or `done`. On landing a Step, flip `Status` to `done` and fill the `Commit` column with the short SHA. The first row whose `Status` is not `done` is the resume point for `om-auto-continue-pr-loop`. Step ids and `Exec` cells are immutable once the plan is committed — per-Step commits touch only `Status` and `Commit`.
+
+| Phase | Step | Title | Exec | Status | Commit |
+|-------|------|-------|------|--------|--------|
+| 1 | 1.1 | Password hashing (PasswordHasher port + scrypt adapter) | inline | todo | — |
+| 1 | 1.2 | Agent session service and secret resolution | inline | todo | — |
+| 1 | 1.3 | Agent entity and migration | inline | todo | — |
+| 1 | 1.4 | Agent repository | inline | todo | — |
+| 1 | 1.5 | Agent service and validators | inline | todo | — |
+| 1 | 1.6 | Composition and login/logout/accept routes | inline | todo | — |
+| 1 | 1.7 | First-agent command (agent:create) | inline | todo | — |
+| 1 | 1.8 | Login and invite pages | inline | todo | — |
+| 2 | 2.1 | authenticate hook in apiHandler and makeCrudRoute | inline | todo | — |
+| 2 | 2.2 | agent-auth.ts guards and open-redirect sanitizer | inline | todo | — |
+| 2 | 2.3 | Guard the existing admin surface | inline | todo | — |
+| 2 | 2.4 | Identity on timeline events | inline | todo | — |
+| 2 | 2.5 | proxy.ts optimistic check | inline | todo | — |
+| 2 | 2.6 | Close the blocker (README, platform-primitives) | inline | todo | — |
+| 3 | 3.1 | List and invite API | inline | todo | — |
+| 3 | 3.2 | Disable API | inline | todo | — |
+| 3 | 3.3 | /admin/agents screen | inline | todo | — |
+| 4 | 4.1 | R11 refund approval limit | inline | todo | — |
+| 4 | 4.2 | Shared tracker view | inline | todo | — |
+| 4 | 4.3 | Customer-view preview route | inline | todo | — |
+| 4 | 4.4 | Close-out (docs, lessons, run log, spec moved) | inline | todo | — |
+
+## Goal
+Agents sign in with e-mail and password; admin pages and decision APIs require a session; timeline events name the agent; managers invite/disable agents; refunds above 2000 zł need `MANAGE_RULES`; agents get a read-only customer-view preview.
+
+## Scope
+The whole spec (4 phases) on one PR — owner decision 2026-10-24 (the spec itself proposed one PR per phase). Step titles map 1:1 to the spec's Implementation Plan; details live in the spec.
+
+## Non-goals
+`check:guards` script in the validation gate (needs separate owner approval), password reset, MFA, login audit, SSO.
+
+## Owner decisions recorded for this run
+- Whole spec on one PR.
+- `tsx` approved as a devDependency of `@easyrms/app` (Step 1.7).
+- Step 4.4: brief D10/D11 entries and Q15 closure need owner confirmation; R11 needs the finance reviewer — flag as outstanding in the PR, do not assume.
+
+## Risks
+risk-high: authentication, data scoping, schema migration. Breaking change: unauthenticated `PATCH /api/returns/[id]` and `/api/discovery/**` return 401 (Phase 2). Needs human QA reviewer and a second reviewer.
+
+## External references
+none
