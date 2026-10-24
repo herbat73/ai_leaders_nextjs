@@ -23,14 +23,17 @@ export function parseRefundApprovalLimit(raw: string | null | undefined): Money 
 /**
  * True when moving `request` to `target` is an approval of a refund above the limit (R11). Only `approved` on a `refund`
  * resolution is gated: store credit and exchange never are, and neither is any other move (a rejection of a large
- * refund is not an approval). The amount is the server-computed one stored at submit.
+ * refund is not an approval). The amount is the server-computed one stored at submit, and it is immutable afterwards
+ * (the check and the compare-and-set are separate reads, so a future "edit amount" feature must revisit this).
  */
 export function requiresManagerApproval(
   request: Pick<ReturnRequest, "resolution" | "resolutionAmount">,
   target: ReturnStatus,
   limit: Money,
 ): boolean {
-  if (target !== "approved" || request.resolution !== "refund" || !request.resolutionAmount) return false;
+  if (target !== "approved" || request.resolution !== "refund") return false;
+  // A refund without a stored amount cannot be shown to be within the limit, so a money guard treats it as above it.
+  if (!request.resolutionAmount) return true;
   return request.resolutionAmount.amountMinor > limit.amountMinor;
 }
 

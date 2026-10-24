@@ -163,7 +163,7 @@ type Setup = ReturnType<typeof setup>;
 
 async function activeAgent(s: Setup, email = "ala@example.com", permissions: AgentPermission[] = [], password = "correct horse battery") {
   const { agent, inviteToken } = await s.service.invite({ email, displayName: "Ala", permissions });
-  await s.service.acceptInvite({ token: inviteToken, password });
+  await s.service.acceptInvite({ ip: "9.9.9.9", token: inviteToken, password });
   return { id: agent.id, email, password };
 }
 
@@ -244,6 +244,26 @@ describe("login", () => {
     await expect(login(s, email, password)).rejects.toBeInstanceOf(TooManyRequestsError);
   });
 
+  it("locks an e-mail after 20 failures in an hour whatever the IP, so spoofed addresses do not reset the budget", async () => {
+    const s = setup();
+    const { email, password } = await activeAgent(s);
+    for (let i = 0; i < 20; i += 1) await expect(login(s, email, "bad password 1", `10.0.0.${i}`)).rejects.toBeInstanceOf(InvalidCredentialsError);
+
+    await expect(login(s, email, password, "10.9.9.9")).rejects.toBeInstanceOf(TooManyRequestsError);
+    await expect(login(s, "other@example.com", "bad password 1", "10.9.9.9")).rejects.toBeInstanceOf(InvalidCredentialsError);
+    s.advance(60 * 60_000);
+    await expect(login(s, email, password, "10.9.9.9")).resolves.toBeDefined();
+  });
+
+  it("successes do not count toward the per-account budget", async () => {
+    const s = setup();
+    const { email, password } = await activeAgent(s);
+    for (let i = 0; i < 30; i += 1) {
+      await login(s, email, password, `10.1.0.${i}`);
+    }
+    await expect(login(s, email, password, "10.1.9.9")).resolves.toBeDefined();
+  });
+
   it("spends no budget when the hasher is busy", async () => {
     const s = setup();
     const { email, password } = await activeAgent(s);
@@ -287,7 +307,7 @@ describe("invite and accept", () => {
     const s = setup();
     const { agent, inviteToken } = await s.service.invite({ email: "a@example.com", displayName: "A", permissions: [] });
 
-    const outcome = await s.service.acceptInvite({ token: inviteToken, password: "a long enough password" });
+    const outcome = await s.service.acceptInvite({ ip: "9.9.9.9", token: inviteToken, password: "a long enough password" });
 
     expect(outcome.agent.id).toBe(agent.id);
     expect(s.rows[0]).toMatchObject({ status: "active", passwordHash: "hash:a long enough password", inviteTokenHash: null, sessionEpoch: 1 });
@@ -298,17 +318,29 @@ describe("invite and accept", () => {
   it("answers invite_invalid for an unknown, used or expired token", async () => {
     const s = setup();
     const { inviteToken } = await s.service.invite({ email: "a@example.com", displayName: "A", permissions: [] });
-    await expect(s.service.acceptInvite({ token: "nope", password: "a long enough password" })).rejects.toBeInstanceOf(InviteInvalidError);
+    await expect(s.service.acceptInvite({ ip: "9.9.9.9", token: "nope", password: "a long enough password" })).rejects.toBeInstanceOf(InviteInvalidError);
 
-    await s.service.acceptInvite({ token: inviteToken, password: "a long enough password" });
-    await expect(s.service.acceptInvite({ token: inviteToken, password: "another long password" })).rejects.toMatchObject({
+    await s.service.acceptInvite({ ip: "9.9.9.9", token: inviteToken, password: "a long enough password" });
+    await expect(s.service.acceptInvite({ ip: "9.9.9.9", token: inviteToken, password: "another long password" })).rejects.toMatchObject({
       status: 400,
       code: "invite_invalid",
     });
 
     const late = await s.service.invite({ email: "b@example.com", displayName: "B", permissions: [] });
     s.advance(AGENT_INVITE_TTL_MS);
-    await expect(s.service.acceptInvite({ token: late.inviteToken, password: "a long enough password" })).rejects.toBeInstanceOf(InviteInvalidError);
+    await expect(s.service.acceptInvite({ ip: "9.9.9.9", token: late.inviteToken, password: "a long enough password" })).rejects.toBeInstanceOf(InviteInvalidError);
+  });
+
+  it("throttles invite acceptance per IP before hashing, so bogus tokens cannot starve the hash slots", async () => {
+    const s = setup();
+    for (let i = 0; i < 10; i += 1) {
+      await expect(s.service.acceptInvite({ ip: "7.7.7.7", token: `bogus-${i}`, password: "a long enough password" })).rejects.toBeInstanceOf(InviteInvalidError);
+    }
+    s.hasher.hash.mockClear();
+
+    await expect(s.service.acceptInvite({ ip: "7.7.7.7", token: "bogus-x", password: "a long enough password" })).rejects.toBeInstanceOf(TooManyRequestsError);
+    expect(s.hasher.hash).not.toHaveBeenCalled();
+    await expect(s.service.acceptInvite({ ip: "8.8.8.8", token: "bogus-y", password: "a long enough password" })).rejects.toBeInstanceOf(InviteInvalidError);
   });
 
   it("answers 409 for an e-mail that is already active", async () => {
@@ -330,7 +362,7 @@ describe("invite and accept", () => {
     expect(s.rows.find((row) => row.id === id)?.passwordHash).toBeNull();
     await expect(login(s, email, password)).rejects.toBeInstanceOf(InvalidCredentialsError);
 
-    await s.service.acceptInvite({ token: again.inviteToken, password: "brand new password" });
+    await s.service.acceptInvite({ ip: "9.9.9.9", token: again.inviteToken, password: "brand new password" });
     expect(await s.service.authenticate(oldSession)).toBeNull();
   });
 
@@ -338,8 +370,8 @@ describe("invite and accept", () => {
     const s = setup();
     const first = await s.service.invite({ email: "a@example.com", displayName: "A", permissions: [] });
     const second = await s.service.invite({ email: "a@example.com", displayName: "A", permissions: [] });
-    await expect(s.service.acceptInvite({ token: first.inviteToken, password: "a long enough password" })).rejects.toBeInstanceOf(InviteInvalidError);
-    await expect(s.service.acceptInvite({ token: second.inviteToken, password: "a long enough password" })).resolves.toBeDefined();
+    await expect(s.service.acceptInvite({ ip: "9.9.9.9", token: first.inviteToken, password: "a long enough password" })).rejects.toBeInstanceOf(InviteInvalidError);
+    await expect(s.service.acceptInvite({ ip: "9.9.9.9", token: second.inviteToken, password: "a long enough password" })).resolves.toBeDefined();
   });
 
   it("swallows a mail failure, still returns the token and logs neither token nor address", async () => {

@@ -32,12 +32,16 @@ describe("requiresManagerApproval", () => {
     expect(requiresManagerApproval(refund(200001), "approved", LIMIT)).toBe(true);
   });
 
-  it("never gates store credit, exchange, legacy rows or a missing amount", () => {
+  it("never gates store credit, exchange or legacy rows without a resolution", () => {
     expect(requiresManagerApproval({ resolution: "store_credit", resolutionAmount: money(900000) }, "approved", LIMIT)).toBe(false);
     expect(requiresManagerApproval({ resolution: "exchange", resolutionAmount: null }, "approved", LIMIT)).toBe(false);
     expect(requiresManagerApproval({ resolution: null, resolutionAmount: null }, "approved", LIMIT)).toBe(false);
     expect(requiresManagerApproval({}, "approved", LIMIT)).toBe(false);
-    expect(requiresManagerApproval({ resolution: "refund", resolutionAmount: null }, "approved", LIMIT)).toBe(false);
+  });
+
+  it("treats a refund without a stored amount as above the limit (fail closed)", () => {
+    expect(requiresManagerApproval({ resolution: "refund", resolutionAmount: null }, "approved", LIMIT)).toBe(true);
+    expect(requiresManagerApproval({ resolution: "refund" }, "approved", LIMIT)).toBe(true);
   });
 
   it("gates only the approval, not any other move", () => {

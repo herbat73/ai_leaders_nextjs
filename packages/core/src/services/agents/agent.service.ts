@@ -16,11 +16,21 @@ export const AGENT_RATE_RULES = {
   login: { limit: 10, windowMs: 60_000 },
   /** Failed logins per (e-mail, client IP). */
   failedLogin: { limit: 5, windowMs: 10 * 60_000 },
+  /**
+   * Failed logins per e-mail whatever the IP: the per-IP budgets are only as good as the client address, which is one
+   * shared bucket without a trusted proxy and spoofable behind one that appends to `x-forwarded-for`. Trade-off: anyone
+   * can lock a known e-mail out of login for up to an hour; a manager can still re-invite.
+   */
+  accountFailures: { limit: 20, windowMs: 60 * 60_000 },
+  /** Invite acceptances per client IP (each one costs a password hash, and hash slots are shared with login). */
+  accept: { limit: 10, windowMs: 60_000 },
 } as const satisfies Record<string, RateRule>;
 
 export const agentRateKeys = {
   login: (ip: string): string => `agent-login:${ip}`,
   failedLogin: (email: string, ip: string): string => `agent-login-failed:${normalizeAgentEmail(email)}:${ip}`,
+  accountFailures: (email: string): string => `agent-login-account:${normalizeAgentEmail(email)}`,
+  accept: (ip: string): string => `agent-accept:${ip}`,
 } as const;
 
 /** Every login failure (unknown e-mail, wrong password, disabled, not yet accepted) is this one error. */
@@ -145,8 +155,12 @@ export class AgentService {
     return { agent, inviteToken };
   }
 
-  /** Sets the password for a live invite and signs the agent in. Any bad token is `InviteInvalidError`. */
-  async acceptInvite(input: { token: string; password: string }): Promise<AgentSessionOutcome> {
+  /**
+   * Sets the password for a live invite and signs the agent in. Any bad token is `InviteInvalidError`. Throttled per IP
+   * (429) so an anonymous client cannot keep every password-hash slot busy and starve logins.
+   */
+  async acceptInvite(input: { token: string; password: string; ip: string }): Promise<AgentSessionOutcome> {
+    if (!this.rateLimiter.consume(agentRateKeys.accept(input.ip), AGENT_RATE_RULES.accept).allowed) throw new TooManyRequestsError();
     // Hash first: the cost is the same whether or not the token matches, and the conditional update stays atomic.
     const passwordHash = await this.passwordHasher.hash(input.password);
     const agent = await this.agentRepository.consumeInvite(hashInviteToken(input.token), passwordHash, this.clock());
@@ -157,15 +171,21 @@ export class AgentService {
   /**
    * Budgets: logins per IP and failed logins per (e-mail, IP) are reserved first (429). A hash verification always
    * runs, against a dummy hash when the agent is unknown or has no password, so timing does not reveal existence. A
-   * success refunds the failed-attempt slot; every failure keeps it.
+   * success refunds the failed-attempt slots; every failure keeps them.
    */
   async login(input: { email: string; password: string; ip: string }): Promise<AgentSessionOutcome> {
     const email = normalizeAgentEmail(input.email);
     const loginKey = agentRateKeys.login(input.ip);
     const failedKey = agentRateKeys.failedLogin(email, input.ip);
+    const accountKey = agentRateKeys.accountFailures(email);
     if (!this.rateLimiter.consume(loginKey, AGENT_RATE_RULES.login).allowed) throw new TooManyRequestsError();
     if (!this.rateLimiter.consume(failedKey, AGENT_RATE_RULES.failedLogin).allowed) {
       this.rateLimiter.release(loginKey);
+      throw new TooManyRequestsError();
+    }
+    if (!this.rateLimiter.consume(accountKey, AGENT_RATE_RULES.accountFailures).allowed) {
+      this.rateLimiter.release(loginKey);
+      this.rateLimiter.release(failedKey);
       throw new TooManyRequestsError();
     }
 
@@ -179,6 +199,7 @@ export class AgentService {
       // A busy hasher or a database failure says nothing about the credentials: no budget is spent.
       this.rateLimiter.release(loginKey);
       this.rateLimiter.release(failedKey);
+      this.rateLimiter.release(accountKey);
       throw error;
     }
 
@@ -186,6 +207,7 @@ export class AgentService {
       throw new InvalidCredentialsError();
     }
     this.rateLimiter.release(failedKey);
+    this.rateLimiter.release(accountKey);
     return this.startSession(credentials);
   }
 
