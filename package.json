@@ -21,6 +21,7 @@
     "db:migration:create": "npm run db:migration:create -w @easyrms/db",
     "audit": "node scripts/audit.mjs",
     "docs:check": "node scripts/check-design-docs.mjs",
-    "setup": "node scripts/setup.mjs"
+    "setup": "node scripts/setup.mjs",
+    "agent:create": "npm run agent:create -w @easyrms/app --"
   }
 }

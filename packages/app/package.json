@@ -8,7 +8,8 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "storybook": "storybook dev -p 6006",
-    "storybook:build": "storybook build -o storybook-static"
+    "storybook:build": "storybook build -o storybook-static",
+    "agent:create": "tsx scripts/agent-create.ts"
   },
   "dependencies": {
     "@easyrms/core": "*",
@@ -36,6 +37,7 @@
     "remark-gfm": "^4.0.1",
     "storybook": "10.6.3",
     "tailwindcss": "^4.3.3",
+    "tsx": "^4.23.15",
     "typescript": "^5",
     "vite": "8.2.4"
   }
