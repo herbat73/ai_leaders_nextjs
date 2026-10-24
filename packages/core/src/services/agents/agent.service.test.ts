@@ -32,7 +32,14 @@ interface StoredAgent extends AgentRecord {
   inviteExpiresAt: Date | null;
 }
 
-const strip = ({ passwordHash: _p, inviteTokenHash: _t, inviteExpiresAt: _e, ...record }: StoredAgent): AgentRecord => record;
+const strip = (row: StoredAgent): AgentRecord => ({
+  id: row.id,
+  email: row.email,
+  displayName: row.displayName,
+  permissions: row.permissions,
+  status: row.status,
+  sessionEpoch: row.sessionEpoch,
+});
 
 /** In-memory stand-in for the `db` port with the same invite, epoch and last-manager semantics. */
 function makeRepository(clock: () => Date) {
@@ -140,8 +147,7 @@ function setup(options: { mail?: MailPort; hasher?: PasswordHasher } = {}) {
     mailPort,
     logger,
     clock,
-    inviteTokenGenerator: () => `token-${++tokenCounter}`,
-  });
+  }, { inviteTokenGenerator: () => `token-${++tokenCounter}` });
   return {
     service,
     rows,

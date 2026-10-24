@@ -4,31 +4,40 @@ import { asFunction, asValue, createContainer, InjectionMode, type AwilixContain
 import {
   createFakeOrderLookup,
   createLogMailPort,
+  limitHashConcurrency,
+  ScryptPasswordHasher,
   RateLimiter,
   registerCore,
   selectOrderSource,
   withLookupTimeout,
+  type AgentService,
+  type AgentSessionService,
   type ApiLogger,
   type CaseSampleService,
   type MailLogger,
   type GuestSessionService,
   type MailPort,
   type OrderLookup,
+  type PasswordHasher,
   type ReturnLookupService,
   type ReturnService,
 } from "@easyrms/core";
 import { getOrm, registerDb } from "@easyrms/db";
 
+import { getAgentSessionService } from "./agent-session";
 import { getGuestSessionService } from "./guest-session";
 import { getEligibilityConfig, getQuoteConfig } from "./return-config";
 
 /** What can be resolved from a request scope. */
 export interface Cradle {
+  agentService: AgentService;
+  agentSessionService: AgentSessionService;
   caseSampleService: CaseSampleService;
   guestSessionService: GuestSessionService;
   logger: ApiLogger;
   mailPort: MailPort;
   orderLookup: OrderLookup;
+  passwordHasher: PasswordHasher;
   returnLookupService: ReturnLookupService;
   returnService: ReturnService;
 }
@@ -69,6 +78,9 @@ function getRootContainer(): Promise<AwilixContainer> {
       mailPort: asFunction(createLogMailPort).singleton(),
       orderLookup: asFunction(createOrderLookup).singleton(),
       guestSessionService: asFunction(getGuestSessionService).singleton(),
+      agentSessionService: asFunction(getAgentSessionService).singleton(),
+      // One hasher (and so one concurrency cap) per process.
+      passwordHasher: asFunction(() => limitHashConcurrency(new ScryptPasswordHasher())).singleton(),
       rateLimiter: asFunction(getRateLimiter).singleton(),
       eligibilityConfig: asFunction(getEligibilityConfig).singleton(),
       quoteConfig: asFunction(getQuoteConfig).singleton(),

@@ -72,9 +72,15 @@ export interface AgentServiceDeps {
   mailPort: MailPort;
   logger: ApiLogger;
   clock: () => Date;
-  /** Test seam; defaults to 32 random bytes, base64url. */
+}
+
+export interface AgentServiceOptions {
+  /** Test seam; defaults to 32 random bytes, base64url. (Not a dependency: Awilix's strict proxy would demand a registration.) */
   inviteTokenGenerator?: () => string;
 }
+
+/** One dummy hash per hasher (the container shares one), so an unknown e-mail costs one hash, not an extra one per request. */
+const dummyHashes = new WeakMap<PasswordHasher, Promise<string>>();
 
 const toContext = (agent: AgentRecord): AgentContext => ({
   id: agent.id,
@@ -96,9 +102,8 @@ export class AgentService {
   private readonly logger: ApiLogger;
   private readonly clock: () => Date;
   private readonly inviteTokenGenerator: () => string;
-  private dummyHash: Promise<string> | undefined;
 
-  constructor(deps: AgentServiceDeps) {
+  constructor(deps: AgentServiceDeps, options: AgentServiceOptions = {}) {
     this.agentRepository = deps.agentRepository;
     this.passwordHasher = deps.passwordHasher;
     this.agentSessionService = deps.agentSessionService;
@@ -106,7 +111,7 @@ export class AgentService {
     this.mailPort = deps.mailPort;
     this.logger = deps.logger;
     this.clock = deps.clock;
-    this.inviteTokenGenerator = deps.inviteTokenGenerator ?? newInviteToken;
+    this.inviteTokenGenerator = options.inviteTokenGenerator ?? newInviteToken;
   }
 
   /**
@@ -218,13 +223,16 @@ export class AgentService {
 
   private getDummyHash(): Promise<string> {
     // Cached, but a failed attempt (a busy hasher) is not: the next login tries again.
-    if (!this.dummyHash) {
-      this.dummyHash = this.passwordHasher.hash(randomBytes(16).toString("hex")).catch((error: unknown) => {
-        this.dummyHash = undefined;
+    let pending = dummyHashes.get(this.passwordHasher);
+    if (!pending) {
+      const hasher = this.passwordHasher;
+      pending = hasher.hash(randomBytes(16).toString("hex")).catch((error: unknown) => {
+        dummyHashes.delete(hasher);
         throw error;
       });
+      dummyHashes.set(hasher, pending);
     }
-    return this.dummyHash;
+    return pending;
   }
 
   private async sendInviteMail(agent: AgentRecord, token: string, linkBase: string | undefined, expiresAt: Date): Promise<void> {
