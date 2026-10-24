@@ -19,3 +19,8 @@
 
 ## 2026-10-24 — checkpoint 3
 - Phase 3 complete (checkpoint-3-checks.md). Lesson: Turbopack HMR can serve a stale server component; restart `next dev` when a nav/shell edit does not show.
+
+## 2026-10-24 — checkpoint 4 and final gate
+- Phase 4 complete; full validation gate green; integration suite skipped (none in repo), see final-gate-checks.md.
+- Decision: `AppError` carries a `Symbol.for` brand and `apiHandler` uses `isAppError` (bundle duplication made `instanceof` fail in dev).
+- Decision: brief D10/D11/Q15 recorded as the spec states (owner-approved 2026-10-24); outstanding and flagged on the PR: security review, finance reviewer for R11, human QA.
