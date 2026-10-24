@@ -30,7 +30,7 @@ Engine: om-auto-create-pr-loop (steps: 21, --loop: no, threshold exceeded)
 | 3 | 3.3 | /admin/agents screen | inline | done | 2d0a4e9 |
 | 4 | 4.1 | R11 refund approval limit | inline | done | — |
 | 4 | 4.2 | Shared tracker view | inline | done | — |
-| 4 | 4.3 | Customer-view preview route | inline | todo | — |
+| 4 | 4.3 | Customer-view preview route | inline | done | — |
 | 4 | 4.4 | Close-out (docs, lessons, run log, spec moved) | inline | todo | — |
 
 ## Goal

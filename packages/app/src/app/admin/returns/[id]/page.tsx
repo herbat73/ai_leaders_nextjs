@@ -55,9 +55,14 @@ export default async function ReturnCardPage({ params }: { params: Promise<{ id:
   return (
     <AdminShell agent={agent}>
       <main className="mx-auto max-w-3xl space-y-6 p-8">
-        <Link href="/admin/returns" className="text-sm underline underline-offset-4">
-          {copy.back}
-        </Link>
+        <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+          <Link href="/admin/returns" className="underline underline-offset-4">
+            {copy.back}
+          </Link>
+          <Link href={`/admin/returns/${id}/customer-view`} className="underline underline-offset-4">
+            {copy.customerView}
+          </Link>
+        </div>
 
         <Card>
           <CardHeader className="flex-row items-center justify-between gap-4">

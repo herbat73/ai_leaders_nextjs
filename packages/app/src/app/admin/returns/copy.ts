@@ -38,6 +38,7 @@ export const returnsCopy = {
   },
   card: {
     back: "← Wszystkie zwroty",
+    customerView: "Podgląd widoku klienta",
     details: "Zgłoszenie",
     order: "Zamówienie",
     customer: "Klient",
