@@ -1,6 +1,6 @@
 # Agent login and roles
 
-Status: approved by the owner on 2026-10-24 (all Open Questions answered; author defaults and D10/D11 confirmed). Not implemented. Tracking: #30 (task of epic #29). Design authority: `.ai/specs/product-brief.md` (Q05, Q06, Q15, D09). Nothing here is implemented.
+Status: approved by the owner on 2026-10-24 (all Open Questions answered; author defaults and D10/D11 confirmed). Implemented on PR #33 (all four phases on one PR, by the owner's choice; the Phasing section below was the original plan of one PR per phase). Tracking: #30 (task of epic #29). Design authority: `.ai/specs/product-brief.md` (Q05, Q06, Q15, D09, D10, D11). Still open before a public deployment: the security review of this login (brief D08/D10) and the finance reviewer's acceptance of the R11 limit (brief R11).
 
 ## 📝 TLDR
 Agents who decide returns are anonymous today: `/admin` and `PATCH /api/returns/[id]` accept any request, and timeline events carry `actor = agent` with no identity (current behavior, `return-agent-decision` spec AD-A2). Proposed (future behavior): agents sign in with e-mail and password, every admin page and decision API requires a session, each timeline event names the agent, an admin screen invites and disables agents, agents get a read-only view of the customer tracker (K-05), and refunds above 2000 zł need the `MANAGE_RULES` permission. The reason is that the README forbids exposing the app publicly until this exists, and the customer portal shares the same app.

@@ -31,7 +31,7 @@ Engine: om-auto-create-pr-loop (steps: 21, --loop: no, threshold exceeded)
 | 4 | 4.1 | R11 refund approval limit | inline | done | — |
 | 4 | 4.2 | Shared tracker view | inline | done | — |
 | 4 | 4.3 | Customer-view preview route | inline | done | — |
-| 4 | 4.4 | Close-out (docs, lessons, run log, spec moved) | inline | todo | — |
+| 4 | 4.4 | Close-out (docs, lessons, run log, spec moved) | inline | done | — |
 
 ## Goal
 Agents sign in with e-mail and password; admin pages and decision APIs require a session; timeline events name the agent; managers invite/disable agents; refunds above 2000 zł need `MANAGE_RULES`; agents get a read-only customer-view preview.
