@@ -5,6 +5,8 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
 interface SeedOrder {
   email: string;
+  /** Dev-only hint about which flow this order exercises. */
+  scenario: string;
   /** Days before the injected clock; `null` = not delivered. */
   deliveredDaysAgo: number | null;
   order: Omit<ReturnOrder, "deliveredAt" | "customerEmail">;
@@ -14,6 +16,7 @@ interface SeedOrder {
 const SEEDS: SeedOrder[] = [
   {
     email: "anna.kowalska@example.pl",
+    scenario: "Dostarczone 3 dni temu, trzy pozycje – pełny zwrot lub zwrot części",
     deliveredDaysAgo: 3,
     order: {
       orderNumber: "PL-10001",
@@ -26,6 +29,7 @@ const SEEDS: SeedOrder[] = [
   },
   {
     email: "jan.nowak@example.pl",
+    scenario: "Dostarczone, jedna pozycja nie podlega zwrotowi (bielizna)",
     deliveredDaysAgo: 5,
     order: {
       orderNumber: "PL-10002",
@@ -37,6 +41,7 @@ const SEEDS: SeedOrder[] = [
   },
   {
     email: "ewa.wisniewska@example.pl",
+    scenario: "Dostarczone 120 dni temu – okno zwrotu zamknięte",
     deliveredDaysAgo: 120,
     order: {
       orderNumber: "PL-10003",
@@ -45,6 +50,7 @@ const SEEDS: SeedOrder[] = [
   },
   {
     email: "piotr.zielinski@example.pl",
+    scenario: "Niedostarczone – brak możliwości zwrotu, link do śledzenia",
     deliveredDaysAgo: null,
     order: {
       orderNumber: "PL-10004",
@@ -54,6 +60,7 @@ const SEEDS: SeedOrder[] = [
   },
   {
     email: "maria.lewandowska@example.pl",
+    scenario: "Pozycje z ilością większą niż 1 – zwrot częściowy",
     deliveredDaysAgo: 2,
     order: {
       orderNumber: "PL-10005",
@@ -108,4 +115,21 @@ export function createFakeOrderLookup(options: { clock?: () => Date } = {}): Ord
       return seed ? { status: "found", order: snapshot(seed, clock()) } : { status: "not_found" };
     },
   };
+}
+
+export interface FakeOrderSample {
+  orderNumber: string;
+  email: string;
+  scenario: string;
+  lines: { name: string; quantity: number; returnable: boolean }[];
+}
+
+/** Seed credentials and scenarios for the dev-only hint on the lookup page. Never show this outside development. */
+export function listFakeOrderSamples(): FakeOrderSample[] {
+  return SEEDS.map((seed) => ({
+    orderNumber: seed.order.orderNumber,
+    email: seed.email,
+    scenario: seed.scenario,
+    lines: seed.order.lines.map((line) => ({ name: line.name, quantity: line.quantity, returnable: line.returnable })),
+  }));
 }

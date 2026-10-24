@@ -1,6 +1,7 @@
 import type { ReactElement } from "react";
 
 import { lookupCopy as copy } from "./_lookup/copy";
+import { DevSamples } from "./_lookup/dev-samples";
 import { LookupForm } from "./_lookup/lookup-form";
 
 export default function LookupPage(): ReactElement {
@@ -11,6 +12,7 @@ export default function LookupPage(): ReactElement {
         <p className="text-muted-foreground">{copy.intro}</p>
       </header>
       <LookupForm />
+      <DevSamples />
     </main>
   );
 }
