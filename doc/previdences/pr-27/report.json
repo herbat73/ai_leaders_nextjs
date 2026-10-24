@@ -1,0 +1,27 @@
+{
+  "runId": "20261024-080229-6326",
+  "mode": "local",
+  "target": { "prNumber": null, "title": "feat: return customer portal", "branch": "feat/return-customer-portal", "headSha": "c3965df" },
+  "verdict": "PARTIAL",
+  "environment": { "baseUrl": "http://localhost:3000", "role": "none (no login in the app)", "startedByThisRepo": false, "browserProvider": "agent-browser" },
+  "scenario": [
+    { "step": 1, "priority": "P1", "action": "Open / on desktop", "expected": "Lookup form", "observed": "Rendered with labels", "result": "PASS", "screenshot": "01-lookup-default.png" },
+    { "step": 2, "priority": "P0", "action": "PL-10001 with wrong e-mail", "expected": "Generic not-found error", "observed": "Generic error, stayed on /", "result": "PASS", "screenshot": "02-lookup-wrong-email.png" },
+    { "step": 3, "priority": "P1", "action": "pl-10004 undelivered", "expected": "Not-delivered notice and tracking link", "observed": "Notice and https link shown", "result": "PASS", "screenshot": "03-lookup-not-delivered.png" },
+    { "step": 4, "priority": "P1", "action": "PL-10001 valid lookup", "expected": "/returns overview", "observed": "Two requests listed", "result": "PASS", "screenshot": "04-returns-overview.png" },
+    { "step": 5, "priority": "P1", "action": "Wizard with all lines covered", "expected": "Lines disabled with reason", "observed": "Disabled with reason and banner", "result": "PASS", "screenshot": "05-wizard-lines.png" },
+    { "step": 6, "priority": "P1", "action": "Dalej with no selection", "expected": "Validation error", "observed": "Wybierz co najmniej jeden produkt.", "result": "PASS", "screenshot": "06-wizard-nothing-selectable-next.png" },
+    { "step": 7, "priority": "P1", "action": "PL-10005 select gloves", "expected": "Quantity capped at remaining", "observed": "Maksymalnie 1 szt.", "result": "PASS", "screenshot": "07-wizard-line-selected.png" },
+    { "step": 8, "priority": "P1", "action": "Reasons step, no reason", "expected": "Validation error", "observed": "Wybierz powód zwrotu.", "result": "PASS", "screenshot": "09-wizard-reasons-validation.png" },
+    { "step": 9, "priority": "P1", "action": "Method and resolution steps", "expected": "Options render", "observed": "3 methods, 3 resolutions", "result": "PASS", "screenshot": "11-wizard-resolution.png" },
+    { "step": 10, "priority": "P0", "action": "Summary", "expected": "Correct totals", "observed": "69,00 zl, fee 0,00 zl", "result": "PASS", "screenshot": "12-wizard-summary.png" },
+    { "step": 11, "priority": "P1", "action": "Submit without consent", "expected": "Blocked", "observed": "Consent error shown", "result": "PASS", "screenshot": "13-wizard-consent-validation.png" },
+    { "step": 12, "priority": "P0", "action": "Consent and submit", "expected": "Tracker with new RMA", "observed": "RMA-2026-00009 tracker page", "result": "PASS", "screenshot": "14-tracker-after-submit.png" },
+    { "step": 13, "priority": "P0", "action": "Foreign RMA and anonymous access", "expected": "No disclosure, redirect", "observed": "404 and 307 to /", "result": "PASS", "screenshot": "15-tracker-other-order-denied.png" },
+    { "step": 14, "priority": "P1", "action": "375px viewport", "expected": "No horizontal overflow", "observed": "Overflow 0 on 3 routes", "result": "PASS", "screenshot": "16-mobile-tracker.png" },
+    { "step": 15, "priority": "P1", "action": "Admin inbox", "expected": "New RMA listed", "observed": "RMA-2026-00009 first", "result": "PASS", "screenshot": "18-admin-inbox.png" },
+    { "step": 16, "priority": "P1", "action": "Admin decision card", "expected": "Details and actions", "observed": "All sections render", "result": "PASS", "screenshot": "19-admin-decision-card.png" }
+  ],
+  "hasUiTest": false,
+  "notes": ["Environment attached to an already-running next dev server (not started by this run).", "Not exercised: dark theme, loading/error states, expired window PL-10003, exchange resolution, admin approve/reject, long content, keyboard-only."]
+}
