@@ -18,7 +18,8 @@ function toTimelineEvent(event: ReturnEvent): TimelineEvent {
   return {
     id: event.id,
     label: event.type === "submitted" ? copy.eventLabels.submitted : returnsCopy.statusLabels[event.toStatus],
-    actor: copy.actors[event.actor],
+    // The named agent for a decision made after login; legacy agent events (no identity recorded) keep the generic label.
+    actor: event.agentName ?? copy.actors[event.actor],
     at: formatEventTime(event.createdAt),
     note: event.note ?? undefined,
   };

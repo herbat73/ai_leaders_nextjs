@@ -36,4 +36,13 @@ describe("trackerEventView", () => {
   it("treats an empty decision note as none", () => {
     expect(trackerEventView(event({ note: "   " })).note).toBeNull();
   });
+
+  it("exposes no agent identity, whatever the stored event carries", () => {
+    const view = trackerEventView(event({ agentId: 42, agentName: "Ula Testowa", note: "Zapraszamy" }));
+
+    expect(Object.keys(view).sort()).toEqual(["actor", "at", "id", "key", "note"]);
+    expect(view.actor).toBe("team");
+    expect(JSON.stringify(view)).not.toContain("Ula");
+    expect(JSON.stringify(view)).not.toContain("42");
+  });
 });

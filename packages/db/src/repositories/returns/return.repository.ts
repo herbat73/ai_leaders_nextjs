@@ -27,6 +27,7 @@ import {
 } from "@easyrms/core";
 
 import {
+  AgentSchema,
   ReturnRequestEventSchema,
   ReturnRequestItemSchema,
   ReturnRequestSchema,
@@ -96,7 +97,9 @@ function toDomain(entity: ReturnRequestEntity): ReturnRequest {
   };
 }
 
-function toEvent(entity: ReturnRequestEventEntity): ReturnEvent {
+/** `withAgent` is true only for the admin read: the customer tracker never receives who decided. */
+function toEvent(entity: ReturnRequestEventEntity, withAgent: boolean): ReturnEvent {
+  const agent = entity.agent;
   return {
     id: entity.id,
     // Written only by this repository, which only ever writes the values of the domain union.
@@ -105,6 +108,7 @@ function toEvent(entity: ReturnRequestEventEntity): ReturnEvent {
     toStatus: toReturnStatus(entity.toStatus),
     note: entity.note ?? null,
     actor: entity.actor as ReturnEvent["actor"],
+    ...(withAgent ? { agentId: agent?.id ?? null, agentName: agent?.displayName ?? null } : {}),
     createdAt: entity.createdAt,
   };
 }
@@ -135,12 +139,12 @@ export class MikroOrmReturnRepository implements ReturnRepository {
   async findDetail(id: number): Promise<ReturnDetail | null> {
     // `refresh`: `findStatus` may have loaded a partial entity into this scope's identity map.
     const row = await this.em.findOne(ReturnRequestSchema, { id }, { refresh: true });
-    return row ? this.toDetail(row) : null;
+    return row ? this.toDetail(row, true) : null;
   }
 
   async findByRma(rma: string): Promise<ReturnDetail | null> {
     const row = await this.em.findOne(ReturnRequestSchema, { rma }, { refresh: true });
-    return row ? this.toDetail(row) : null;
+    return row ? this.toDetail(row, false) : null;
   }
 
   async listByOrder(orderNumber: string): Promise<ReturnRequest[]> {
@@ -173,18 +177,19 @@ export class MikroOrmReturnRepository implements ReturnRepository {
     }, joinOrOpen());
   }
 
-  private async toDetail(row: ReturnRequestEntity): Promise<ReturnDetail> {
+  private async toDetail(row: ReturnRequestEntity, withAgent: boolean): Promise<ReturnDetail> {
     const events = await this.em.find(
       ReturnRequestEventSchema,
       { returnRequest: row.id },
-      { orderBy: { createdAt: "asc", id: "asc" } },
+      // The agent is loaded only when it will be shown, so the customer path never even reads the `agents` table.
+      { orderBy: { createdAt: "asc", id: "asc" }, ...(withAgent ? { populate: ["agent"] as const } : {}), refresh: true },
     );
     const items = await this.em.find(ReturnRequestItemSchema, { returnRequest: row.id }, { orderBy: { id: "asc" } });
     return {
       request: toDomain(row),
       decisionNote: row.decisionNote ?? null,
       items: items.map(toItem),
-      events: events.map(toEvent),
+      events: events.map((event) => toEvent(event, withAgent)),
     };
   }
 
@@ -245,7 +250,7 @@ export class MikroOrmReturnRepository implements ReturnRepository {
     }
   }
 
-  transition(id: number, from: ReturnStatus, to: ReturnStatus, note: string | null): Promise<TransitionOutcome> {
+  transition(id: number, from: ReturnStatus, to: ReturnStatus, note: string | null, agentId: number): Promise<TransitionOutcome> {
     // Runs on the callback's EntityManager: `this.em` is a plain fork and would run outside the transaction.
     return this.em.transactional(async (tx): Promise<TransitionOutcome> => {
       const now = new Date();
@@ -269,6 +274,7 @@ export class MikroOrmReturnRepository implements ReturnRepository {
         toStatus: to,
         note,
         actor: "agent",
+        agent: tx.getReference(AgentSchema, agentId),
       });
       await tx.flush();
       const row = await tx.findOneOrFail(ReturnRequestSchema, { id }, { refresh: true });

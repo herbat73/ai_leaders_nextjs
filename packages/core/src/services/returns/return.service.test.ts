@@ -20,6 +20,7 @@ import {
 
 // Thursday 5 Nov 2026 10:00 Warsaw is UTC+1 all week, so due dates are easy to read.
 const CREATED = new Date("2026-11-05T10:00:00Z");
+const AGENT = { id: 7 };
 const LONG_NOTE = "Item was used and returned after the period ended";
 const SECRET_NOTE = "ZZ-secret-customer-note-ZZ ZZ-secret-customer-note-ZZ";
 
@@ -70,7 +71,7 @@ function makeRepository(initial: ReturnRequest[] = []): Fake {
     findByIdempotencyKey: unsupported,
     claimedQuantities: unsupported,
     withOrderLock: unsupported,
-    transition: async (id, from, to, note) => {
+    transition: async (id, from, to, note, agentId) => {
       fake.beforeTransition?.();
       const row = fake.rows.find((candidate) => candidate.id === id);
       if (!row) return { result: "not_found" };
@@ -87,6 +88,7 @@ function makeRepository(initial: ReturnRequest[] = []): Fake {
         toStatus: to,
         note,
         actor: "agent",
+        agentId,
         createdAt: CREATED,
       });
       return { result: "moved", request: row };
@@ -212,7 +214,7 @@ describe("ReturnService.getDetail", () => {
   it("returns the note, the events and the derived values", async () => {
     const repository = makeRepository([makeRequest()]);
     const service = makeService(repository);
-    await service.transition(1, "approved", ` ${LONG_NOTE} `);
+    await service.transition(1, "approved", ` ${LONG_NOTE} `, AGENT);
 
     const detail = await service.getDetail(1);
 
@@ -231,7 +233,7 @@ describe("ReturnService.transition", () => {
     const service = makeService(makeRepository([makeRequest()]));
 
     for (const status of ["approved", "in_transit", "received", "resolved"] as const) {
-      const item = await service.transition(1, status);
+      const item = await service.transition(1, status, undefined, AGENT);
       expect(item.status).toBe(status);
     }
 
@@ -247,7 +249,7 @@ describe("ReturnService.transition", () => {
     const repository = makeRepository();
     const transition = vi.spyOn(repository, "transition");
 
-    const error = await errorOf(makeService(repository).transition(99, "approved"));
+    const error = await errorOf(makeService(repository).transition(99, "approved", undefined, AGENT));
 
     expect(error).toBeInstanceOf(NotFoundError);
     expect(error).toMatchObject({ status: 404, code: "not_found", message: "Return 99 not found" });
@@ -257,7 +259,7 @@ describe("ReturnService.transition", () => {
   it("throws a 409 carrying the stored status for a forbidden move, and writes nothing", async () => {
     const repository = makeRepository([makeRequest({ status: "approved" })]);
 
-    const error = await errorOf(makeService(repository).transition(1, "rejected", LONG_NOTE.repeat(2)));
+    const error = await errorOf(makeService(repository).transition(1, "rejected", LONG_NOTE.repeat(2), AGENT));
 
     expect(error).toBeInstanceOf(ConflictError);
     expect(error).toMatchObject({ status: 409, fieldErrors: { status: "approved" } });
@@ -267,7 +269,7 @@ describe("ReturnService.transition", () => {
   it("answers 409 for a request whose stored status is unknown", async () => {
     const repository = makeRepository([makeRequest({ status: "unknown" })]);
 
-    const error = await errorOf(makeService(repository).transition(1, "approved"));
+    const error = await errorOf(makeService(repository).transition(1, "approved", undefined, AGENT));
 
     expect(error).toBeInstanceOf(ConflictError);
     expect(error).toMatchObject({ status: 409, fieldErrors: { status: "unknown" } });
@@ -279,7 +281,7 @@ describe("ReturnService.transition", () => {
       repository.rows[0].status = "rejected";
     };
 
-    const error = await errorOf(makeService(repository).transition(1, "approved"));
+    const error = await errorOf(makeService(repository).transition(1, "approved", undefined, AGENT));
 
     expect(error).toBeInstanceOf(ConflictError);
     expect(error).toMatchObject({ fieldErrors: { status: "rejected" } });
@@ -292,7 +294,7 @@ describe("ReturnService.transition", () => {
       repository.rows.length = 0;
     };
 
-    expect(await errorOf(makeService(repository).transition(1, "approved"))).toBeInstanceOf(NotFoundError);
+    expect(await errorOf(makeService(repository).transition(1, "approved", undefined, AGENT))).toBeInstanceOf(NotFoundError);
   });
 
   describe("decision note", () => {
@@ -300,16 +302,16 @@ describe("ReturnService.transition", () => {
       const repository = makeRepository([makeRequest()]);
       const service = makeService(repository);
 
-      const error = await errorOf(service.transition(1, "rejected", `  ${"a".repeat(29)}  `));
+      const error = await errorOf(service.transition(1, "rejected", `  ${"a".repeat(29)}  `, AGENT));
 
       expect(error).toBeInstanceOf(ValidationError);
       expect(error).toMatchObject({ status: 400, fieldErrors: { decisionNote: expect.any(String) } });
       expect(repository.events).toEqual([]);
-      expect((await service.transition(1, "rejected", "a".repeat(30))).status).toBe("rejected");
+      expect((await service.transition(1, "rejected", "a".repeat(30), AGENT)).status).toBe("rejected");
     });
 
     it("requires a note to reject", async () => {
-      const error = await errorOf(makeService(makeRepository([makeRequest()])).transition(1, "rejected"));
+      const error = await errorOf(makeService(makeRepository([makeRequest()])).transition(1, "rejected", undefined, AGENT));
 
       expect(error).toMatchObject({ status: 400, code: "validation_error" });
     });
@@ -318,9 +320,9 @@ describe("ReturnService.transition", () => {
       const repository = makeRepository([makeRequest({ id: 1 }), makeRequest({ id: 2 }), makeRequest({ id: 3 })]);
       const service = makeService(repository);
 
-      await service.transition(1, "approved", `  ${LONG_NOTE}\n`);
-      await service.transition(2, "approved", "   ");
-      await service.transition(3, "approved");
+      await service.transition(1, "approved", `  ${LONG_NOTE}\n`, AGENT);
+      await service.transition(2, "approved", "   ", AGENT);
+      await service.transition(3, "approved", undefined, AGENT);
 
       expect(repository.notes.get(1)).toBe(LONG_NOTE);
       expect(repository.notes.get(2)).toBeNull();
@@ -330,7 +332,7 @@ describe("ReturnService.transition", () => {
     it("rejects a note sent with any other target status, even when the move would be allowed", async () => {
       const repository = makeRepository([makeRequest({ status: "approved" })]);
 
-      const error = await errorOf(makeService(repository).transition(1, "in_transit", LONG_NOTE));
+      const error = await errorOf(makeService(repository).transition(1, "in_transit", LONG_NOTE, AGENT));
 
       expect(error).toMatchObject({ status: 400, fieldErrors: { decisionNote: expect.any(String) } });
       expect(repository.events).toEqual([]);
@@ -339,7 +341,7 @@ describe("ReturnService.transition", () => {
     it("checks the note (400) before the move (409)", async () => {
       const repository = makeRepository([makeRequest({ status: "approved" })]);
 
-      const error = await errorOf(makeService(repository).transition(1, "resolved", LONG_NOTE));
+      const error = await errorOf(makeService(repository).transition(1, "resolved", LONG_NOTE, AGENT));
 
       expect(error).toBeInstanceOf(ValidationError);
     });
@@ -347,10 +349,10 @@ describe("ReturnService.transition", () => {
     it("leaves the stored note unchanged by a later move", async () => {
       const repository = makeRepository([makeRequest()]);
       const service = makeService(repository);
-      await service.transition(1, "approved", LONG_NOTE);
+      await service.transition(1, "approved", LONG_NOTE, AGENT);
 
-      await service.transition(1, "in_transit");
-      await service.transition(1, "received");
+      await service.transition(1, "in_transit", undefined, AGENT);
+      await service.transition(1, "received", undefined, AGENT);
 
       expect(repository.notes.get(1)).toBe(LONG_NOTE);
       expect(repository.rows[0].hasDecisionNote).toBe(true);
@@ -360,9 +362,9 @@ describe("ReturnService.transition", () => {
       const repository = makeRepository([makeRequest({ status: "approved" })]);
       const service = makeService(repository);
 
-      const conflict = await errorOf(service.transition(1, "rejected", SECRET_NOTE));
-      const missing = await errorOf(service.transition(9, "approved", SECRET_NOTE));
-      const short = await errorOf(service.transition(1, "rejected", "secret short"));
+      const conflict = await errorOf(service.transition(1, "rejected", SECRET_NOTE, AGENT));
+      const missing = await errorOf(service.transition(9, "approved", SECRET_NOTE, AGENT));
+      const short = await errorOf(service.transition(1, "rejected", "secret short", AGENT));
 
       for (const error of [conflict, missing, short]) {
         expect(JSON.stringify({ message: (error as Error).message, fields: (error as ConflictError).fieldErrors })).not.toMatch(
@@ -428,7 +430,7 @@ describe("ReturnService.transition mail", () => {
   it("sends exactly one return_status_changed with the RMA and new status", async () => {
     const mail = makeMailPort();
     const service = makeService(makeRepository([makeRequest()]), NOW, mail);
-    await service.transition(1, "approved", LONG_NOTE);
+    await service.transition(1, "approved", LONG_NOTE, AGENT);
     expect(mail.sent).toEqual([
       {
         template: "return_status_changed",
@@ -441,7 +443,7 @@ describe("ReturnService.transition mail", () => {
   it("sends nothing when the transition is rejected", async () => {
     const mail = makeMailPort();
     const service = makeService(makeRepository([makeRequest()]), NOW, mail);
-    await errorOf(service.transition(1, "resolved"));
+    await errorOf(service.transition(1, "resolved", undefined, AGENT));
     expect(mail.sent).toHaveLength(0);
   });
 
@@ -460,7 +462,7 @@ describe("ReturnService.transition mail", () => {
   it.each(failures)("swallows and logs a port that %s", async (_name, port) => {
     const error = vi.fn();
     const service = makeService(makeRepository([makeRequest()]), NOW, port, { error });
-    const item = await service.transition(1, "approved", LONG_NOTE);
+    const item = await service.transition(1, "approved", LONG_NOTE, AGENT);
     expect(item.status).toBe("approved");
     expect(error).toHaveBeenCalledTimes(1);
     expect(error).toHaveBeenCalledWith("mail send failed", {
@@ -471,3 +473,29 @@ describe("ReturnService.transition mail", () => {
     expect(JSON.stringify(error.mock.calls)).not.toContain("customer@example.com");
   });
 });
+
+describe("ReturnService.transition identity", () => {
+  it("records the acting agent on the timeline event", async () => {
+    const repository = makeRepository([makeRequest()]);
+
+    await makeService(repository).transition(1, "approved", LONG_NOTE, { id: 42 });
+
+    expect(repository.events).toHaveLength(1);
+    expect(repository.events[0]).toMatchObject({ actor: "agent", agentId: 42, toStatus: "approved" });
+  });
+
+  it("passes the agent id to the repository only after the note, existence and move checks", async () => {
+    const repository = makeRepository([makeRequest()]);
+    const spy = vi.spyOn(repository, "transition");
+    const service = makeService(repository);
+
+    await errorOf(service.transition(1, "rejected", undefined, AGENT));
+    await errorOf(service.transition(99, "approved", undefined, AGENT));
+    await errorOf(service.transition(1, "resolved", undefined, AGENT));
+    expect(spy).not.toHaveBeenCalled();
+
+    await service.transition(1, "approved", undefined, AGENT);
+    expect(spy).toHaveBeenCalledWith(1, "submitted", "approved", null, 7);
+  });
+});
+

@@ -8,10 +8,14 @@ import { MikroOrmReturnRepository } from "./return.repository";
 const NOTE = "Item was used and returned after the period ended";
 
 let db: TestDatabase;
+let agentId: number;
 
 beforeAll(async () => {
   db = await createTestDatabase();
   await db.migrateUp();
+  [{ id: agentId }] = await db.query<{ id: number }>(
+    `insert into "agents" ("email", "display_name", "status", "created_at", "updated_at") values ('agent@example.com', 'Ula Testowa', 'active', now(), now()) returning "id"`,
+  );
 });
 
 afterAll(async () => {
@@ -72,7 +76,7 @@ describe("transition", () => {
     const [{ updated_at: before }] = await db.query<{ updated_at: Date | string }>(`select "updated_at" from "return_requests" where "id" = ?`, [id]);
     await new Promise((resolve) => setTimeout(resolve, 5));
 
-    const outcome = await repository().transition(id, "submitted", "approved", NOTE);
+    const outcome = await repository().transition(id, "submitted", "approved", NOTE, agentId);
 
     expect(outcome).toMatchObject({ result: "moved", request: { id, status: "approved", hasDecisionNote: true } });
     const [{ updated_at: after }] = await db.query<{ updated_at: Date | string }>(`select "updated_at" from "return_requests" where "id" = ?`, [id]);
@@ -90,10 +94,10 @@ describe("transition", () => {
 
   it("does not clear the decision note when a later, non-decision move happens", async () => {
     const id = await createRequest();
-    await repository().transition(id, "submitted", "approved", NOTE);
+    await repository().transition(id, "submitted", "approved", NOTE, agentId);
 
-    await repository().transition(id, "approved", "in_transit", null);
-    await repository().transition(id, "in_transit", "received", null);
+    await repository().transition(id, "approved", "in_transit", null, agentId);
+    await repository().transition(id, "in_transit", "received", null, agentId);
 
     expect(await storedNote(id)).toBe(NOTE);
     expect((await repository().findDetail(id))?.request.hasDecisionNote).toBe(true);
@@ -102,7 +106,7 @@ describe("transition", () => {
   it("stores no note for an approval without one", async () => {
     const id = await createRequest();
 
-    const outcome = await repository().transition(id, "submitted", "approved", null);
+    const outcome = await repository().transition(id, "submitted", "approved", null, agentId);
 
     expect(outcome).toMatchObject({ result: "moved", request: { hasDecisionNote: false } });
     expect(await storedNote(id)).toBeNull();
@@ -110,9 +114,9 @@ describe("transition", () => {
 
   it("returns conflict with the stored status and writes no event when `from` is stale", async () => {
     const id = await createRequest();
-    await repository().transition(id, "submitted", "approved", null);
+    await repository().transition(id, "submitted", "approved", null, agentId);
 
-    const outcome = await repository().transition(id, "submitted", "rejected", NOTE);
+    const outcome = await repository().transition(id, "submitted", "rejected", NOTE, agentId);
 
     expect(outcome).toEqual({ result: "conflict", currentStatus: "approved" });
     expect(await events(id)).toHaveLength(2);
@@ -120,24 +124,24 @@ describe("transition", () => {
   });
 
   it("returns not_found for an unknown id", async () => {
-    expect(await repository().transition(987654, "submitted", "approved", null)).toEqual({ result: "not_found" });
+    expect(await repository().transition(987654, "submitted", "approved", null, agentId)).toEqual({ result: "not_found" });
   });
 
   it("reports a stale status from a fork that has already loaded the row (identity map is bypassed)", async () => {
     const id = await createRequest();
     const stale = new MikroOrmReturnRepository({ em: db.fork(), logger: makeLogger() });
     expect(await stale.findStatus(id)).toBe("submitted");
-    await repository().transition(id, "submitted", "approved", null);
+    await repository().transition(id, "submitted", "approved", null, agentId);
 
-    expect(await stale.transition(id, "submitted", "rejected", NOTE)).toEqual({ result: "conflict", currentStatus: "approved" });
+    expect(await stale.transition(id, "submitted", "rejected", NOTE, agentId)).toEqual({ result: "conflict", currentStatus: "approved" });
   });
 
   it("lets exactly one of two concurrent moves win, and the loser sees the winner's status", async () => {
     const id = await createRequest();
 
     const outcomes = await Promise.all([
-      repository().transition(id, "submitted", "approved", null),
-      repository().transition(id, "submitted", "rejected", NOTE),
+      repository().transition(id, "submitted", "approved", null, agentId),
+      repository().transition(id, "submitted", "rejected", NOTE, agentId),
     ]);
 
     const moved = outcomes.filter((outcome) => outcome.result === "moved");
@@ -154,9 +158,9 @@ describe("transition", () => {
 
     await Promise.all(
       ids.flatMap((id) => [
-        repository().transition(id, "submitted", "approved", null),
-        repository().transition(id, "submitted", "rejected", NOTE),
-        repository().transition(id, "submitted", "approved", null),
+        repository().transition(id, "submitted", "approved", null, agentId),
+        repository().transition(id, "submitted", "rejected", NOTE, agentId),
+        repository().transition(id, "submitted", "approved", null, agentId),
       ]),
     );
 
@@ -167,8 +171,8 @@ describe("transition", () => {
 describe("reads", () => {
   it("findDetail returns the note and the events oldest first; findStatus reads the status alone", async () => {
     const id = await createRequest();
-    await repository().transition(id, "submitted", "approved", NOTE);
-    await repository().transition(id, "approved", "in_transit", null);
+    await repository().transition(id, "submitted", "approved", NOTE, agentId);
+    await repository().transition(id, "approved", "in_transit", null, agentId);
 
     const detail = await repository().findDetail(id);
 
@@ -185,7 +189,7 @@ describe("reads", () => {
 
   it("list never carries the note text, filters by status and orders newest first", async () => {
     const id = await createRequest("LIST-1");
-    await repository().transition(id, "submitted", "approved", NOTE);
+    await repository().transition(id, "submitted", "approved", NOTE, agentId);
     const newer = await createRequest("LIST-2");
 
     const all = await repository().list();
@@ -214,7 +218,7 @@ describe("a corrupt status", () => {
     expect(onlyUnknown.map((request) => request.id)).toContain(id);
     expect(onlyUnknown.every((request) => request.status === "unknown")).toBe(true);
     expect(await repository().findStatus(id)).toBe("unknown");
-    expect(await repository().transition(id, "submitted", "approved", null)).toEqual({ result: "conflict", currentStatus: "unknown" });
+    expect(await repository().transition(id, "submitted", "approved", null, agentId)).toEqual({ result: "conflict", currentStatus: "unknown" });
   });
 });
 
@@ -353,11 +357,11 @@ describe("claimedQuantities", () => {
     await repository().createWithItems(portalInput("Q-1-other"));
     expect(await repository().claimedQuantities("Q-1")).toEqual({ L1: 6, L2: 3 });
 
-    await repository().transition(cancelled.id, "submitted", "cancelled", null);
-    await repository().transition(rejected.id, "submitted", "rejected", "Not eligible for return here");
+    await repository().transition(cancelled.id, "submitted", "cancelled", null, agentId);
+    await repository().transition(rejected.id, "submitted", "rejected", "Not eligible for return here", agentId);
     expect(await repository().claimedQuantities("Q-1")).toEqual({ L1: 2, L2: 1 });
 
-    await repository().transition(kept.id, "submitted", "approved", null);
+    await repository().transition(kept.id, "submitted", "approved", null, agentId);
     expect(await repository().claimedQuantities("Q-1")).toEqual({ L1: 2, L2: 1 });
     expect(await repository().claimedQuantities("Q-empty")).toEqual({});
   });
@@ -396,3 +400,41 @@ describe("withOrderLock", () => {
     expect(await db.query(`select 1 from "pg_locks" where "locktype" = 'advisory' and "granted" and "database" = (select "oid" from "pg_database" where "datname" = current_database())`)).toHaveLength(0);
   });
 });
+
+describe("agent identity on events", () => {
+  it("stores the agent on the event and shows the name to the admin read only", async () => {
+    const id = await createRequest("IDENT-1");
+    await repository().transition(id, "submitted", "approved", NOTE, agentId);
+
+    const [stored] = await db.query<{ agent_id: number | null }>(
+      `select "agent_id" from "return_request_events" where "return_request_id" = ? and "type" = 'status_changed'`,
+      [id],
+    );
+    expect(stored.agent_id).toBe(agentId);
+
+    const admin = await repository().findDetail(id);
+    expect(admin?.events.map((event) => [event.type, event.agentId ?? null, event.agentName ?? null])).toEqual([
+      ["submitted", null, null],
+      ["status_changed", agentId, "Ula Testowa"],
+    ]);
+
+    const rma = admin?.request.rma ?? "";
+    const customer = await repository().findByRma(rma);
+    expect(customer?.events).toHaveLength(2);
+    for (const event of customer?.events ?? []) {
+      expect(event).not.toHaveProperty("agentId");
+      expect(event).not.toHaveProperty("agentName");
+    }
+    expect(JSON.stringify(customer)).not.toContain("Ula Testowa");
+  });
+
+  it("rejects a transition for an agent that does not exist, rolling the move back", async () => {
+    const id = await createRequest("IDENT-2");
+
+    await expect(repository().transition(id, "submitted", "approved", NOTE, 987654)).rejects.toThrow();
+
+    expect((await repository().findDetail(id))?.request.status).toBe("submitted");
+    expect(await events(id)).toHaveLength(1);
+  });
+});
+

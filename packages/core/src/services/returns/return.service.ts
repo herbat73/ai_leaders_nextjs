@@ -10,6 +10,7 @@ import {
 import type { ApiLogger } from "../../http/types";
 import { CUSTOMER_RATE_RULES, rateKeys, type RateLimiter } from "../../security/rate-limiter";
 import type { ReturnSubmitBody } from "../../validators/returns/return-submit.schema";
+import type { AgentContext } from "../agents/types";
 import { maskEmail, type MailPort, type MailTemplate } from "../mail/mail.port";
 import type { OrderLookup, OrderLookupResult } from "../orders/order-lookup.port";
 import { checkDecisionNote } from "./decision-note";
@@ -127,10 +128,11 @@ export class ReturnService {
   }
 
   /**
-   * Moves a request along the state machine. Checks run in the order the API documents: note rules (400), existence
-   * (404), allowed move (409); the repository's compare-and-set then settles a race between two agents (409).
+   * Moves a request along the state machine on behalf of `agent`, who is recorded on the timeline event. Checks run in
+   * the order the API documents: note rules (400), existence (404), allowed move (409); the repository's
+   * compare-and-set then settles a race between two agents (409). Authentication (401) happened before the call.
    */
-  async transition(id: number, status: ReturnStatus, decisionNote?: string): Promise<ReturnListItem> {
+  async transition(id: number, status: ReturnStatus, decisionNote: string | undefined, agent: Pick<AgentContext, "id">): Promise<ReturnListItem> {
     const check = checkDecisionNote(status, decisionNote);
     if (!check.ok) throw new ValidationError("Invalid input", { decisionNote: check.message });
 
@@ -140,7 +142,7 @@ export class ReturnService {
     // `assert` only passes for a known status, so `current` is one of the nine here.
     const from = current as ReturnStatus;
 
-    const outcome = await this.returnRepository.transition(id, from, status, check.note);
+    const outcome = await this.returnRepository.transition(id, from, status, check.note, agent.id);
     switch (outcome.result) {
       case "moved":
         await this.notifyStatusChanged(outcome.request);
