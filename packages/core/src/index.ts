@@ -39,3 +39,4 @@ export * from "./validators/returns/return-quote.schema";
 export * from "./validators/returns/return-submit.schema";
 export * from "./validators/returns/return-status-update.schema";
 export * from "./services/agents/password-hasher";
+export * from "./services/agents/agent-session.service";
