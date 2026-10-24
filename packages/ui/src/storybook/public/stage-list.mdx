@@ -1,0 +1,96 @@
+import { Canvas, Controls, Meta } from "@storybook/addon-docs/blocks";
+
+import { DoDont } from "../docs/blocks";
+import * as StageListStories from "./stage-list.stories";
+
+<Meta of={StageListStories} />
+
+# StageList
+
+Pionowy tracker statusu zgłoszenia: uporządkowane etapy (zrobiony, bieżący, przyszły) albo stan zamknięty (odrzucone, anulowane).
+
+<Canvas of={StageListStories.Current} />
+
+## Kiedy użyć
+
+- Klient śledzi, **na jakim etapie jest jego zgłoszenie** (strona `/returns/[rma]`): zgłoszone, zaakceptowane, w drodze, odebrane, rozliczone.
+- Zgłoszenie mogło się zakończyć bez dojścia do końca ścieżki: użyj `closed` (odrzucone, anulowane) zamiast listy.
+
+StageList kontra `Stepper`:
+
+- `Stepper` to pasek postępu **kreatora, który klient wypełnia** (poziomy, w `nav`); steruje nim klient.
+- `StageList` pokazuje stan **nadany przez system**, jest pionowa i nie jest nawigacją; klient nie może po niej klikać.
+
+StageList kontra `Timeline`: lista etapów mówi, gdzie jest zgłoszenie teraz; `Timeline` opowiada, co i kiedy się wydarzyło.
+
+## Kiedy nie użyć
+
+- Dla kroków formularza — `Stepper` (albo `WizardShell`, który go zawiera).
+- Dla historii zdarzeń z datami — `Timeline`.
+- W panelu admina — tam status to `Badge` i karta decyzji.
+
+## Jak złożyć
+
+Mapowanie statusu na etapy robi `core` (`trackerView`), a etykiety pochodzą z pliku copy aplikacji; `ui` tylko rysuje.
+
+```tsx
+import { StageList, type Stage } from "@easyrms/ui/public";
+
+const stages: Stage[] = view.stages.map((s) => ({ id: s.id, label: copy.stages[s.id], state: s.state }));
+const closed = view.closed ? { label: copy.closed[view.closed.kind], reason: decisionNote ?? undefined } : undefined;
+
+<StageList stages={stages} closed={closed} label={copy.stagesLabel} />
+```
+
+Strona `/returns/[rma]` stawia ją pod nagłówkiem z aktualnym statusem, a pod nią `Timeline`. Gdy podasz `closed`, tablica `stages` jest ignorowana.
+
+<Canvas of={StageListStories.ClosedWithReason} />
+
+## Tokeny
+
+Znacznik etapu: `border-primary bg-primary text-primary-foreground` (zrobiony i bieżący), `border-border text-muted-foreground` (przyszły), bieżący dodatkowo pierścień `ring-ring/60` z `ring-offset-background`. Etykiety: `text-foreground` (zrobiony), `font-semibold text-foreground` (bieżący), `text-muted-foreground` (przyszły). Stan zamknięty: `border-border bg-muted`, powód `text-muted-foreground`.
+
+## Stany
+
+| Stan etapu | Wygląd | Jak wywołać |
+|---|---|---|
+| done | wypełnione kółko z ✓ | `state: "done"` |
+| current | wypełnione kółko z numerem, pierścień, pogrubiona etykieta, `aria-current="step"` | `state: "current"` |
+| upcoming | puste kółko z numerem, przygaszona etykieta | `state: "upcoming"` |
+| closed | ramka `bg-muted` z etykietą i opcjonalnym powodem | `closed` |
+
+<Canvas of={StageListStories.Resolved} />
+
+<Canvas of={StageListStories.ClosedWithoutReason} />
+
+## Dostępność
+
+- To uporządkowana lista `ol`; bieżący etap ma `aria-current="step"`. Znaczniki w kółkach są `aria-hidden`, więc czytnik odczyta tylko etykiety w kolejności.
+- Stan nie opiera się na samym kolorze: zrobiony ma ✓, bieżący jest pogrubiony i ma pierścień.
+- Komponent **nie** dodaje ukrytego tekstu „zrobiony” (w przeciwieństwie do `Stepper` i jego `doneLabel`); czytnik ekranu dowie się o stanie tylko z `aria-current` bieżącego etapu. Jeśli to ważne, uwzględnij stan w etykiecie lub w nagłówku sekcji (jak „Aktualny status: …” na stronie śledzenia).
+- `label` nadaje listze nazwę (`aria-label`); podaj go. Stan zamknięty jest grupą `role="group"` z tym samym `label`.
+
+## Rób i nie rób
+
+<DoDont
+  rob={[
+    "Podaj `label` listy.",
+    "Pokaż stan zamknięty przez `closed`, z powodem, jeśli klient go zna.",
+    "Nad listą umieść nagłówek z bieżącym statusem słowami.",
+  ]}
+  nieRob={[
+    "Dwóch etapów `current` naraz (jest jeden bieżący etap).",
+    "StageList do nawigacji po krokach formularza.",
+    "Polegania wyłącznie na kolorze kółek.",
+  ]}
+/>
+
+## API
+
+<Controls of={StageListStories.Current} />
+
+| Prop | Znaczenie |
+|---|---|
+| `stages` | Lista `Stage`: `id`, `label`, `state` (`done`, `current`, `upcoming`). |
+| `closed` | `label` i opcjonalny `reason`; zastępuje listę etapów. |
+| `label` | Dostępna nazwa listy. |

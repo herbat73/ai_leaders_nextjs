@@ -1,0 +1,122 @@
+import { Canvas, Controls, Meta } from "@storybook/addon-docs/blocks";
+
+import { DoDont } from "../../docs/blocks";
+import * as CrudFormStories from "./crud-form.stories";
+
+<Meta of={CrudFormStories} />
+
+# CrudForm
+
+Formularz sterowany listą pól: sam obsługuje walidację po stronie klienta, błędy serwera, stan oczekiwania oraz skróty klawiszowe.
+
+<Canvas of={CrudFormStories.Default} />
+
+<Canvas of={CrudFormStories.ClientValidation} />
+
+<Canvas of={CrudFormStories.ServerErrors} />
+
+## Kiedy użyć
+
+- Prosty formularz admina z polami tekstowymi: `text`, `email` lub `textarea` (tylko te trzy typy).
+- Gdy walidacja to wspólny schemat Zod z `core` (przekaż go w `validate`), a zapis idzie przez `apiCall` do trasy API.
+- Gdy chcesz mieć jednakowe zachowanie na każdym formularzu: błędy przy polach, blokada podwójnego wysłania, `Cmd/Ctrl+Enter`, `Escape`.
+
+## Kiedy nie użyć
+
+- Formularz z `Select`, `Checkbox`, polami zależnymi od siebie, wieloetapowy lub z własnym układem — złóż go z `Label`, `Input`, `Select`, `Checkbox` i `Button`.
+- Decyzja z wyborem akcji i uzasadnieniem (karta decyzji w `/admin/returns/[id]`) — tam akcje mają różne skutki, użyj osobnych `Button` w `Card`.
+- Strony publiczne (klient): używaj `Field`, `TextInput`, `Textarea`, `ActionButton`.
+- Potwierdzenie czynności nieodwracalnej — `Dialog`.
+
+## Jak złożyć
+
+`CrudForm` sam niczego nie pobiera ani nie wysyła — robi to Twój `onSubmit`. Jedyne dozwolone miejsce wywołań `/api/*` to `apiCall` z `@easyrms/ui/api`. Błędy walidacji serwera zwróć jako mapę `nazwaPola: komunikat` (klucz `form` oznacza błąd ogólny).
+
+```tsx
+"use client";
+
+import { apiCall } from "@easyrms/ui/api";
+import { Card, CardContent, CardHeader, CardTitle, CrudForm, type CrudFormField } from "@easyrms/ui/admin";
+
+const fields: CrudFormField[] = [
+  { name: "orderNumber", label: copy.orderNumber },
+  { name: "customerEmail", label: copy.email, type: "email" },
+  { name: "reason", label: copy.reason, type: "textarea" },
+];
+
+<Card>
+  <CardHeader>
+    <CardTitle>{copy.title}</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <CrudForm
+      fields={fields}
+      validate={(values) => {
+        const parsed = schema.safeParse(values);
+        return parsed.success ? null : fieldErrorsFrom(parsed.error);
+      }}
+      onSubmit={async (values) => {
+        const result = await apiCall("/api/returns", { method: "POST", body: values });
+        return result.ok ? null : { form: result.error.message, ...result.error.fieldErrors };
+      }}
+      onCancel={() => router.back()}
+      submitLabel={copy.save}
+    />
+  </CardContent>
+</Card>;
+```
+
+`fieldErrorsFrom` to pomocnik z `app` zamieniający błędy Zod na mapę pól (szkic). `apiCall` nigdy nie rzuca: rozgałęziaj po `result.ok`; `result.error.fieldErrors` to gotowa mapa pól. Zwróć `null` z `onSubmit` przy sukcesie — formularz zostanie wyczyszczony (`form.reset()`).
+
+## Tokeny
+
+Pola: `Label` + `Input` z `border-input`, `placeholder:text-muted-foreground`, pierścień fokusu `ring-ring`. `textarea` używa własnej, tej samej klasy (4 wiersze). Błędy: `text-destructive` (przez `ErrorMessage`). Przyciski: `Button` `default` (zapis) i `outline` (anuluj). Odstępy `space-y-4`, `space-y-1`, `gap-2`.
+
+## Stany
+
+| Stan | Wygląd i zachowanie | Jak wywołać |
+|---|---|---|
+| default | Pola puste, przycisk zapisu aktywny. | Story `Default`. |
+| błąd walidacji klienta | `ErrorMessage` pod polem; nic nie jest wysyłane, brak stanu pending. | `validate` zwraca mapę błędów (story `ClientValidation`: puste „Order number”). |
+| pending | Przycisk zapisu `disabled` i etykieta `Saving…`; po zakończeniu wraca. | `onSubmit` zwraca obietnicę, która jeszcze się nie rozstrzygnęła. |
+| błąd serwera | Błędy pod polami; klucz `form` jako ogólny błąd nad przyciskami. Pola nie są czyszczone. | `onSubmit` zwraca mapę błędów (story `ServerErrors`). |
+| sukces | Błędy znikają, formularz jest czyszczony (`form.reset()`). | `onSubmit` zwraca `null`. |
+| bez anulowania | Brak przycisku anuluj; `Escape` nic nie robi. | Brak `onCancel` (story `WithoutCancel`). |
+
+Uwaga: formularz nie ma propu `disabled` ani stanu tylko-do-odczytu.
+
+## Dostępność
+
+- Każde pole ma `Label` powiązany przez `htmlFor`/`id` równe `name` pola — `name` musi być unikalne na stronie.
+- Błędy są w `ErrorMessage` z `role="alert"` i ogłaszane po pojawieniu się. Pole nie dostaje jednak `aria-invalid` ani `aria-describedby`, więc powiązanie błędu z polem jest tylko wizualne i przez kolejność w DOM.
+- Formularz ma `noValidate` — walidację przeglądarki zastępuje `validate`; bez niej błędy zwraca tylko serwer.
+- Klawiatura: `Cmd/Ctrl+Enter` wywołuje `requestSubmit()` z dowolnego pola (także `textarea`, gdzie sam `Enter` wstawia nową linię); `Escape` wywołuje `onCancel` (tylko gdy jest ustawiony).
+- Przycisk anuluj ma `type="button"`, więc nie wysyła formularza. Podczas pending blokowany jest tylko przycisk zapisu, ale `Cmd/Ctrl+Enter` nadal wywoła `requestSubmit` — `onSubmit` powinien być odporny na podwójne wywołanie.
+- Fokus po błędzie nie jest przenoszony automatycznie na pierwsze błędne pole.
+
+## Rób i nie rób
+
+<DoDont
+  rob={[
+    "Przekazuj w `validate` ten sam schemat Zod, którego używa trasa API.",
+    "Zwracaj z `onSubmit` błędy serwera jako mapę pól, a ogólny błąd pod kluczem `form`.",
+    "Podawaj `submitLabel` jako czasownik: „Zapisz zwrot”.",
+  ]}
+  nieRob={[
+    "Dodawać `fetch('/api/...')` w komponencie — tylko `apiCall`.",
+    "Duplikować reguł walidacji w kliencie i na serwerze.",
+    "Zwracać `null` z `onSubmit` po porażce — formularz zostanie wyczyszczony.",
+  ]}
+/>
+
+## API
+
+<Controls of={CrudFormStories.Default} />
+
+| Prop | Typ | Opis |
+|---|---|---|
+| `fields` | `CrudFormField[]` | Pola: `name`, `label`, opcjonalnie `type` (`text` domyślnie, `email`, `textarea`). |
+| `validate` | `(values) => Record<string, string> or null` | Opcjonalna walidacja klienta. `null` oznacza poprawne wartości. |
+| `onSubmit` | `(values) => Promise<Record<string, string> or null>` | Wymagany. Błędy serwera lub `null` przy sukcesie. |
+| `onCancel` | `() => void` | Opcjonalny. Włącza przycisk anuluj i skrót `Escape`. |
+| `submitLabel` | `string` | Domyślnie `Save`. Etykiety `Saving…` i `Cancel` są na sztywno po angielsku. |

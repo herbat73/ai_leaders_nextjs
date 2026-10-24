@@ -1,0 +1,87 @@
+import { Canvas, Controls, Meta } from "@storybook/addon-docs/blocks";
+
+import { DoDont } from "../docs/blocks";
+import * as CheckboxStories from "./checkbox.stories";
+
+<Meta of={CheckboxStories} />
+
+# Checkbox
+
+Pole wyboru oparte na Radix `Checkbox` (shadcn): przełącznik dwustanowy (oraz stan pośredni) z kontrolą dostępności po stronie Radix.
+
+<Canvas of={CheckboxStories.Checked} />
+
+<Canvas of={CheckboxStories.Indeterminate} />
+
+## Kiedy użyć
+
+- Wybór tak/nie w formularzu (np. „Potwierdzam odbiór”).
+- Wielokrotny wybór z listy opcji lub wierszy tabeli.
+- Stan pośredni (`checked="indeterminate"`) dla pola „zaznacz wszystko”, gdy zaznaczona jest część elementów.
+
+Jeśli opcje wykluczają się wzajemnie, użyj `Select` (lista rozwijana) lub grupy opcji; `Checkbox` służy do wyborów niezależnych.
+
+## Kiedy nie użyć
+
+- Do akcji natychmiastowej — użyj `Button`.
+- Do wyboru jednej opcji z kilku — użyj `Select`.
+- Na stronach publicznych — tam jest `ChoiceGroup` (Tailwind).
+
+## Jak złożyć
+
+Każdy `Checkbox` musi mieć widoczną etykietę `Label` powiązaną przez `htmlFor` i `id`.
+
+```tsx
+import { Checkbox, Label } from "@easyrms/ui/admin";
+
+<div className="flex items-center gap-2">
+  <Checkbox id="notify" defaultChecked />
+  <Label htmlFor="notify">Powiadom klienta e-mailem</Label>
+</div>
+```
+
+- Pole sterowane: `checked` + `onCheckedChange` (wartość `boolean` lub `"indeterminate"`).
+- Błąd pola: ustaw `aria-invalid` i pokaż `ErrorMessage` pod polem.
+- W formularzu natywnym podaj `name` i `value`; Radix dodaje ukryte pole wejściowe.
+
+## Tokeny
+
+`border-input` (ramka), `bg-primary` i `text-primary-foreground` oraz `border-primary` (zaznaczone), `ring-ring` (fokus), `border-destructive` i `ring-destructive` (invalid), `rounded-[4px]`, `size-4`; w ciemnym motywie tło `bg-input/30`.
+
+## Stany
+
+| Stan | Zachowanie | Jak wywołać |
+|---|---|---|
+| unchecked | Pusta ramka `border-input`. | domyślnie |
+| checked | Tło `bg-primary`, ikona znacznika. | `checked` lub `defaultChecked` |
+| indeterminate | Stan pośredni (`data-state=indeterminate`), pokazywany przez wskaźnik Radix. | `checked="indeterminate"` |
+| focus-visible | Obrys 3 px `ring-ring/50` i `border-ring`. | nawigacja klawiaturą |
+| disabled | `opacity-50`, kursor `not-allowed`. | `disabled` |
+| invalid | `border-destructive`, pierścień `ring-destructive/20`. | `aria-invalid` |
+
+## Dostępność
+
+- Radix renderuje `button` z `role="checkbox"` i `aria-checked` (`true`, `false`, `mixed`).
+- Klawiatura: `Space` przełącza, `Tab` przenosi fokus.
+- Komponent nie ma własnej etykiety — deweloper musi dodać `Label` z `htmlFor` zgodnym z `id` lub `aria-label`.
+- `aria-invalid` zmienia wygląd; komunikat błędu pokaż w `ErrorMessage` i powiąż przez `aria-describedby`.
+- Stan pośredni ustawiaj tylko dla pola grupującego i ogłaszaj go tekstem.
+
+## Rób i nie rób
+
+<DoDont
+  rob={[
+    "Zawsze łącz `Checkbox` z `Label` (`htmlFor` / `id`).",
+    "Etykieta opisuje stan twierdzący: „Powiadom klienta”.",
+    "Błąd pola pokaż przez `aria-invalid` i `ErrorMessage`.",
+  ]}
+  nieRob={[
+    "Checkboxa bez etykiety.",
+    "Checkboxa do akcji natychmiastowej (zapisz, usuń).",
+    "Etykiet w formie negacji („Nie wysyłaj…”).",
+  ]}
+/>
+
+## API
+
+<Controls of={CheckboxStories.Unchecked} />

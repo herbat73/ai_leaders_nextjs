@@ -1,0 +1,53 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="Fundamenty/Treści" />
+
+# Treści
+
+Interfejs mówi po polsku. Komponenty nie mają wbudowanych tekstów domenowych: tekst wchodzi przez props, a pochodzi z jednego pliku `copy.ts` obok strony.
+
+## Gdzie żyje tekst
+
+| Rodzaj | Gdzie | Przykład |
+|---|---|---|
+| Teksty strony | `copy.ts` obok `page.tsx` (stała `as const`) | `app/returns/copy.ts` → `overviewCopy` |
+| Etykiety statusów, akcji | `copy.ts` strony admina, klucze = wartości domenowe | `returnsCopy.statusLabels.approved` → „Zatwierdzone” |
+| Błędy dla klienta | `returns/_lib/error-copy.ts`, wybór klucza przez `customerErrorKey` z `core` | „Zbyt wiele prób. Odczekaj chwilę i spróbuj ponownie.” |
+| Daty, kwoty, liczby mnogie | `core` (`formatDatePl`, `formatMoney`, `pluralPl`) → gotowy tekst do props | „1299,00 zł”, „2 szt.” |
+| Domyślne teksty komponentu | `DialogContent` ma „Zamknij” (`closeLabel`); pozostałe domyślne teksty admina są jeszcze angielskie, więc zawsze przekazuj własne | „Znane luki” |
+
+Nigdy nie pokazuj użytkownikowi `error.message` z `apiCall`: jest po angielsku. Zamapuj kod błędu na tekst (`customerErrorKey` + `errorCopy`).
+
+## Ton
+
+- **Klient (public):** zwracamy się do klienta w drugiej osobie („Sprawdź numer zamówienia”, „Potrzebujemy od Ciebie…”), prosto, bez żargonu i bez winienia („Nie znaleźliśmy zamówienia”, nie „Podałeś zły numer”).
+- **Agent (admin):** rzeczowo i krótko, w trybie rozkazującym dla akcji („Zatwierdź”, „Odrzuć”, „Poproś klienta o informacje”).
+- **Nie mów „błąd”**, jeśli możesz powiedzieć, co się stało i co zrobić dalej.
+
+## Wzory
+
+| Element | Zasada | Dobrze | Źle |
+|---|---|---|---|
+| Przycisk | czasownik + obiekt, mówi co się stanie | „Rozpocznij zwrot”, „Zatwierdź zwrot” | „OK”, „Dalej”, „Kliknij tutaj” |
+| Przycisk w trakcie akcji | czas teraźniejszy + „…” | „Wysyłanie…”, „Zapisuję…” | „Proszę czekać” |
+| Błąd | co się stało + co zrobić | „Nie udało się wysłać zgłoszenia. Spróbuj ponownie.” | „Błąd 500” |
+| Błąd pola | konkretnie, bez winy | „Podaj adres e-mail w formacie nazwa@domena.pl” | „Nieprawidłowe dane” |
+| Stan pusty | co tu będzie + co zrobić | „Nie masz jeszcze zgłoszeń” + „Rozpocznij zwrot” | „Brak danych” |
+| Potwierdzenie destrukcyjne | pytanie z nazwą obiektu + skutek | „Odrzucić zwrot RMA-2026-00042? Klient dostanie e-mail z powodem.” | „Czy na pewno?” |
+| Etykieta pola | rzeczownik, bez dwukropka | „Numer zamówienia” | „Podaj numer zamówienia:” |
+
+## Formaty
+
+- Kwoty: `1299,00 zł` (przecinek, spacja nierozdzielająca przed `zł`), zawsze z `formatMoney`.
+- Daty: `formatDatePl`; czasy zdarzeń w osi czasu jako gotowy tekst (`at`).
+- Liczby mnogie: `pluralPl` („1 sztuka”, „2 sztuki”, „5 sztuk”); nie sklejaj „szt.” ręcznie, jeśli kontekst pozwala na pełne słowo.
+- Numer RMA: `font-mono`, nie łam w środku.
+- Wartości domenowe (`approved`) zostają angielskie w kodzie i API; użytkownik widzi tylko etykiety.
+
+## Wielkość liter
+
+Zdania zaczynamy wielką literą; nagłówki i etykiety w stylu zdaniowym („Twoje zwroty”, nie „Twoje Zwroty”). Przyciski zdaniowo. Bez WIELKICH LITER do wyróżniania.
+
+## Domyślne teksty angielskie
+
+Część komponentów admina ma jeszcze angielskie wartości domyślne (lista w „Znane luki”). Przekazuj zawsze polski tekst; nie zostawiaj domyślnego.

@@ -1,0 +1,57 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="Fundamenty/Odstępy, promienie i cienie" />
+
+# Odstępy, promienie i cienie
+
+## Odstępy
+
+Siatka Tailwind (4 px). W kodzie używamy wąskiego zestawu; wybieraj z niego.
+
+| Odstęp | Klasa | Użycie |
+|---|---|---|
+| 4 px | `space-y-1`, `gap-1` | etykieta i pole, tytuł i opis |
+| 8 px | `gap-2`, `space-y-2` | przyciski obok siebie, elementy jednej grupy (opcje w `ChoiceGroup`) |
+| 12 px | `gap-3`, `space-y-3`, `p-3` | elementy listy, wnętrze karty opcji |
+| 16 px | `gap-4`, `space-y-4`, `px-4 py-2` | pola w formularzu, wnętrze `StatTile` |
+| 24 px | `space-y-6`, `p-6` | sekcje strony admina, wnętrze `Card` |
+| 32 px | `space-y-8`, `py-8`, `p-8` | główny kontener strony |
+
+Reguły:
+
+- **Odstępy między rodzeństwem robi rodzic** (`space-y-*` lub `gap-*`), nie margines dziecka.
+- Jedna wartość w jednej roli: w całym formularzu pola dzieli to samo `space-y-4`.
+- Układ strony: public `mx-auto max-w-2xl space-y-8 px-4 py-8 sm:px-6`; admin lista `mx-auto max-w-5xl p-8`; admin szczegół `mx-auto max-w-3xl space-y-6 p-8`.
+- Układ pod mobile jest domyślny, `sm:` rozszerza (np. `StatRow`: 1 kolumna → `sm:grid-cols-2` → `lg:grid-cols-4`).
+
+## Promienie
+
+Baza to `--radius` (0,625 rem); `rounded-md` = baza − 2 px, `rounded-lg` = baza.
+
+| Klasa | Użycie |
+|---|---|
+| `rounded-md` | kontrolki admina: `Button`, `Input`, `Select`, `Badge` |
+| `rounded-lg` | powierzchnie i kontrolki publiczne: `Card`, `Alert`, `Banner`, pola publiczne, karty opcji |
+| `rounded-full` | wyłącznie kółka kroków i punkty osi czasu |
+
+Nie mieszaj promieni na jednej powierzchni. Nie używaj `rounded-none`/`rounded-xl` do „wyróżnienia”.
+
+## Cienie i obramowania
+
+Powierzchnie oddzielamy **obramowaniem** (`border`), cień jest tylko lekki.
+
+| Klasa | Użycie |
+|---|---|
+| `shadow-sm` | `Card`, `StatTile`, karty opcji, pola publiczne, `Input` admina |
+| `shadow-xs` | prymitywy shadcn dodane później: `Textarea`, `Select`, `Checkbox` (różnica `sm`/`xs` jest wizualnie niemal niewidoczna; nie rozstrzygaj jej w ekranie) |
+| `shadow-md` / `shadow-lg` | wyłącznie warstwy nad stroną: `SelectContent` (md), `DialogContent` (lg) |
+
+Karta w karcie jest zakazana: grupuj `Separator`em lub nagłówkiem, nie kolejną `Card`.
+
+## Warstwy (z-index)
+
+Tylko Radix: `Dialog`, `Select` i `Tooltip` używają `z-50` i renderują się w portalu. Nie ustawiaj własnych `z-*` w ekranach.
+
+## Fokus
+
+Każdy element interaktywny ma widoczny fokus z klawiatury: pierścień `ring-2 ring-ring` (admin; shadcn dodaje też `ring-[3px] ring-ring/50` w nowszych prymitywach) lub `ring-ring/60` (public). Nigdy `outline-none` bez zastępczego pierścienia.

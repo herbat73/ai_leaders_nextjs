@@ -2,6 +2,7 @@
 
 import { useId, type ReactElement } from "react";
 
+import { ActionButton } from "../action-button";
 import { Banner } from "../banner";
 
 export interface SummaryItem {
@@ -69,21 +70,15 @@ export function SummaryStep({ itemsHeading, items, rows, acknowledgement, submit
           <span>{acknowledgement.label}</span>
         </label>
         {acknowledgement.error && (
-          <p id={ackErrorId} role="alert" className="mt-1 text-sm text-red-600 dark:text-red-400">
+          <p id={ackErrorId} role="alert" className="mt-1 text-sm text-destructive">
             {acknowledgement.error}
           </p>
         )}
       </div>
       {errorText && <Banner tone="error">{errorText}</Banner>}
-      <button
-        type="button"
-        onClick={submit.onSubmit}
-        disabled={submit.pending}
-        aria-disabled={submit.pending}
-        className="w-full rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
-      >
+      <ActionButton size="lg" onClick={submit.onSubmit} disabled={submit.pending} aria-disabled={submit.pending} className="sm:w-auto" fullWidth>
         {submit.pending ? submit.pendingLabel : submit.label}
-      </button>
+      </ActionButton>
     </div>
   );
 }

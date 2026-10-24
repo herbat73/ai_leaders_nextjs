@@ -1,0 +1,84 @@
+import { Canvas, Controls, Meta } from "@storybook/addon-docs/blocks";
+
+import { DoDont } from "../../docs/blocks";
+import * as LoadingMessageStories from "./loading-message.stories";
+
+<Meta of={LoadingMessageStories} />
+
+# LoadingMessage
+
+Tekstowy wskaźnik ładowania, ogłaszany czytnikom ekranu przez `role="status"`.
+
+<Canvas of={LoadingMessageStories.Default} />
+
+<Canvas of={LoadingMessageStories.CustomMessage} />
+
+## Kiedy użyć
+
+| Sytuacja | Komponent |
+|---|---|
+| Pobieranie lub obliczanie trwa, a kształt wyniku jest nieznany lub nieistotny (np. raport w laboratorium próbki). | `LoadingMessage` |
+| Pobieranie trwa, a znany jest układ (karty, wiersze tabeli) — chcesz uniknąć skoku układu. | `Skeleton` |
+| Pobieranie się udało, ale wynik jest pusty. | `EmptyState` |
+| Pobieranie się nie udało. | `ErrorMessage` |
+
+`DataTable` pokazuje `LoadingMessage` sam, gdy `loading` jest `true`.
+
+## Kiedy nie użyć
+
+- Do akcji na przycisku (zapis, zatwierdzenie) — tam stan oczekiwania to `disabled` plus zmieniona etykieta („Zapisuję…”).
+- Gdy stronę ładuje serwer (Server Component) — dane są gotowe przy renderze, wskaźnik jest zbędny.
+- Do pustej listy.
+
+## Jak złożyć
+
+`LoadingMessage` stawiasz w miejscu, gdzie pojawi się wynik. Tekst przekaż z `app`: domyślne `Loading…` jest angielskie, więc w aplikacji zawsze podawaj `message`.
+
+```tsx
+import { ErrorMessage, LoadingMessage } from "@easyrms/ui/admin";
+
+{loading && <LoadingMessage message={copy.loading} />}
+{error && <ErrorMessage message={error} />}
+```
+
+Tak robi `case-sample-lab.tsx`: ładowanie, błąd, a po sukcesie — wyniki.
+
+## Tokeny
+
+`text-muted-foreground`, `text-sm`. Bez animacji, bez ikony.
+
+## Stany
+
+| Stan | Zachowanie |
+|---|---|
+| default | Tekst `Loading…` (angielski, domyślny `message`). |
+| z własnym `message` | Podany tekst, np. „Obliczam…” (story `CustomMessage`). |
+| znika | Usuń komponent z DOM po zakończeniu; nie ma ukrywania przez prop. |
+
+## Dostępność
+
+- `role="status"` (polite): zmiana tekstu jest ogłaszana bez przerywania. Najlepiej, gdy element jest w DOM jeszcze przed zmianą treści; przy warunkowym renderze niektóre czytniki mogą pominąć ogłoszenie — to akceptowalne dla krótkiego tekstu.
+- Wskaźnik nie ma ruchu, więc nie wymaga obsługi `prefers-reduced-motion`.
+
+## Rób i nie rób
+
+<DoDont
+  rob={[
+    "Podawaj `message` z `app` — krótko i konkretnie („Obliczam raport…”).",
+    "Zastąp go wynikiem, błędem lub `EmptyState` zaraz po zakończeniu.",
+    "Używaj `Skeleton`, gdy układ jest znany i skok byłby widoczny.",
+  ]}
+  nieRob={[
+    "Zostawiać domyślnego, angielskiego `Loading…` w polskiej aplikacji.",
+    "Stosować go na przycisku zamiast `disabled` i zmiany etykiety.",
+    "Pokazywać go razem z `EmptyState` w tym samym miejscu.",
+  ]}
+/>
+
+## API
+
+<Controls of={LoadingMessageStories.Default} />
+
+| Prop | Typ | Opis |
+|---|---|---|
+| `message` | `string` | Opcjonalny. Domyślnie `Loading…`. |

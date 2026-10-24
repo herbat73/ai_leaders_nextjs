@@ -3,6 +3,7 @@ export * from "./text-input";
 export * from "./textarea";
 export * from "./choice-group";
 export * from "./banner";
+export * from "./action-button";
 export * from "./stepper";
 export * from "./stage-list";
 export * from "./timeline";

@@ -1,0 +1,115 @@
+import { Canvas, Controls, Meta } from "@storybook/addon-docs/blocks";
+
+import { DoDont } from "../../docs/blocks";
+import * as LinePickerStories from "./line-picker.stories";
+
+<Meta of={LinePickerStories} />
+
+# LinePicker
+
+Pierwszy krok kreatora zwrotu: lista pozycji zamówienia z polem wyboru i licznikiem ilości ograniczonym do pozostałej ilości.
+
+<Canvas of={LinePickerStories.Selected} />
+
+## Kiedy użyć
+
+- Klient wybiera **które pozycje zamówienia** zwraca i **ile sztuk** każdej (krok `items` kreatora).
+- Pozycje mogą być niekwalifikujące się (`eligible: false`) i klient ma przeczytać dlaczego.
+
+LinePicker kontra `ChoiceGroup`: `ChoiceGroup` to wybór **jednej** opcji (radio); LinePicker pozwala wybrać **wiele** pozycji (checkboxy) i dla każdej podać ilość.
+
+## Kiedy nie użyć
+
+- Dla wyboru jednej opcji — `ChoiceGroup`.
+- Do edycji ilości poza kreatorem — komponent zakłada, że wybrane pozycje mają ilość od 1 do `remainingQuantity`.
+- W panelu admina — pozycje zwrotu pokazuje tabela.
+
+## Jak złożyć
+
+Kolejność kreatora: **1. LinePicker (`items`)** → `ReasonsStep` → `MethodStep` → `ResolutionStep` → `SummaryStep`, wszystko w `WizardShell`. Kolejność i walidację kroków trzyma `core` (`WIZARD_STEPS`, `checkWizardStep`).
+
+Wejście: `lines` (tablica `LinePickerLine`) i teksty: `legend`, `decreaseLabel`, `increaseLabel`. Wyjście: `onToggle(lineId, selected)` i `onQuantityChange(lineId, quantity)`. Komponent jest kontrolowany: stan wybranych pozycji (`selected`, `quantity`) trzyma rodzic — w aplikacji komponent `Wizard` w `app/returns/new/wizard.tsx`.
+
+```tsx
+<LinePicker
+  legend={copy.items.legend}
+  decreaseLabel={copy.items.decrease}
+  increaseLabel={copy.items.increase}
+  lines={lines.map((line) => ({
+    id: line.lineRef,
+    title: line.name,
+    detail: `${copy.items.unitPrice} ${line.unitPriceText}`,
+    remainingQuantity: line.remainingQuantity,
+    eligible: line.eligible,
+    ineligibleReason: reasonText(line),
+    selected: item !== undefined,
+    quantity: item?.quantity ?? 1,
+    capText: copy.items.capText(line.remainingQuantity),
+    quantityLabel: copy.items.quantityLabel(line.name),
+  }))}
+  onToggle={toggleLine}
+  onQuantityChange={changeQuantity}
+  error={showProblems ? copy.problems.no_items : undefined}
+/>
+```
+
+- Cena, SKU i tekst limitu (`detail`, `capText`) przychodzą jako gotowe teksty; `ui` nie formatuje pieniędzy ani liczby mnogiej.
+- Błąd przekazuj po próbie przejścia dalej, nie przy pierwszym renderze.
+- Pozycję odrzuconą przez serwer (zmiana stanu zamówienia) pokaż jako `eligible: false` z przyczyną.
+
+<Canvas of={LinePickerStories.QuantityAtCap} />
+
+## Tokeny
+
+Karta: `bg-background`, `border-input` (dostępna), `border-primary` + `ring-primary` (wybrana), `border-border` + `opacity-70` (niekwalifikująca się), `rounded-lg`, `shadow-sm`. Tytuł `text-foreground`, szczegóły i limit `text-muted-foreground`, przyczyna `text-warning-subtle-foreground`, błąd `text-destructive`, kontrolki `border-input` z fokusem `ring-ring/60`, `accent-primary` na checkboxie.
+
+## Stany
+
+| Stan | Wygląd i zachowanie | Jak wywołać |
+|---|---|---|
+| default | karta z checkboxem, bez licznika | `selected: false` |
+| selected | karta z `border-primary`, pojawia się licznik − / pole / + | `selected: true` |
+| quantity at cap | przycisk + nieaktywny, widoczny `capText` | `quantity >= remainingQuantity` |
+| minimum | przycisk − nieaktywny | `quantity <= 1` |
+| ineligible (disabled) | checkbox nieaktywny, `opacity-70`, przyczyna jako tekst | `eligible: false` + `ineligibleReason` |
+| invalid | tekst błędu pod listą (`role="alert"`) | `error` |
+| focus-visible | pierścień 2 px na checkboxie (natywny), przyciskach i polu ilości | Tab |
+
+Pole ilości trzyma lokalny szkic: można je opróżnić w trakcie pisania; wartości spoza zakresu są ucinane do 1–`remainingQuantity` po opuszczeniu pola (blur), a `onQuantityChange` dostaje tylko poprawne liczby.
+
+<Canvas of={LinePickerStories.Invalid} />
+
+## Dostępność
+
+- Lista to `fieldset` z `legend`; błąd jest powiązany z `fieldset` przez `aria-describedby`, a jego tekst ma `role="alert"`.
+- Checkbox ma etykietę (tytuł pozycji i szczegóły); przyczyna niedostępności jest tekstem i podpięta przez `aria-describedby`.
+- Przyciski − i + mają `aria-label` z `decreaseLabel` / `increaseLabel`, a znaki są `aria-hidden`. Pole ilości ma `aria-label` z `quantityLabel` (podaj nazwę produktu, by było jednoznaczne) i `aria-describedby` do tekstu limitu, gdy ilość jest na maksimum.
+- Cel dotyku przycisków i pola to 40 px (`size-10`, `h-10`).
+- Nic nie opiera się na kolorze: niedostępność i limit to tekst.
+- Deweloper dostarcza: `legend`, `decreaseLabel`, `increaseLabel`, `quantityLabel` dla każdej pozycji, `ineligibleReason` dla każdej niekwalifikującej się, `capText`.
+
+## Rób i nie rób
+
+<DoDont
+  rob={[
+    "Podaj `ineligibleReason` przy każdej pozycji z `eligible: false`.",
+    "Ustaw `remainingQuantity` na realny limit; klient nie przekroczy go ani polem, ani przyciskiem.",
+    "Nazwij pole ilości nazwą produktu przez `quantityLabel`.",
+  ]}
+  nieRob={[
+    "Ukrywania niekwalifikujących się pozycji bez wyjaśnienia.",
+    "Formatowania ceny wewnątrz `ui`; przekaż gotowy `detail`.",
+    "LinePicker do wyboru jednej opcji.",
+  ]}
+/>
+
+## API
+
+<Controls of={LinePickerStories.Default} />
+
+| Prop | Znaczenie |
+|---|---|
+| `lines` | `LinePickerLine`: `id`, `title`, `detail?`, `remainingQuantity`, `eligible`, `ineligibleReason?`, `selected`, `quantity`, `capText?`, `quantityLabel`. |
+| `onToggle` | `(lineId, selected)` po zmianie checkboxa. |
+| `onQuantityChange` | `(lineId, quantity)` po zmianie ilości (przyciski lub pole). |
+| `error` | Tekst błędu całej listy. |

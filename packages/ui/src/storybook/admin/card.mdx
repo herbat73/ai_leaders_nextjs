@@ -1,0 +1,86 @@
+import { Canvas, Controls, Meta } from "@storybook/addon-docs/blocks";
+
+import { DoDont } from "../docs/blocks";
+import * as CardStories from "./card.stories";
+
+<Meta of={CardStories} />
+
+# Card
+
+Powierzchnia do grupowania treści na stronach admina (shadcn): ramka z tłem `bg-card`, nagłówkiem i treścią.
+
+<Canvas of={CardStories.Default} />
+
+## Kiedy użyć
+
+- Jedno logiczne grupowanie na stronie: dane zwrotu, lista pozycji, oś czasu, karta decyzji. **Jedna Card = jedno grupowanie na poziomie strony.**
+- Gdy treść ma własny tytuł i opis (`CardTitle`, `CardDescription`).
+- Do opakowania `Table`, `DataTable` lub formularza `CrudForm`.
+
+Alternatywy: do rozdzielenia sekcji w jednej karcie użyj `Separator`; do przełączania widoków `Tabs`; do komunikatu `Alert`.
+
+## Kiedy nie użyć
+
+- Karta w karcie — zagnieżdżone ramki dodają szum; wewnątrz użyj `Separator` lub odstępów.
+- Dla pojedynczego zdania lub etykiety — użyj zwykłego tekstu albo `Badge`.
+- Na stronach publicznych (klient) — tam używaj kontenerów Tailwind z pakietu `public`.
+- Jako elementu klikalnego w całości — `Card` nie ma stanów interaktywnych.
+
+## Jak złożyć
+
+```tsx
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@easyrms/ui/admin";
+
+<Card>
+  <CardHeader>
+    <CardTitle>Pozycje zwrotu</CardTitle>
+    <CardDescription>Produkty zgłoszone przez klienta.</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <Table>…</Table>
+  </CardContent>
+</Card>
+```
+
+- Kolejność: `CardHeader` (z `CardTitle` i opcjonalnie `CardDescription`), potem `CardContent`.
+- Reguła użycia w aplikacji: `Card` jest używana na stronach `/admin/returns`, `/admin/returns/[id]` i laboratorium case sample.
+- `CardTitle` renderuje `h3`; ułóż hierarchię nagłówków strony tak, by karta była pod `h2`.
+- Odstępy między kartami ustaw na rodzicu (`space-y-4` lub `grid gap-4`), nie przez `className` karty.
+
+## Tokeny
+
+`bg-card`, `text-card-foreground`, ramka `border`, `rounded-lg`, `shadow-sm`; opis w `text-muted-foreground`; odstępy `p-6` (nagłówek) i `p-6 pt-0` (treść).
+
+## Stany
+
+| Stan | Zachowanie |
+|---|---|
+| default | Ramka, tło `bg-card`, cień `shadow-sm`. |
+| hover / focus / disabled | Brak — komponent jest statyczny. |
+| pusta karta | Brak osobnego stanu; w `CardContent` użyj `EmptyState`. |
+| ładowanie / błąd | Brak osobnego stanu; w `CardContent` użyj `Skeleton`, `LoadingMessage` lub `ErrorMessage`. |
+
+## Dostępność
+
+- `Card` to zwykły `div` bez roli. `CardTitle` to `h3`, więc zachowaj spójną hierarchię nagłówków.
+- Jeśli karta ma być regionem nawigowalnym, dodaj `role="region"` i `aria-labelledby` wskazujące na `id` tytułu.
+- Nie opieraj się na samej ramce do przekazania grupowania — tytuł nazywa grupę.
+
+## Rób i nie rób
+
+<DoDont
+  rob={[
+    "Jedna karta na jedno logiczne grupowanie.",
+    "Zawsze dawaj `CardTitle`, aby grupa miała nazwę.",
+    "Wewnątrz karty rozdzielaj części przez `Separator`.",
+  ]}
+  nieRob={[
+    "Zagnieżdżania `Card` w `Card`.",
+    "Zmieniania tła klasami (`bg-white`) — token `bg-card` działa w obu motywach.",
+    "Używania `Card` jako przycisku.",
+  ]}
+/>
+
+## API
+
+<Controls of={CardStories.Default} />

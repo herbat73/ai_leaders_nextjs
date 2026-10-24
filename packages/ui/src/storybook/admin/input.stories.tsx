@@ -15,3 +15,4 @@ export const Default: Story = {};
 export const Filled: Story = { args: { defaultValue: "ORD-10042" } };
 export const Email: Story = { args: { type: "email", placeholder: "you@example.com", "aria-label": "Email" } };
 export const Disabled: Story = { args: { disabled: true, defaultValue: "ORD-10042" } };
+export const Invalid: Story = { args: { "aria-invalid": true, defaultValue: "anna" } };

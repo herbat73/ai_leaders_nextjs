@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, type ReactElement } from "react";
 import { apiCall } from "@easyrms/ui/api";
+import { ActionButton } from "@easyrms/ui/public";
 
 import { overviewCopy as copy } from "./copy";
 
@@ -26,16 +27,11 @@ export function LogoutButton(): ReactElement {
 
   return (
     <div className="text-right">
-      <button
-        type="button"
-        onClick={logout}
-        disabled={pending}
-        className="text-sm underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 disabled:opacity-60"
-      >
+      <ActionButton variant="link" onClick={logout} disabled={pending}>
         {pending ? copy.loggingOut : copy.logout}
-      </button>
+      </ActionButton>
       {failed && (
-        <p role="alert" className="mt-1 text-sm text-red-600 dark:text-red-400">
+        <p role="alert" className="mt-1 text-sm text-destructive">
           {copy.logoutFailed}
         </p>
       )}

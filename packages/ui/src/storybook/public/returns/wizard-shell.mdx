@@ -1,0 +1,101 @@
+import { Canvas, Controls, Meta } from "@storybook/addon-docs/blocks";
+
+import { DoDont } from "../../docs/blocks";
+import * as WizardShellStories from "./wizard-shell.stories";
+
+<Meta of={WizardShellStories} />
+
+# WizardShell
+
+Rama kreatora zwrotu: `Stepper`, nagłówek kroku, na który przenoszony jest fokus przy zmianie kroku, treść kroku oraz przyciski Wstecz i Dalej.
+
+<Canvas of={WizardShellStories.MiddleStep} />
+
+## Kiedy użyć
+
+- Zawsze, gdy składasz wieloetapowy kreator dla klienta: rama zapewnia pasek postępu, nagłówek, fokus i nawigację w jednym miejscu.
+- W kreatorze zwrotu obejmuje pięć kroków: `items` (`LinePicker`), `reasons` (`ReasonsStep`), `method` (`MethodStep`), `resolution` (`ResolutionStep`), `summary` (`SummaryStep`).
+
+WizardShell kontra `Stepper`: `Stepper` to sam pasek postępu; rama dokłada nagłówek, fokus i przyciski.
+
+## Kiedy nie użyć
+
+- Dla zwykłego, jednoekranowego formularza (np. wyszukiwanie zamówienia) — `Field` i `ActionButton`.
+- Dla statusu zgłoszenia — `StageList`.
+
+## Jak złożyć
+
+Rama nie zna kroków i nie waliduje: wszystko steruje rodzic (`Wizard` w `app/returns/new/wizard.tsx`). Kolejność i walidację kroków trzyma `core` (`WIZARD_STEPS`, `checkWizardStep`), teksty pochodzą z pliku copy aplikacji.
+
+Wejście: `steps`, `currentId`, `stepperLabel`, `stepDoneLabel`, `heading`, `focusKey`, `backLabel`, `nextLabel`, `showBack`, `showNext`, `nextDisabled?`, `backDisabled?` i `children` (treść bieżącego kroku). Wyjście: `onBack()` i `onNext()`.
+
+```tsx
+<WizardShell
+  steps={WIZARD_STEPS.map((id) => ({ id, label: copy.steps[id] }))}
+  currentId={step}
+  stepperLabel={copy.stepperLabel}
+  stepDoneLabel={copy.stepDoneLabel}
+  heading={copy.headings[step]}
+  focusKey={step}
+  backLabel={copy.backButton}
+  nextLabel={copy.nextButton}
+  showBack={stepIndex > 0}
+  showNext={step !== "summary"}
+  backDisabled={submitting}
+  onBack={goBack}
+  onNext={goNext}
+>
+  {renderStep()}
+</WizardShell>
+```
+
+- `onNext` w aplikacji sprawdza krok: gdy są problemy, ustawia `showProblems` i nie przechodzi dalej (błędy wracają do komponentów kroku). Dlatego `nextDisabled` nie jest używane do blokowania z powodu niepoprawnych danych — klient dostaje komunikaty, nie martwy przycisk.
+- Na ostatnim kroku `showNext={false}`, bo `SummaryStep` ma własny przycisk wysłania.
+- Na pierwszym kroku `showBack={false}`; zamiast przycisku rama renderuje pusty `span`, by Dalej został po prawej.
+
+<Canvas of={WizardShellStories.FirstStep} />
+
+## Tokeny
+
+Nagłówek: `text-xl font-semibold text-foreground`, fokus `ring-ring/60`. Przyciski to `ActionButton size="lg"`: Wstecz `variant="secondary"`, Dalej `primary` (kolory, fokus i disabled z `ActionButton`). Odstępy `space-y-6`. Układ przycisków: kolumna odwrócona na telefonie (Dalej na górze), rząd z rozstawieniem od `sm`.
+
+## Stany
+
+| Stan | Wygląd i zachowanie | Jak wywołać |
+|---|---|---|
+| pierwszy krok | bez przycisku Wstecz | `showBack={false}` |
+| środkowy krok | Wstecz i Dalej | `showBack`, `showNext` |
+| ostatni krok | bez Dalej (krok ma własne wysłanie) | `showNext={false}` |
+| next disabled | Dalej z `opacity-60`, nieaktywny | `nextDisabled` |
+| back disabled | Wstecz nieaktywny (np. w trakcie wysyłania) | `backDisabled` |
+| focus-visible | pierścień 2 px na przyciskach i nagłówku | Tab |
+
+<Canvas of={WizardShellStories.NextDisabled} />
+
+<Canvas of={WizardShellStories.LastStep} />
+
+## Dostępność
+
+- Przy zmianie `focusKey` fokus przechodzi na nagłówek kroku (`h2` z `tabIndex={-1}`), więc czytnik ekranu ogłasza nowy krok, a użytkownik klawiatury zaczyna od góry kroku. Pierwszy render nie kradnie fokusu. Przekaż w `focusKey` id bieżącego kroku.
+- `Stepper` to `nav` z `aria-label` i `aria-current="step"`; ukończone kroki mają ukryty tekst `stepDoneLabel`.
+- Przyciski to natywne `button type="button"`, z widocznym tekstem.
+- Deweloper dostarcza: `stepperLabel`, `stepDoneLabel`, nagłówek każdego kroku, etykiety przycisków, unikalny `focusKey` na krok.
+
+## Rób i nie rób
+
+<DoDont
+  rob={[
+    "Przekaż `focusKey={step}`, żeby fokus trafiał na nagłówek nowego kroku.",
+    "Ukryj Dalej na ostatnim kroku i daj krokowi własny przycisk wysłania.",
+    "Zablokuj Wstecz w trakcie wysyłania.",
+  ]}
+  nieRob={[
+    "Ręcznego zarządzania fokusem na zewnątrz ramy.",
+    "Własnych przycisków Wstecz i Dalej wewnątrz kroków.",
+    "Blokowania Dalej bez komunikatu o tym, co poprawić.",
+  ]}
+/>
+
+## API
+
+<Controls of={WizardShellStories.MiddleStep} />

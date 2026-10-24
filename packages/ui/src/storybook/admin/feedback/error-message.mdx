@@ -1,0 +1,84 @@
+import { Canvas, Controls, Meta } from "@storybook/addon-docs/blocks";
+
+import { DoDont } from "../../docs/blocks";
+import * as ErrorMessageStories from "./error-message.stories";
+
+<Meta of={ErrorMessageStories} />
+
+# ErrorMessage
+
+Krótki komunikat o błędzie (pod polem, nad tabelą, pod przyciskiem akcji), ogłaszany czytnikom ekranu jako `role="alert"`.
+
+<Canvas of={ErrorMessageStories.Default} />
+
+## Kiedy użyć
+
+| Sytuacja | Komponent |
+|---|---|
+| Błąd walidacji pola lub błąd serwera pod formularzem. | `ErrorMessage` |
+| Błąd pobierania listy (`DataTable` robi to sam przez prop `error`). | `ErrorMessage` |
+| Błąd akcji (np. nieudane zatwierdzenie zwrotu), jedna linia. | `ErrorMessage` pod przyciskiem |
+| Błąd wymagający tytułu, opisu lub akcji naprawczej. | `Alert` (wariant `destructive`) |
+| Stan pusty bez błędu. | `EmptyState` |
+
+## Kiedy nie użyć
+
+- Do komunikatów sukcesu i ostrzeżeń — użyj `Alert` z odpowiednim tonem.
+- Do kilku błędów naraz w jednym bloku — pokaż każdy przy swoim polu.
+- Na stronach publicznych: tam jest `Banner` / `Field` z własnym błędem.
+
+## Jak złożyć
+
+- Pod polem: `Label` + `Input` + `ErrorMessage`, w kontenerze `space-y-1` — dokładnie tak składa to `CrudForm`.
+- Pod akcją: `ErrorMessage` renderowany warunkowo po nieudanym wywołaniu `apiCall` (tak robi `decision-actions.tsx` w `/admin/returns/[id]`).
+- Tekst błędu przychodzi z `app`: z `AppError` (mapowanego przez `apiHandler` na `{ ok: false, error }`) albo ze schematu Zod. `ui` niczego nie tłumaczy.
+
+```tsx
+import { Button, ErrorMessage } from "@easyrms/ui/admin";
+
+<Button onClick={approve} disabled={pending}>
+  {copy.approve}
+</Button>;
+{error && <ErrorMessage message={error} />}
+```
+
+## Tokeny
+
+`text-destructive` (kolor tekstu), `text-sm`. Brak tła i obramowania — dla pełnego bloku błędu użyj `Alert` (tonalny `destructive-subtle*`).
+
+## Stany
+
+| Stan | Zachowanie |
+|---|---|
+| default | Czerwony (`text-destructive`) tekst w jednej linii, zawija się w razie potrzeby. |
+| nieobecny | Komponent nie renderuje się bez `message` — warunkuj go w wywołaniu (`error && ...`). |
+| pojawienie się | Dodanie do DOM wywołuje ogłoszenie przez `role="alert"`. |
+
+## Dostępność
+
+- `role="alert"` (assertive): czytnik ekranu przerywa i czyta komunikat od razu. Nadaje się do błędów po akcji użytkownika; nie renderuj go przy pierwszym załadowaniu strony, jeśli błąd nie jest efektem akcji.
+- Znaczenie nie zależy od koloru — komunikat to tekst; pisz go tak, by sam wyjaśniał problem.
+- Pole formularza nie dostaje automatycznie `aria-invalid` ani `aria-describedby` (patrz uwagi o `CrudForm`).
+
+## Rób i nie rób
+
+<DoDont
+  rob={[
+    "Pisz, co poszło nie tak i co zrobić dalej („Adres e-mail nie pasuje do zamówienia.”).",
+    "Stawiaj komunikat przy polu lub akcji, której dotyczy.",
+    "Pokazuj go tylko wtedy, gdy błąd istnieje.",
+  ]}
+  nieRob={[
+    "Pokazywać surowych komunikatów technicznych (stack trace, kod wyjątku).",
+    "Kolorować tekstu błędu klasą palety (`text-red-500`) — użyj tokenu.",
+    "Używać go do ostrzeżeń i sukcesu.",
+  ]}
+/>
+
+## API
+
+<Controls of={ErrorMessageStories.Default} />
+
+| Prop | Typ | Opis |
+|---|---|---|
+| `message` | `string` | Wymagany. Gotowy tekst błędu. |

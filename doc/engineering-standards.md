@@ -52,7 +52,9 @@ Build a new shared piece only for a genuinely new pattern; never re-implement on
 - Every reusable `ui` component ships a `<name>.stories.tsx` in `ui/src/storybook/`, mirroring its path (for example
   `storybook/admin/button.stories.tsx`), with one story per meaningful state (empty,
   loading, error, disabled, dark via the toolbar). Stories pass props only; callbacks use `fn()` from `storybook/test`.
-  A spec's UI acceptance names the stories that show each new state.
+  A spec's UI acceptance names the stories that show each new state. Every component also has a docs page
+  (`ui/src/storybook/<same path>.mdx`) with the fixed sections checked by `npm run docs:check`; colours are semantic
+  tokens only (see `ui/src/storybook/foundations/kolory-i-tokeny.mdx`).
 
 **Data flow (hybrid):** reads in Server Components (resolve the service from the request scope); mutations and
 client-initiated reads go through `apiCall` to API routes. No Server Actions.

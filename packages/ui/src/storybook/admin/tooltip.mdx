@@ -1,0 +1,84 @@
+import { Canvas, Controls, Meta } from "@storybook/addon-docs/blocks";
+
+import { DoDont } from "../docs/blocks";
+import * as TooltipStories from "./tooltip.stories";
+
+<Meta of={TooltipStories} />
+
+# Tooltip
+
+Krótka podpowiedź przy elemencie, oparta na Radix `Tooltip` (shadcn): pojawia się po najechaniu lub fokusie.
+
+<Canvas of={TooltipStories.Open} />
+
+## Kiedy użyć
+
+- Rozwinięcie skrótu lub nazwa przycisku z samą ikoną (uzupełnienie `aria-label`).
+- Pomocnicza wskazówka, bez której interfejs nadal jest zrozumiały.
+
+Alternatywy: informacja istotna dla pracy to widoczny tekst lub `Alert`; pole opisuj `Label` i tekstem pomocniczym; wymaga decyzji to `Dialog`.
+
+## Kiedy nie użyć
+
+- Do informacji niezbędnych do wykonania zadania — **Tooltip nigdy nie niesie informacji koniecznych**.
+- Na urządzeniach dotykowych jako jedynego źródła — tam najechanie nie istnieje, więc podpowiedź jest niedostępna.
+- Do interaktywnej zawartości (linki, przyciski w środku) — zawartość znika po opuszczeniu.
+- Do komunikatów błędów i walidacji — użyj `ErrorMessage`.
+
+## Jak złożyć
+
+`Tooltip` ma własnego providera, więc nie potrzebujesz `TooltipProvider` na górze aplikacji.
+
+```tsx
+import { Button, Tooltip, TooltipContent, TooltipTrigger } from "@easyrms/ui/admin";
+
+<Tooltip>
+  <TooltipTrigger asChild>
+    <Button variant="outline" size="sm" aria-label="Skopiuj numer RMA">Kopiuj</Button>
+  </TooltipTrigger>
+  <TooltipContent>Skopiuj numer RMA do schowka</TooltipContent>
+</Tooltip>
+```
+
+- Wyzwalacz musi być elementem fokusowalnym (`Button`, link); użyj `asChild`.
+- Treść: jedno zdanie, bez znaczników interaktywnych.
+- Opóźnienie otwarcia domyślnie 0 ms (`delayDuration` w `TooltipProvider`).
+- Pozycjonowanie: `side` i `sideOffset` na `TooltipContent`.
+
+## Tokeny
+
+`bg-foreground` i `text-background` (odwrócona para, więc kontrastuje w obu motywach), `rounded-md`, `text-xs`, strzałka w kolorze `bg-foreground`.
+
+## Stany
+
+| Stan | Zachowanie | Jak wywołać |
+|---|---|---|
+| closed | Brak widocznej treści. | domyślnie |
+| open | Dymek z animacją fade/zoom i strzałką. | najechanie, fokus klawiatury, `defaultOpen`, `open` |
+| zamykanie | Animacja wyjścia. | opuszczenie, `Esc`, utrata fokusu |
+
+## Dostępność
+
+- Radix: treść dostaje `role="tooltip"`, a wyzwalacz `aria-describedby`; otwiera się po fokusie klawiatury, więc jest dostępna bez myszy. `Esc` zamyka.
+- Nie jest dostępny na dotyku. Informacja musi istnieć również poza Tooltip.
+- Przycisk z samą ikoną musi mieć `aria-label`; Tooltip jest uzupełnieniem, nie zamiennikiem.
+- Treść nie może być interaktywna ani niezbędna do zrozumienia strony.
+
+## Rób i nie rób
+
+<DoDont
+  rob={[
+    "Używaj do informacji uzupełniających (rozwinięcie skrótu).",
+    "Owiń fokusowalny element przez `TooltipTrigger asChild`.",
+    "Dla przycisku z ikoną dodaj `aria-label` oprócz Tooltip.",
+  ]}
+  nieRob={[
+    "Chowania w Tooltip informacji koniecznych do wykonania zadania.",
+    "Wstawiania linków lub przycisków do `TooltipContent`.",
+    "Wyzwalacza niefokusowalnego (`span` bez `tabindex`).",
+  ]}
+/>
+
+## API
+
+<Controls of={TooltipStories.Open} />

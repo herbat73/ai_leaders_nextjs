@@ -1,0 +1,87 @@
+import { Canvas, Controls, Meta } from "@storybook/addon-docs/blocks";
+
+import { DoDont } from "../docs/blocks";
+import * as SeparatorStories from "./separator.stories";
+
+<Meta of={SeparatorStories} />
+
+# Separator
+
+Cienka linia rozdzielająca treść (shadcn, Radix `Separator`): pozioma lub pionowa.
+
+<Canvas of={SeparatorStories.Horizontal} />
+
+<Canvas of={SeparatorStories.Vertical} />
+
+## Kiedy użyć
+
+- Rozdzielenie dwóch części treści wewnątrz jednej `Card` zamiast zagnieżdżać kolejną kartę.
+- Pionowa kreska między elementami w jednym rzędzie (np. w toolbarze lub pasku metadanych).
+
+Alternatywy: osobne grupowanie na stronie to osobna `Card`; odstęp bez linii wystarczy zwykły `gap` lub `space-y`.
+
+## Kiedy nie użyć
+
+- Do rozdzielania wierszy tabeli — `TableRow` ma własną dolną ramkę.
+- Do każdej pary elementów — nadmiar linii zaszumia widok; zacznij od odstępów.
+- Jako elementu strukturalnego dla czytników ekranu (jest dekoracyjny) — strukturę nadaj nagłówkami.
+
+## Jak złożyć
+
+```tsx
+import { Card, CardContent, Separator } from "@easyrms/ui/admin";
+
+<Card>
+  <CardContent className="space-y-4 pt-6">
+    <p>Dane klienta</p>
+    <Separator />
+    <p>Pozycje zwrotu</p>
+  </CardContent>
+</Card>
+
+<div className="flex h-5 items-center gap-3 text-sm">
+  <span>RMA-1042</span>
+  <Separator orientation="vertical" />
+  <span>Wczoraj</span>
+</div>
+```
+
+- Pozioma linia ma `w-full`; pionowa `h-full`, więc rodzic musi mieć wysokość (np. `h-5`).
+
+## Tokeny
+
+`bg-border`; grubość 1 px (`h-px` lub `w-px`).
+
+## Stany
+
+| Stan | Zachowanie |
+|---|---|
+| horizontal | Domyślnie: `h-px w-full`. |
+| vertical | `orientation="vertical"`: `h-full w-px`; wymaga rodzica z wysokością. |
+| decorative | Domyślnie `true`: linia ukryta przed technologiami asystującymi. |
+| hover / focus / disabled | Brak — element nieinteraktywny. |
+
+## Dostępność
+
+- Domyślnie `decorative` jest `true`, więc Radix nadaje `role="none"` — czytnik ekranu pomija linię.
+- Ustaw `decorative={false}` tylko wtedy, gdy linia ma realnie dzielić treść semantycznie; wtedy dostaje `role="separator"` i `aria-orientation` (dla pionowej).
+- Nie polegaj na linii jako jedynym sygnale podziału; sekcje nazywaj nagłówkami.
+
+## Rób i nie rób
+
+<DoDont
+  rob={[
+    "Używaj do podziału wewnątrz jednej `Card`.",
+    "Dla pionowej linii ustaw wysokość rodzica.",
+    "Zostaw `decorative` domyślnie, jeśli linia jest tylko ozdobą.",
+  ]}
+  nieRob={[
+    "Wstawiania `Separator` między wszystkie elementy listy.",
+    "Zagnieżdżania kart zamiast użycia linii.",
+    "Kolorowania linii klasami (`bg-gray-300`) — token `bg-border` działa w obu motywach.",
+  ]}
+/>
+
+## API
+
+<Controls of={SeparatorStories.Horizontal} />

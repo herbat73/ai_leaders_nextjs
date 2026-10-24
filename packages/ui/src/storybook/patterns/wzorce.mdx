@@ -1,0 +1,115 @@
+import { Canvas, Meta } from "@storybook/addon-docs/blocks";
+
+import * as Ekrany from "./ekrany.stories";
+
+<Meta title="Wzorce/Przegląd" />
+
+# Wzorce ekranów
+
+Wzorzec to sprawdzony szkielet ekranu złożony z prawdziwych komponentów. **Zaczynaj nowy ekran od skopiowania wzorca**, nie od pustej strony. Kod każdego wzorca widzisz przez „Show code” pod podglądem; historie leżą w `ui/src/storybook/patterns/ekrany.stories.tsx`.
+
+Który wzorzec?
+
+| Budujesz | Wzorzec |
+|---|---|
+| Listę rekordów dla agenta | Lista admina |
+| Szczegół rekordu i decyzję agenta | Szczegół z decyzją |
+| Cokolwiek nieodwracalnego | Potwierdzenie akcji nieodwracalnej |
+| Formularz dla klienta | Formularz publiczny |
+| Kolejne kroki dla klienta | `WizardShell` (zobacz Public/Returns/WizardShell) |
+| Etykieta statusu | Status → ton |
+| Dowolny widok z danymi | Macierz stanów |
+
+## Lista admina
+
+Szkielet: `main.mx-auto.max-w-5xl` → `Card` (`CardHeader` z tytułem i opisem liczby, `CardContent.space-y-4`) → filtry jako `Button size="sm"` (aktywny `default`, pozostałe `outline`, `aria-current="page"` na aktywnym) → `DataTable`.
+
+<Canvas of={Ekrany.ListaAdmina} />
+
+Reguły:
+
+- Jeden `Card` na stronie listy; tytuł mówi, czym jest lista („Zwroty”), opis podaje liczbę.
+- Pierwsza kolumna to identyfikator (`font-mono`), ostatnia status (`Badge`, plus `Badge variant="destructive"` „Po terminie”, jeśli dotyczy).
+- Filtr ma odpowiednik w adresie URL (`?status=`), żeby dało się go udostępnić; nieprawidłowy filtr daje komunikat `role="status"`, nie błąd.
+- Wiersz nie ma własnych przycisków akcji; klik prowadzi do szczegółu (link w komórce identyfikatora).
+
+### Stany listy
+
+Każda lista obsługuje wszystkie cztery. Lista bez stanów to nieskończony ekran.
+
+<Canvas of={Ekrany.ListaLadowanie} />
+<Canvas of={Ekrany.ListaPusta} />
+<Canvas of={Ekrany.ListaBlad} />
+
+| Stan | Komponent | Zasada |
+|---|---|---|
+| Ładowanie | `Skeleton` w kontenerze `role="status"` z `aria-label`, albo `DataTable loading` (`LoadingMessage`), gdy kształt nieznany | nie przesuwa układu po załadowaniu |
+| Pusto | `DataTable emptyMessage` (`EmptyState`) | tekst mówi, co tu się pojawi; po filtrze inny tekst niż bez filtra |
+| Błąd | `DataTable error` (`ErrorMessage`, `role="alert"`) | po polsku, co zrobić dalej; nie pokazuj `error.message` |
+| Dane | `DataTable rows` | |
+
+W Server Component ładowanie robi `loading.tsx` lub `Suspense`; stan błędu `error.tsx` — tekst nadal z `copy.ts`.
+
+## Szczegół z decyzją
+
+Szkielet: `main.mx-auto.max-w-3xl.space-y-6` → link „← Wróć do listy” → (po akcji) `Alert` z wynikiem → `Card` z wierszem tytułu (identyfikator + `Badge` statusu) → `dl` faktów → rząd akcji → osobny `Card` „Historia” z `Timeline`.
+
+<Canvas of={Ekrany.SzczegolZDecyzja} />
+
+Reguły:
+
+- **Jedna akcja główna** (`Button default`), pozostałe `outline`; destrukcyjna idzie przez `Dialog` (poniżej), nigdy bezpośrednio.
+- Fakty to `dl` z `dt.text-muted-foreground`; brak wartości to „—” albo tekst typu „Brak notatki”, nigdy pusta komórka.
+- Wynik akcji pokazuje `Alert variant="success"` (info/uprzejmy), niepowodzenie `Alert variant="destructive"` (alert/natychmiastowy) nad kartą; status w `Badge` odświeża się razem z nim.
+- Karta w karcie jest zakazana: osobne sekcje to osobne `Card` obok siebie, w kolumnie `space-y-6`.
+
+## Potwierdzenie akcji nieodwracalnej
+
+<Canvas of={Ekrany.PotwierdzenieAkcjiNieodwracalnej} />
+
+Kliknij „Odrzuć zwrot”, żeby zobaczyć okno.
+
+- Wyzwalacz to `Button variant="destructive"` lub `outline` z tą samą nazwą akcji, co przycisk w oknie.
+- Tytuł jest pytaniem **z nazwą obiektu** („Odrzucić zwrot RMA-2026-00042?”), opis mówi o skutku („Klient dostanie e-mail…, nie da się cofnąć”).
+- Stopka: **Anuluj (`outline`) po lewej, akcja (`destructive`) po prawej**; fokus startuje w oknie, Esc zamyka, fokus wraca na wyzwalacz (zapewnia Radix).
+- Nie używaj `Dialog` do długich formularzy ani do komunikatów informacyjnych (to `Alert`).
+
+## Formularz publiczny
+
+Szkielet: `main.mx-auto.max-w-md.space-y-6` → `h1` → (przy błędzie ogólnym) `Banner tone="error"` → `form.space-y-4.noValidate` → `Field` + `TextInput` na każde pole → jeden `ActionButton type="submit" fullWidth`.
+
+<Canvas of={Ekrany.FormularzPubliczny} />
+
+<Canvas of={Ekrany.FormularzPublicznyBlad} />
+
+<Canvas of={Ekrany.FormularzPublicznyWysylanie} />
+
+Reguły:
+
+- Błąd pola idzie do `Field error` (powiązany z polem), błąd ogólny do `Banner`; nigdy tylko jeden z dwóch, jeśli pole jest winne.
+- Podczas wysyłania `disabled` + etykieta „Sprawdzamy…”; po sukcesie nawigacja, nie komunikat „zapisano”, jeśli użytkownik trafia gdzie indziej.
+- Walidacja klienta i serwera używa tego samego schematu Zod z `core`; komunikaty z `copy.ts`.
+- Wielokrokowe procesy: `WizardShell` (fokus przechodzi na nagłówek kroku, Wstecz/Dalej w jednym miejscu).
+
+## Status → ton
+
+Każdy status ma ton wynikający z pytania **„kto ma teraz ruch?”**, a nie z etapu. To jedyne źródło prawdy dla etykiet statusu; w kodzie żyje w `app/admin/returns/status-badge.ts`.
+
+<Canvas of={Ekrany.StatusNaTon} />
+
+| Ton | Znaczenie | Przykład |
+|---|---|---|
+| `warning` | ktoś czeka na akcję | zgłoszone (agent), oczekuje na klienta |
+| `info` | w toku, nic do zrobienia | zatwierdzone, w drodze, w serwisie |
+| `success` | załatwione | zakończone |
+| `destructive` | zamknięte bez zwrotu / błąd | odrzucone |
+| `secondary` | zamknięte neutralnie | anulowane |
+| `outline` | nieznane | status spoza słownika |
+
+Nowy status: dodaj etykietę w `copy.ts`, ton w `status-badge.ts` (zgodnie z tabelą) i wiersz w tym wzorcu.
+
+## Macierz stanów
+
+<Canvas of={Ekrany.MacierzStanow} />
+
+Przed oddaniem ekranu przejdź tę listę dla **każdego** bloku danych: dane, ładowanie, pusto, błąd. Dodatkowo dla formularza: walidacja klienta, błąd serwera, wysyłanie, sukces; dla kontrolki: fokus, disabled, invalid.

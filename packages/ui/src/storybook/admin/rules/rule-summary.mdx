@@ -1,0 +1,91 @@
+import { Canvas, Controls, Meta } from "@storybook/addon-docs/blocks";
+
+import { DoDont } from "../../docs/blocks";
+import * as RuleSummaryStories from "./rule-summary.stories";
+
+<Meta of={RuleSummaryStories} />
+
+# RuleSummary
+
+Tylko do odczytu lista definicji reguł silnika reguł: identyfikator, nazwa, rodzaj działania (rozstrzyga lub kieruje), warunki i akcje.
+
+<Canvas of={RuleSummaryStories.SettlingAndRouting} />
+
+<Canvas of={RuleSummaryStories.DisabledRule} />
+
+## Kiedy użyć
+
+- Gdy użytkownik ma zobaczyć, jakie reguły działają (np. w laboratorium próbki, `/admin/discovery/case-sample`): co je uruchamia i co robią.
+- Gdy opis reguły jest już gotowym tekstem — warunki i akcje opisuje `core`, `ui` tylko je wyświetla.
+
+## Kiedy nie użyć
+
+- Do edycji reguł — komponent jest tylko do odczytu, nie ma pól ani akcji.
+- Do wyniku zastosowania reguły do konkretnej sprawy — to dane przypadku, pokaż je w `DataTable` lub `Timeline`.
+- Do ogólnych list rekordów z kolumnami — użyj `DataTable`.
+
+## Jak złożyć
+
+Przekaż `rules` (z `conditions` i `actions` jako tablice już przetłumaczonych zdań) oraz `labels` z pięcioma napisami. Komponent stawiasz w `Card` pod nagłówkiem sekcji.
+
+```tsx
+import { Card, CardContent, CardHeader, CardTitle, RuleSummary } from "@easyrms/ui/admin";
+
+<Card>
+  <CardHeader>
+    <CardTitle>{copy.rules.title}</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <RuleSummary rules={rules} labels={copy.ruleLabels} />
+  </CardContent>
+</Card>;
+```
+
+`labels`: `settles`, `routes`, `disabled`, `when`, `then`. Warunki są łączone średnikiem, więc nie wstawiaj średników do pojedynczych warunków.
+
+## Tokeny
+
+Element listy: `border`, `rounded-md`, `p-3`, `text-sm`. Znaczniki to `Badge`: `default` (rozstrzyga), `secondary` (kieruje), `outline` (wyłączona). Opisy `text-muted-foreground`, etykiety „Gdy” i „Wtedy” `text-foreground` `font-medium`.
+
+## Stany
+
+| Stan | Wygląd | Jak wywołać |
+|---|---|---|
+| reguła rozstrzygająca | Odznaka `default` z `labels.settles`. | `settles: true` (story `SettlingAndRouting`). |
+| reguła kierująca | Odznaka `secondary` z `labels.routes`. | `settles: false`. |
+| reguła wyłączona | Dodatkowa odznaka `outline` z `labels.disabled`. | `enabled: false` (story `DisabledRule`). |
+| brak warunków | W linii „Gdy” pojawia się „—”. | `conditions: []`. |
+| brak reguł | Pusta lista `ul`, bez komunikatu. | `rules: []` — pokaż wcześniej `EmptyState`. |
+
+Wyłączona reguła nie jest wygaszana wizualnie — informuje ją tylko odznaka.
+
+## Dostępność
+
+- Semantyczna lista `ul` / `li`; każda reguła to jeden element.
+- Rodzaj działania i wyłączenie są podane tekstem w odznace, nie samym kolorem ani kształtem.
+- Komponent jest statyczny: brak interakcji, ról i ogłoszeń.
+- Brak akcji wymagającej fokusu, więc nie ma specjalnej obsługi klawiatury.
+
+## Rób i nie rób
+
+<DoDont
+  rob={[
+    "Przekazuj gotowe, polskie zdania warunków i akcji z `core`.",
+    "Podawaj wszystkie pięć `labels` z `app`.",
+    "Obsłuż pustą listę reguł przez `EmptyState` przed renderem.",
+  ]}
+  nieRob={[
+    "Przekazywać surowych obiektów reguł lub kodu — komponent wyświetla tylko tekst.",
+    "Dodawać przycisków edycji do elementów listy — to widok tylko do odczytu.",
+    "Tłumaczyć lub składać zdań w `ui`.",
+  ]}
+/>
+
+## API
+
+<Controls of={RuleSummaryStories.SettlingAndRouting} />
+
+| Prop | Typ | Opis |
+|---|---|---|
+| `rules` | `RuleSummaryItem[]` | `id`, `name`, `enabled`, `conditions` (string[]), `actions` (string[]), `settles`. |
+| `labels` | obiekt z 5 stringami | `settles`, `routes`, `disabled`, `when`, `then`. |

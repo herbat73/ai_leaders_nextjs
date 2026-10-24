@@ -1,0 +1,91 @@
+import { Canvas, Controls, Meta } from "@storybook/addon-docs/blocks";
+
+import { DoDont } from "../docs/blocks";
+import * as TableStories from "./table.stories";
+
+<Meta of={TableStories} />
+
+# Table
+
+Niskopoziomowy znacznik tabeli dla stron admina (shadcn): `Table`, `TableHeader`, `TableBody`, `TableRow`, `TableHead`, `TableCell`, `TableCaption` z natywnymi elementami HTML.
+
+<Canvas of={TableStories.Default} />
+
+## Kiedy użyć
+
+- Dane tabelaryczne o stałym układzie, gdzie sam renderujesz wiersze (np. pozycje zwrotu wewnątrz `Card`).
+- Gdy potrzebujesz własnej zawartości komórek (`Badge`, przyciski).
+
+Alternatywa: `DataTable` to skonfigurowana lista ze stanami ładowania, błędu i pustej listy; użyj jej dla list pobieranych z API. `BreakdownTable` służy do zestawień statystyk. `Table` jest podstawą, na której te komponenty się opierają.
+
+## Kiedy nie użyć
+
+- Dla listy pobieranej z API ze stanami ładowania, błędu i pustym — użyj `DataTable`.
+- Do układu strony (kolumny, siatka) — użyj `grid` lub `flex`.
+- Dla list jednokolumnowych bez nagłówków — użyj zwykłej listy.
+
+## Jak złożyć
+
+```tsx
+import { Badge, Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@easyrms/ui/admin";
+
+<Table>
+  <TableCaption>Pozycje zwrotu</TableCaption>
+  <TableHeader>
+    <TableRow>
+      <TableHead scope="col">Produkt</TableHead>
+      <TableHead scope="col">Status</TableHead>
+    </TableRow>
+  </TableHeader>
+  <TableBody>
+    <TableRow>
+      <TableCell>Słuchawki</TableCell>
+      <TableCell><Badge variant="info">in_transit</Badge></TableCell>
+    </TableRow>
+  </TableBody>
+</Table>
+```
+
+- `Table` opakowuje `table` w kontener `overflow-auto`, więc przewija się poziomo na wąskich ekranach.
+- Umieść tabelę w `CardContent`, gdy jest jedynym elementem sekcji.
+- Pusty stan zrób osobno (`EmptyState`) — `Table` go nie obsługuje.
+
+## Tokeny
+
+`border-b` (wiersze), `hover:bg-muted/50` (wiersz), `text-muted-foreground` (nagłówek kolumny i podpis), `text-sm`, odstępy `h-10 px-3` (nagłówek) i `p-3` (komórka).
+
+## Stany
+
+| Stan | Zachowanie |
+|---|---|
+| default | Wiersze z dolną ramką; ostatni wiersz bez ramki. |
+| hover wiersza | Tło `bg-muted/50`. |
+| przepełnienie | Przewijanie poziome w kontenerze. |
+| focus / disabled / loading / empty / error | Brak — obsługuje je `DataTable` lub komponent otaczający. |
+
+## Dostępność
+
+- To natywne `table`, `thead`, `tbody`, `th`, `td`, więc czytniki ekranu rozpoznają strukturę.
+- Nagłówki kolumn dawaj w `TableHead` (`th`); rozważ `scope="col"`.
+- `TableCaption` nazywa tabelę; gdy nie chcesz widocznego podpisu, dodaj `aria-label` na `Table`.
+- Hover wiersza jest tylko dekoracją — nie polegaj na nim jako jedynym wskaźniku interakcji. Wiersz nie jest klikalny; akcję daj w komórce (`Button` lub link).
+- Przewijany kontener nie ma `tabindex`, więc użytkownik klawiatury nie przewinie go bez interaktywnego elementu w środku.
+
+## Rób i nie rób
+
+<DoDont
+  rob={[
+    "Używaj `TableHead` dla nagłówków kolumn.",
+    "Dodaj `TableCaption` lub `aria-label` nazywający tabelę.",
+    "Dla list z API wybierz `DataTable`.",
+  ]}
+  nieRob={[
+    "Tabeli do układu strony.",
+    "Komórek `TableCell` w roli nagłówków.",
+    "Zagnieżdżania tabeli w tabeli.",
+  ]}
+/>
+
+## API
+
+<Controls of={TableStories.Default} />

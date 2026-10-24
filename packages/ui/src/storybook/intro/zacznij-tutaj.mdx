@@ -1,0 +1,80 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="Wprowadzenie/Zacznij tutaj" />
+
+# EasyRMS Design System
+
+Ten Storybook jest instrukcją obsługi, nie galerią. Każda strona odpowiada na pytania: **którego komponentu użyć i dlaczego**, **jak go złożyć z innymi**, **jakich tokenów użyć**, **jak zachowa się każdy stan** i **czego nie robić**. System stoi na shadcn/ui i Tailwind CSS 4; całość żyje w pakiecie `@easyrms/ui`.
+
+## Czytasz to jako…
+
+| Rola | Zacznij od | Potem |
+|---|---|---|
+| **Developer** buduje ekran | „Dwie powierzchnie” i „Jak wybrać komponent” poniżej, potem **Wzorce** (gotowe szkielety ekranów) | strona komponentu: sekcje „Jak złożyć” i „Stany” |
+| **Agent AI** buduje ekran | **Dla agenta AI** (reguły i lista dozwolonych klocków), potem **Wzorce** | pliki `.mdx` w `packages/ui/src/storybook/` to zwykły tekst: czytaj je bez uruchamiania Storybooka |
+| **Designer** sprawdza zgodność | **Dla designera** (lista kontrolna), potem **Fundamenty** | strony komponentów: „Rób i nie rób” |
+
+## Dwie powierzchnie
+
+Produkt ma dwa różne wnętrza i **nie wolno ich mieszać**.
+
+| | Admin (back-office, agent) | Public (klient) |
+|---|---|---|
+| Kto | agent obsługi zwrotów | klient sklepu |
+| Technologia | komponenty **shadcn/ui** | czysty **Tailwind**, bez shadcn |
+| Import | `@easyrms/ui/admin` | `@easyrms/ui/public` |
+| Gęstość | gęsta: tabele, `size="sm"`, `text-sm` | luźna: duże pola, jedna kolumna, `max-w-2xl` |
+| Ścieżki | `/admin/*` | `/`, `/returns/*` |
+| Wspólne | **te same tokeny** (kolory, promienie, tryb ciemny), te same zasady dostępności i treści | |
+
+Strona publiczna nigdy nie importuje z `@easyrms/ui/admin` i odwrotnie. Wspólne są tokeny, nie komponenty.
+
+## Jak wybrać komponent
+
+1. **Czy ekran jest dla klienta?** Tak: użyj komponentów z sekcji `Public`. Nie: `Admin`.
+2. **Czego potrzebujesz?**
+
+| Potrzeba | Admin | Public |
+|---|---|---|
+| Wywołać akcję | `Button` | `ActionButton` (lub `actionClassName` dla `<Link>`) |
+| Pole tekstowe z etykietą | `Label` + `Input` / `Textarea` | `Field` + `TextInput` / `Textarea` |
+| Wybór jednej opcji z listy | `Select` | `ChoiceGroup` |
+| Wybór tak/nie | `Checkbox` | pole `checkbox` w `SummaryStep`; osobnego komponentu nie ma |
+| Formularz z walidacją i błędami serwera | `CrudForm` | `Field` + stan formularza w stronie (wzorzec „Formularz publiczny”) |
+| Lista rekordów | `DataTable` (surowa tabela: `Table`) | lista `ul` z `divide-y` (strona `/returns`) |
+| Pogrupować treść na stronie | `Card` | `section` z nagłówkiem |
+| Krótka etykieta statusu | `Badge` (zobacz „Status → ton”) | tekst + `StageList` |
+| Komunikat o wyniku lub ostrzeżenie | `Alert` | `Banner` |
+| Błąd jednego pola | `ErrorMessage` | `Field` (`error`) |
+| Potwierdzić akcję nieodwracalną | `Dialog` | nie dotyczy (klient nie ma takich akcji) |
+| Stan ładowania / pusty / błąd listy | `Skeleton`, `LoadingMessage`, `EmptyState`, `ErrorMessage` (wbudowane w `DataTable`) | `Banner` + przycisk „Spróbuj ponownie” |
+| Oś zdarzeń | `Timeline` (admin) | `Timeline` (public) |
+| Postęp kreatora | nie dotyczy | `Stepper`, `WizardShell` |
+
+3. **Brak komponentu?** Najpierw sprawdź, czy da się złożyć z istniejących. Jeśli nie: dodaj prymityw shadcn do `packages/ui/src/admin/` przez `npx shadcn@latest add`, albo komponent do `public/`. Potem napisz stories **i** stronę `.mdx` (zobacz „Jak dodać komponent”). Nie pisz lokalnego komponentu w `app`, jeśli drugi ekran może go potrzebować.
+
+## Dziesięć reguł
+
+1. Kolory **tylko z tokenów** (`bg-primary`, `text-muted-foreground`, `bg-success-subtle`…). Zero `bg-red-500`, zero hex, zero `text-white`.
+2. Znaczenie niesie **tekst i ikona**, nie sam kolor (status = `Badge` z etykietą, błąd = komunikat).
+3. Każde pole ma widoczną etykietę (`Label` / `Field`); placeholder nie jest etykietą.
+4. Na widoku jest **jedna** akcja główna.
+5. Akcja nieodwracalna wymaga `Dialog` z nazwą obiektu w pytaniu.
+6. Każda lista i każdy widok z danymi ma obsłużone cztery stany: ładowanie, pusty, błąd, dane.
+7. `ui` nie formatuje danych i nie pobiera danych: daty, kwoty i liczby mnogie przychodzą jako gotowe teksty z `core`/`app`; jedyny `fetch` to `apiCall`.
+8. Teksty po polsku, w jednym pliku `copy.ts` obok strony; komponent dostaje tekst przez props.
+9. Tryb ciemny działa bez dodatkowych klas: tokeny same się przełączają. Nie pisz `dark:` dla kolorów z tokenów.
+10. Komponent bez story i strony `.mdx` nie istnieje: `npm run docs:check` go odrzuci.
+
+## Mapa dokumentacji
+
+- **Fundamenty:** Kolory i tokeny, Typografia, Odstępy, promienie i cienie, Tryb ciemny, Dostępność, Treści.
+- **Wzorce:** szkielety ekranów (lista, szczegół z decyzją, formularz publiczny, potwierdzenie, macierz stanów, status → ton).
+- **Admin / Public / Shared:** jedna strona na komponent, zawsze w tym samym układzie sekcji: Kiedy użyć, Kiedy nie użyć, Jak złożyć, Tokeny, Stany, Dostępność, Rób i nie rób, API.
+
+## Jak dodać komponent
+
+1. Prymityw shadcn: `npx shadcn@latest add <nazwa>` w `packages/ui`, potem popraw import `cn` na `../lib/utils` i usuń pakiet `cn` (`npm uninstall cn -w @easyrms/ui`). Sprawdź, że komponent używa tokenów systemu, nie surowych kolorów.
+2. Wyeksportuj z `admin/index.ts` lub `public/index.ts`.
+3. Stories w `ui/src/storybook/<ścieżka komponentu>.stories.tsx` (jedna historia na stan; callbacki przez `fn()`), strona w `<ta sama ścieżka>.mdx`.
+4. `npm run docs:check` oraz `npm run storybook:build`.

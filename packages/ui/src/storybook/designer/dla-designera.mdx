@@ -1,0 +1,51 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="Dla designera/Lista kontrolna zgodności" />
+
+# Dla designera: czy ekran jest zgodny z systemem
+
+Użyj tej listy przy przeglądzie ekranu (zrzut, preview albo działająca aplikacja). Każdy punkt ma jednoznaczną odpowiedź tak/nie i wskazuje stronę, która rozstrzyga spór. Ekran jest zgodny, gdy wszystkie punkty są „tak” albo mają zapisany, zaakceptowany wyjątek.
+
+## 1. Komponenty
+
+- [ ] Każdy element jest komponentem z systemu (nie lokalną kopią). Rozstrzyga: „Zacznij tutaj”, tabela „Jak wybrać komponent”.
+- [ ] Powierzchnia jest właściwa: admin = shadcn, strona klienta = Tailwind. Nic nie przeciekło między nimi.
+- [ ] Jedna akcja główna na widok; reszta `secondary`/`outline`. Rozstrzyga: `Admin/Button`, `Public/ActionButton`.
+- [ ] Akcja nieodwracalna jest za potwierdzeniem w `Dialog` z nazwą obiektu. Rozstrzyga: `Wzorce`, „Potwierdzenie akcji nieodwracalnej”.
+- [ ] Brakujący komponent ma zgłoszenie, nie obejście.
+
+## 2. Tokeny
+
+- [ ] Kolory tylko z tokenów (zero „prawie takiego” szarego/zielonego). Rozstrzyga: „Kolory i tokeny”.
+- [ ] Ton odpowiada znaczeniu (success = załatwione, warning = ktoś czeka, info = w toku, destructive = błąd/odrzucenie). Rozstrzyga: `Wzorce`, „Status → ton”.
+- [ ] Rozmiary tekstu i grubości z tabeli. Rozstrzyga: „Typografia”.
+- [ ] Odstępy, promienie, cienie z zestawu; brak karty w karcie. Rozstrzyga: „Odstępy, promienie i cienie”.
+
+## 3. Stany
+
+- [ ] Każdy blok danych: ładowanie, pusto, błąd, dane. Rozstrzyga: `Wzorce`, „Macierz stanów”.
+- [ ] Każda kontrolka: domyślny, hover, **fokus**, disabled, invalid (jeśli dotyczy). Rozstrzyga: strona komponentu, sekcja „Stany”.
+- [ ] Formularz: błąd walidacji przy polu, błąd serwera nad formularzem, wysyłanie (disabled + zmieniona etykieta), sukces.
+- [ ] Tekst stanu pustego mówi, co się pojawi i co zrobić.
+
+## 4. Dostępność
+
+- [ ] Fokus z klawiatury widoczny i w sensownej kolejności.
+- [ ] Każde pole ma widoczną etykietę (placeholder to nie etykieta).
+- [ ] Znaczenie nie tylko kolorem: status ma etykietę, błąd ma treść.
+- [ ] Kontrast 4,5:1 (tekst) i 3:1 (obramowania kontrolek) w obu motywach. Rozstrzyga: „Kolory i tokeny”, „Dostępność”.
+- [ ] Ekran działa na 320 px i przy 200% powiększeniu.
+
+## 5. Tryb ciemny
+
+- [ ] Ekran sprawdzony w obu motywach; zero `dark:` dla kolorów, zero czystej bieli/czerni. Rozstrzyga: „Tryb ciemny”.
+
+## 6. Treści
+
+- [ ] Polski, jedna osoba gramatyczna (klient: „Ty”), bez żargonu. Rozstrzyga: „Treści”.
+- [ ] Przyciski: czasownik + obiekt; brak „OK” i „Kliknij tutaj”.
+- [ ] Błędy mówią, co się stało i co zrobić dalej. Kwoty i daty w formacie polskim.
+
+## Jak zgłosić odstępstwo
+
+Nazwij punkt listy, który ekran łamie, i dołącz zrzut. Odstępstwo ma jedną z trzech postaci: **(a)** ekran do poprawki, **(b)** system do uzupełnienia (nowy token lub komponent: spec w `.ai/specs/`), **(c)** świadomy wyjątek zapisany na stronie komponentu, w „Rób i nie rób”. Wyjątek bez wpisu to błąd.

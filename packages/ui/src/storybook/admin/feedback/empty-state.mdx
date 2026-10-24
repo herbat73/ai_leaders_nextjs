@@ -1,0 +1,88 @@
+import { Canvas, Controls, Meta } from "@storybook/addon-docs/blocks";
+
+import { DoDont } from "../../docs/blocks";
+import * as EmptyStateStories from "./empty-state.stories";
+
+<Meta of={EmptyStateStories} />
+
+# EmptyState
+
+Jednozdaniowy komunikat „nic tu jeszcze nie ma” dla listy lub sekcji, która załadowała się poprawnie, ale nie zawiera danych.
+
+<Canvas of={EmptyStateStories.Default} />
+
+## Kiedy użyć
+
+| Sytuacja | Komponent |
+|---|---|
+| Zapytanie się udało, wynik jest pusty (brak zwrotów, brak zdarzeń). | `EmptyState` |
+| Zapytanie się nie udało. | `ErrorMessage` |
+| Dane są właśnie pobierane (komunikat tekstowy). | `LoadingMessage` |
+| Dane są pobierane, a znany jest kształt treści (placeholder układu). | `Skeleton` |
+
+W `DataTable` pusty stan jest wbudowany (prop `emptyMessage`) — nie składaj go ręcznie.
+
+## Kiedy nie użyć
+
+- Przy błędzie ładowania — pusty stan sugeruje, że wszystko działa, a danych po prostu nie ma.
+- Na stronach publicznych (klient): komponent jest w pakiecie `admin`; tam użyj własnego `p` z tokenem `text-muted-foreground` lub `Banner`.
+- Do komunikatów, które wymagają akcji (np. „Dodaj pierwszy zwrot”) — `EmptyState` to sam tekst; akcję dołóż obok jako `Button`.
+
+## Jak złożyć
+
+`EmptyState` przyjmuje gotowy tekst — `ui` niczego nie tłumaczy i nie odmienia. Tekst przychodzi z `app`/`core`.
+
+```tsx
+import { Card, CardContent, EmptyState } from "@easyrms/ui/admin";
+
+<Card>
+  <CardContent>
+    <EmptyState message={copy.empty} />
+  </CardContent>
+</Card>;
+```
+
+Komunikat mówi, dlaczego jest pusto i co zmienić: „Brak zwrotów dla wybranego filtra.” zamiast „Brak danych”. Dla filtrów używaj osobnego tekstu niż dla zupełnie pustej listy (tak robi `/admin/returns`: `emptyFiltered` vs `empty`).
+
+## Tokeny
+
+`text-muted-foreground`, `text-sm`, pionowy odstęp `py-6`, wyśrodkowanie `text-center`. Brak ramki, tła i ikony.
+
+## Stany
+
+| Stan | Zachowanie |
+|---|---|
+| default | Wyśrodkowany, przygaszony tekst. Jedyny stan komponentu. |
+| długi tekst | Zawija się w kontenerze; nie jest obcinany. |
+| brak tekstu | `message` jest wymagany; pusty string wyrenderuje pusty akapit — nie rób tego. |
+
+Brak `role` — to treść statyczna, nie komunikat dynamiczny.
+
+## Dostępność
+
+- To zwykły akapit `p`, bez `role="status"`: czytniki ekranu nie ogłoszą go same po zmianie. Jeśli pusty stan pojawia się po akcji użytkownika (np. po zmianie filtra), a ogłoszenie jest potrzebne, dodaj obok osobny region `role="status"`.
+- Kontrast `muted-foreground` na `background`/`card` spełnia AA w obu motywach (weryfikuje skrypt kontrastu z `styles.css`).
+- Nie przekazuj informacji samym kolorem — tekst niesie całą treść.
+
+## Rób i nie rób
+
+<DoDont
+  rob={[
+    "Pisz, dlaczego jest pusto i co użytkownik może zmienić.",
+    "Rozróżniaj pustą listę od pustego wyniku filtra.",
+    "Przekazuj gotowy, przetłumaczony tekst z `app`.",
+  ]}
+  nieRob={[
+    "Pokazywać `EmptyState` przy błędzie pobierania — użyj `ErrorMessage`.",
+    "Wstawiać tekstu na sztywno w `ui`.",
+    "Używać go jako ładowania („Brak danych…” podczas pobierania).",
+  ]}
+/>
+
+## API
+
+<Controls of={EmptyStateStories.Default} />
+
+| Prop | Typ | Opis |
+|---|---|---|
+| `message` | `string` | Wymagany. Gotowy tekst komunikatu. |

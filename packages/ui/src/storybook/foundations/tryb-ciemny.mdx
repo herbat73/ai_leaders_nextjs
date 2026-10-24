@@ -1,0 +1,25 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="Fundamenty/Tryb ciemny" />
+
+# Tryb ciemny
+
+Tryb ciemny to klasa `dark` na `<html>`. Przełącza ją `ThemeToggle` (zapamiętuje wybór; skrypt `theme-init` w layoucie ustawia klasę przed pierwszym renderem, żeby nie było błysku). W Storybooku ten sam mechanizm jest w pasku narzędzi: przełącznik motywu.
+
+## Jak to działa
+
+- Wszystkie tokeny kolorów mają dwie wartości: w `:root` (jasny) i `.dark`. Komponent używa nazwy tokena, więc **nic nie robisz**.
+- Wariant Tailwind `dark:` jest zdefiniowany (`@custom-variant dark (&:is(.dark *))`), ale **nie jest potrzebny dla kolorów z tokenów**.
+- `color-scheme: dark` jest ustawione w `.dark`, więc natywne kontrolki (paski przewijania, pola daty) też ciemnieją.
+
+## Reguły
+
+1. **Nie pisz `dark:` dla kolorów.** Jeśli czujesz, że potrzebujesz `dark:bg-…`, brakuje tokena: dodaj go (zobacz „Kolory i tokeny”).
+2. **Sprawdź każdy ekran w obu motywach** (przełącznik w Storybooku). Szczególnie tony semantyczne, obramowania (`border` w ciemnym to półprzezroczysta biel) i stany disabled.
+3. **Nie używaj czystej czerni ani bieli**: `bg-black`, `text-white`. Tło to `background`/`card`, tekst na akcji to `*-foreground`.
+4. **Obrazy i ilustracje** muszą działać na obu tłach (przezroczyste tło, bez białych ramek).
+5. **Kontrast liczysz w obu motywach**, wartości są na stronie „Kolory i tokeny”.
+
+## Znane wyjątki
+
+`DialogOverlay` używa półprzezroczystej czerni (`bg-black/50`) jako przesłony: ma przyciemniać w obu motywach i to jedyne dopuszczone miejsce czerni.

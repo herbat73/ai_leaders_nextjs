@@ -1,0 +1,92 @@
+import { Canvas, Controls, Meta } from "@storybook/addon-docs/blocks";
+
+import { DoDont } from "../docs/blocks";
+import * as TabsStories from "./tabs.stories";
+
+<Meta of={TabsStories} />
+
+# Tabs
+
+Zakładki oparte na Radix `Tabs` (shadcn): przełączanie równorzędnych widoków tej samej strony bez przeładowania.
+
+<Canvas of={TabsStories.Default} />
+
+<Canvas of={TabsStories.Line} />
+
+## Kiedy użyć
+
+- 2–5 równorzędnych widoków tego samego obiektu (np. szczegóły, historia, notatki zwrotu).
+- Gdy użytkownik zwykle patrzy na jeden widok naraz.
+
+Wariant listy: `default` (kapsuła z tłem `bg-muted`) dla zakładek w obrębie karty lub panelu; `line` (podkreślenie, bez tła) dla zakładek pod nagłówkiem strony.
+
+Alternatywy: nawigacja między stronami to linki; wybór wartości do formularza to `Select`; kolejność kroków to osobne strony kreatora.
+
+## Kiedy nie użyć
+
+- Do nawigacji między stronami o różnych adresach URL — użyj linków.
+- Do kroków procesu, które mają przebiegać po kolei.
+- Gdy treść jednej zakładki jest niezbędna do zrozumienia innej — pokaż obie naraz.
+- Dla więcej niż około 5 zakładek.
+
+## Jak złożyć
+
+```tsx
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@easyrms/ui/admin";
+
+<Tabs defaultValue="details">
+  <TabsList variant="line">
+    <TabsTrigger value="details">Szczegóły</TabsTrigger>
+    <TabsTrigger value="history">Historia</TabsTrigger>
+  </TabsList>
+  <TabsContent value="details">…</TabsContent>
+  <TabsContent value="history">…</TabsContent>
+</Tabs>
+```
+
+- Każdy `TabsTrigger` ma `value` zgodny z `TabsContent`.
+- Sterowanie: `defaultValue` lub `value` + `onValueChange`.
+- Orientacja pionowa: `orientation="vertical"` na `Tabs`.
+- Treść zakładki może zawierać `Table`, `Card` lub formularz.
+
+## Tokeny
+
+Lista `default`: `bg-muted`, `text-muted-foreground`. Aktywna zakładka: `bg-background`, `text-foreground`. Wariant `line`: tło przezroczyste, podkreślenie `bg-foreground` (pseudoelement `after`). Fokus: `ring-ring/50`, `border-ring`. Zakładka nieaktywna: `text-foreground/60`, hover `text-foreground`.
+
+## Stany
+
+| Stan | Zachowanie | Jak wywołać |
+|---|---|---|
+| nieaktywna | Przygaszony tekst, hover rozjaśnia. | domyślnie |
+| aktywna | Tło `bg-background` i cień (`default`) albo podkreślenie (`line`). | `defaultValue`, `value`, kliknięcie |
+| focus-visible | Pierścień 3 px `ring-ring/50`. | klawiatura |
+| disabled | `opacity-50`, brak zdarzeń wskaźnika. | `disabled` na `TabsTrigger` |
+| wariant line | Bez tła listy, aktywna zakładka z podkreśleniem. | `variant="line"` na `TabsList` |
+| pionowe | Kolumna, trigger na pełną szerokość. | `orientation="vertical"` |
+
+## Dostępność
+
+- Radix: `role="tablist"`, `role="tab"` z `aria-selected`, `role="tabpanel"` powiązany z zakładką.
+- Klawiatura: `Tab` wchodzi na listę, strzałki przechodzą między zakładkami (w pionowej góra/dół), `Home` i `End` skaczą na krańce; zakładka disabled jest pomijana.
+- Zakładki są domyślnie aktywowane po fokusie strzałką (`activationMode` Radix `automatic`).
+- Deweloper nadaje zakładkom jasne, krótkie etykiety; jeśli lista nie ma widocznego tytułu, dodaj `aria-label` na `TabsList`.
+- Nieaktywna treść nie jest renderowana (Radix) — nie zakładaj, że jej stan formularza przetrwa, jeśli nie użyjesz `forceMount`.
+
+## Rób i nie rób
+
+<DoDont
+  rob={[
+    "Używaj do równorzędnych widoków tego samego obiektu.",
+    "Dawaj krótkie etykiety (jedno–dwa słowa).",
+    "Wybierz `line` pod nagłówkiem strony, `default` w panelu.",
+  ]}
+  nieRob={[
+    "Zakładek do nawigacji między stronami.",
+    "Zakładek wymuszających kolejność działań.",
+    "Ukrywania w zakładce informacji krytycznych dla decyzji.",
+  ]}
+/>
+
+## API
+
+<Controls of={TabsStories.Default} />

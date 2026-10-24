@@ -1,0 +1,90 @@
+import { Canvas, Controls, Meta } from "@storybook/addon-docs/blocks";
+
+import { DoDont } from "../docs/blocks";
+import * as TextareaStories from "./textarea.stories";
+
+<Meta of={TextareaStories} />
+
+# Textarea
+
+Wielowierszowe pole tekstowe strony publicznej (natywny `textarea`). W środku `Field` samo pobiera `id`, opisy i stan błędu.
+
+<Canvas of={TextareaStories.Default} />
+
+## Kiedy użyć
+
+- Dłuższy tekst swobodny: komentarz do pozycji zwrotu, opis problemu.
+- Gdy limit znaków jest istotny: ustaw `maxLength` i pokaż licznik (jak `ReasonsStep`).
+
+Textarea kontra `TextInput`: jeden wiersz (numer, e-mail) to `TextInput`.
+
+## Kiedy nie użyć
+
+- Dla krótkich wartości — `TextInput`.
+- Dla wyboru z listy — `ChoiceGroup`.
+- Bez `Field` — pole nie będzie miało etykiety.
+
+## Jak złożyć
+
+```tsx
+import { Field, Textarea } from "@easyrms/ui/public";
+
+<Field label={copy.commentLabel} hint={copy.commentHint} error={commentError}>
+  <Textarea
+    aria-describedby={counterId}
+    value={comment}
+    maxLength={maxCommentLength}
+    onChange={(e) => setComment(e.target.value)}
+  />
+</Field>
+<p id={counterId}>{copy.counter(comment.length, maxCommentLength)}</p>
+```
+
+- Własny `aria-describedby` jest **dopisywany** po opisach z `Field` (inaczej niż w `TextInput`, gdzie go zastępuje) — tak licznik znaków w `ReasonsStep` trafia do opisu pola.
+- Domyślnie `rows={4}`.
+- Licznik to tekst z `app` (np. „120 / 500”); `ui` go nie liczy ani nie formatuje.
+
+## Tokeny
+
+Te same co `TextInput` (`publicControlClass`): `border-input`, `bg-background`, `text-foreground`, `placeholder:text-muted-foreground`, `ring-ring/60`, błąd `border-destructive`, `rounded-lg`, `shadow-sm`, disabled `opacity-60`.
+
+## Stany
+
+| Stan | Wygląd i zachowanie | Jak wywołać |
+|---|---|---|
+| default | obramowanie `border-input`, 4 wiersze | — |
+| focus | `border-ring` i pierścień 2 px | klik / Tab |
+| invalid | obramowanie `border-destructive`, tekst błędu pod polem | `error` w `Field` |
+| disabled | `opacity-60`, kursor `not-allowed` | `disabled` |
+
+<Canvas of={TextareaStories.Invalid} />
+
+<Canvas of={TextareaStories.Disabled} />
+
+## Dostępność
+
+- Natywny `textarea` powiązany z `label` przez `Field`; `aria-describedby` łączy podpowiedź, błąd i Twój licznik; `aria-invalid` przy błędzie.
+- Limit `maxLength` przeglądarka egzekwuje sama; powiedz o nim tekstem (licznik lub podpowiedź), bo klient nie zobaczy powodu, dla którego nie może pisać dalej.
+- Błąd jest tekstem, nie tylko kolorem.
+- Pole ma natywne uchwyty zmiany rozmiaru; nie wyłączaj ich bez powodu.
+
+## Rób i nie rób
+
+<DoDont
+  rob={[
+    "Pokaż licznik znaków, gdy jest `maxLength`.",
+    "Oznacz pole opcjonalne w podpowiedzi („Opcjonalnie”).",
+    "Opakuj w `Field` z etykietą.",
+  ]}
+  nieRob={[
+    "Textarea do jednowierszowych danych.",
+    "Limitu bez żadnej informacji tekstowej.",
+    "Placeholdera zamiast etykiety.",
+  ]}
+/>
+
+## API
+
+<Controls of={TextareaStories.Default} />
+
+Typ `TextareaProps` to `TextareaHTMLAttributes<HTMLTextAreaElement>`; `rows` domyślnie 4.

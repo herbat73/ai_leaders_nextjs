@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent, type ReactElement } from "react";
 import { apiCall } from "@easyrms/ui/api";
-import { Banner, Field, TextInput } from "@easyrms/ui/public";
+import { ActionButton, Banner, Field, TextInput } from "@easyrms/ui/public";
 
 import { errorMessage } from "../returns/_lib/error-copy";
 import { lookupCopy as copy } from "./copy";
@@ -81,13 +81,9 @@ export function LookupForm(): ReactElement {
           onChange={(event) => setEmail(event.target.value)}
         />
       </Field>
-      <button
-        type="submit"
-        disabled={pending}
-        className="w-full rounded-lg bg-foreground px-4 py-2 font-medium text-background shadow-sm hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 disabled:cursor-not-allowed disabled:opacity-60"
-      >
+      <ActionButton type="submit" fullWidth disabled={pending}>
         {pending ? copy.submitting : copy.submit}
-      </button>
+      </ActionButton>
     </form>
   );
 }

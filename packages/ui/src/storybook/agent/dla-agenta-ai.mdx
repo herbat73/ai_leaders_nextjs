@@ -1,0 +1,76 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="Dla agenta AI/Zasady budowania ekranu" />
+
+# Dla agenta AI: jak zbudować ekran bez zgadywania
+
+Ta strona jest napisana tak, żeby dało się ją przeczytać jako zwykły plik: `packages/ui/src/storybook/agent/dla-agenta-ai.mdx`. Pozostałe strony też są plikami `.mdx` w `packages/ui/src/storybook/`, obok komponentu, którego dotyczą (np. `storybook/admin/button.mdx` dla `admin/button.tsx`). **Przeczytaj stronę komponentu, zanim go użyjesz**; sekcje mają stałe nazwy: `Kiedy użyć`, `Kiedy nie użyć`, `Jak złożyć`, `Tokeny`, `Stany`, `Dostępność`, `Rób i nie rób`, `API`.
+
+## Procedura
+
+1. Ustal powierzchnię: strona dla klienta = **public** (`/`, `/returns/*`), dla agenta = **admin** (`/admin/*`). Nie mieszaj.
+2. Wybierz **wzorzec** ekranu (`Wzorce/Przegląd`, kod w `storybook/patterns/ekrany.stories.tsx`) i skopiuj jego szkielet.
+3. Dla każdego elementu wybierz komponent z listy niżej. Jeśli go nie ma: złóż z istniejących; dopiero potem dodaj nowy (zasady w `Wprowadzenie/Zacznij tutaj`, „Jak dodać komponent”).
+4. Kolory wyłącznie z tokenów. Teksty po polsku w `copy.ts` obok strony.
+5. Obsłuż stany: ładowanie, pusto, błąd, dane (formularze: walidacja, błąd serwera, wysyłanie, sukces).
+6. Sprawdź w obu motywach i uruchom: `npm run docs:check`, `npm run lint`, `npm run typecheck`, `npm run storybook:build`.
+
+## Importy (jedyne dozwolone)
+
+```ts
+import { Button, Card, CardHeader, CardTitle, DataTable, Badge, Alert } from "@easyrms/ui/admin";   // /admin/*
+import { ActionButton, Field, TextInput, Banner, ChoiceGroup } from "@easyrms/ui/public";           // strony klienta
+import { apiCall } from "@easyrms/ui/api";                                                          // jedyny fetch do /api/*
+import { cn } from "@easyrms/ui/lib/utils";
+```
+
+Nie importuj ścieżkami względnymi ponad granicą pakietu. `ui` nie importuje z `app`, `core`, `db` ani z Next.js.
+
+## Komponenty: używaj / nigdy
+
+| Potrzeba | Używaj | Nigdy |
+|---|---|---|
+| Akcja w adminie | `Button` (`default` główna, `secondary`, `outline`, `destructive`) | `<button className="...">` z własnymi kolorami |
+| Akcja na stronie klienta | `ActionButton`; dla `<Link>`: `className={actionClassName()}` | `Button` z admina; kopiowanie klas z `ActionButton` |
+| Pole w adminie | `Label` + `Input` / `Textarea` / `Select` / `Checkbox` | `<input>` bez `Label`; placeholder jako etykieta |
+| Pole na stronie klienta | `Field` + `TextInput` / `Textarea` | ręczne `<label>`, `aria-describedby` |
+| Formularz admina z walidacją | `CrudForm` | własny stan `pending`/błędów od zera |
+| Lista admina | `DataTable` (stany wbudowane) | `<table>` ręcznie; własny „loading…” |
+| Grupa treści w adminie | `Card` | `div` z `border rounded shadow`; karta w karcie |
+| Status | `Badge` z tonem (zobacz `Wzorce`, „Status → ton”) | kolorowa kropka bez tekstu |
+| Komunikat (admin) | `Alert` (`info`, `success`, `warning`, `destructive`) | `ErrorMessage` jako baner |
+| Komunikat (klient) | `Banner` (`info`, `success`, `warning`, `error`) | `Alert` z admina |
+| Błąd pola (admin) | `ErrorMessage` | zwykły `<p className="text-red-600">` |
+| Potwierdzenie nieodwracalnej akcji | `Dialog` z nazwą obiektu w pytaniu | `window.confirm` |
+| Ładowanie o znanym kształcie | `Skeleton` w `role="status"` | spinner bez etykiety |
+| Zakładki | `Tabs` | własne przyciski z `aria-selected` |
+| Podpowiedź | `Tooltip` (nigdy jedyny nośnik informacji) | `title` jako jedyna informacja |
+| Oś zdarzeń | `Timeline` (admin lub public, osobne importy) | własna lista z kropkami |
+| Kroki kreatora | `WizardShell` + `Stepper` + komponenty kroków | własny pasek postępu |
+
+## Tokeny: dozwolone
+
+- Powierzchnie: `bg-background`, `bg-card`, `bg-popover`, `bg-muted`, `bg-accent`, `bg-secondary`.
+- Tekst: `text-foreground`, `text-muted-foreground`, `text-card-foreground`, `text-primary-foreground`, `text-destructive`.
+- Obramowanie i fokus: `border-border`, `border-input`, `ring-ring`.
+- Akcje: `bg-primary`, `bg-destructive`.
+- Tony: `bg-{success|warning|info|destructive}-subtle` + `text-…-subtle-foreground` + `border-…-subtle-border`; solid `bg-{success|warning|info}` + `text-…-foreground`.
+- Promienie: `rounded-md`, `rounded-lg` (+ `rounded-full` tylko na kółka). Cienie: `shadow-sm`; `shadow-md`/`shadow-lg` tylko warstwy Radix.
+- Rozmiary tekstu i odstępy: wyłącznie z tabel w `Fundamenty`.
+
+## Zabronione (łapie je `npm run docs:check`, lint lub review)
+
+- Kolory palety (`bg-red-500`, `text-sky-900`), hex, `text-white`, `bg-white`, `dark:` dla kolorów z tokenów.
+- Komponent bez story (`ui/src/storybook/<ścieżka>.stories.tsx`) i bez strony `.mdx`.
+- Formatowanie dat, kwot i liczb mnogich w `ui`; teksty domenowe zaszyte w komponencie.
+- `fetch('/api/*')` poza `apiCall`; Server Actions.
+- Własny kod fokusu (`outline-none` bez pierścienia), `div` z `onClick`.
+- Importy z `@easyrms/ui/admin` na stronach klienta.
+
+## Pułapki, które już kosztowały czas
+
+- **Domyślne teksty części komponentów admina są po angielsku** (`LoadingMessage` „Loading…”, `CrudForm` „Save”/„Saving…”/„Cancel”, `DataTable` „Nothing to show yet.”). Zawsze przekazuj polski tekst przez props. `DialogContent` ma domyślne „Zamknij” (`closeLabel`).
+- **`Tooltip` ma własny provider**: nie dodawaj `TooltipProvider` w layoucie.
+- **Dialog, Select i Tooltip renderują się w portalu**: w testach wizualnych szukaj ich w `document.body`, nie w kontenerze komponentu.
+- **Nowy prymityw shadcn:** `npx shadcn@latest add` zapisuje `import { cn } from "cn"` i dodaje pakiet `cn`: popraw na `../lib/utils` i `npm uninstall cn -w @easyrms/ui`.
+- **Server Components nie mogą przekazać funkcji do komponentów klienckich**: przekaż dane i `copy`, nie callbacki (callbacki są w wyspie `"use client"`).
