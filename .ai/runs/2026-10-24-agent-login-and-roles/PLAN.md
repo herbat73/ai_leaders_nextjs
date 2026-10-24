@@ -13,7 +13,7 @@ Engine: om-auto-create-pr-loop (steps: 21, --loop: no, threshold exceeded)
 |-------|------|-------|------|--------|--------|
 | 1 | 1.1 | Password hashing (PasswordHasher port + scrypt adapter) | inline | done | — |
 | 1 | 1.2 | Agent session service and secret resolution | inline | done | — |
-| 1 | 1.3 | Agent entity and migration | inline | todo | — |
+| 1 | 1.3 | Agent entity and migration | inline | done | — |
 | 1 | 1.4 | Agent repository | inline | todo | — |
 | 1 | 1.5 | Agent service and validators | inline | todo | — |
 | 1 | 1.6 | Composition and login/logout/accept routes | inline | todo | — |
