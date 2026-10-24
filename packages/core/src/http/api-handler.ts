@@ -2,7 +2,7 @@ import { AppError } from "../errors";
 import { assertSameOrigin, isMutatingMethod } from "./csrf";
 import type { ApiEnvelope, ApiLogger, RouteContext } from "./types";
 
-export interface ApiHandlerOptions {
+export interface ApiHandlerOptions<TPrincipal = undefined> {
   /** Status for a successful response. */
   status?: number;
   logger?: ApiLogger;
@@ -12,6 +12,12 @@ export interface ApiHandlerOptions {
    */
   trustProxy?: boolean | (() => boolean);
   allowedOrigins?: readonly string[] | (() => readonly string[]);
+  /**
+   * Resolves who is calling, after the CSRF check and before the handler runs (so before any body is parsed); the
+   * result is passed to the handler as its last argument. It throws an `AppError` (typically `UnauthorizedError`) to
+   * reject. A route without it behaves exactly as before.
+   */
+  authenticate?: (request: Request) => Promise<TPrincipal>;
 }
 
 const consoleLogger: ApiLogger = {
@@ -61,12 +67,12 @@ export function okResponse<T>(data: T, init?: ResponseInit): Response {
 
 /**
  * Wraps a route function: mutating requests (POST/PUT/PATCH/DELETE) first pass the CSRF check (403 `csrf_rejected`),
- * a returned `Response` is passed through unchanged, any other return value becomes `{ ok: true, data }`, a thrown `AppError` becomes
+ * then the optional `authenticate` hook runs (401 and friends are thrown by it), a returned `Response` is passed through unchanged, any other return value becomes `{ ok: true, data }`, a thrown `AppError` becomes
  * `{ ok: false, error }` with its status, and anything else is logged and returned as an opaque 500.
  */
-export function apiHandler<TContext extends RouteContext = RouteContext>(
-  handler: (request: Request, context: TContext) => Promise<unknown>,
-  { status = 200, logger = consoleLogger, trustProxy = false, allowedOrigins = [] }: ApiHandlerOptions = {},
+export function apiHandler<TContext extends RouteContext = RouteContext, TPrincipal = undefined>(
+  handler: (request: Request, context: TContext, principal: TPrincipal) => Promise<unknown>,
+  { status = 200, logger = consoleLogger, trustProxy = false, allowedOrigins = [], authenticate }: ApiHandlerOptions<TPrincipal> = {},
 ): (request: Request, context: TContext) => Promise<Response> {
   return async (request, context) => {
     try {
@@ -76,7 +82,8 @@ export function apiHandler<TContext extends RouteContext = RouteContext>(
           allowedOrigins: typeof allowedOrigins === "function" ? allowedOrigins() : allowedOrigins,
         });
       }
-      const result = await handler(request, context);
+      const principal = (authenticate ? await authenticate(request) : undefined) as TPrincipal;
+      const result = await handler(request, context, principal);
       if (result instanceof Response) return result;
       return envelope({ ok: true, data: result }, status);
     } catch (error) {
