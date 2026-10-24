@@ -18,7 +18,7 @@ Engine: om-auto-create-pr-loop (steps: 21, --loop: no, threshold exceeded)
 | 1 | 1.5 | Agent service and validators | inline | done | — |
 | 1 | 1.6 | Composition and login/logout/accept routes | inline | done | — |
 | 1 | 1.7 | First-agent command (agent:create) | inline | done | — |
-| 1 | 1.8 | Login and invite pages | inline | todo | — |
+| 1 | 1.8 | Login and invite pages | inline | done | — |
 | 2 | 2.1 | authenticate hook in apiHandler and makeCrudRoute | inline | todo | — |
 | 2 | 2.2 | agent-auth.ts guards and open-redirect sanitizer | inline | todo | — |
 | 2 | 2.3 | Guard the existing admin surface | inline | todo | — |

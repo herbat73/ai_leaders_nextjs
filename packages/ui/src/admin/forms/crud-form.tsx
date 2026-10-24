@@ -10,7 +10,9 @@ import { Label } from "../label";
 export interface CrudFormField {
   name: string;
   label: string;
-  type?: "text" | "email" | "textarea";
+  type?: "text" | "email" | "textarea" | "password";
+  /** HTML `autocomplete` token (e.g. `username`, `current-password`, `new-password`); password managers rely on it. */
+  autoComplete?: string;
 }
 
 export interface CrudFormProps {
@@ -21,15 +23,33 @@ export interface CrudFormProps {
   onSubmit: (values: Record<string, string>) => Promise<Record<string, string> | null>;
   onCancel?: () => void;
   submitLabel?: string;
+  /** Submit button text while `onSubmit` is pending. Default is English: pass your own copy. */
+  pendingLabel?: string;
+  /** Cancel button text. Default is English: pass your own copy. */
+  cancelLabel?: string;
+  /** Texts of the show/hide toggle that `password` fields get. Defaults are English: pass your own copy. */
+  showPasswordLabel?: string;
+  hidePasswordLabel?: string;
 }
 
 const TEXTAREA_CLASS =
   "flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
 /** Field-driven form: shows errors next to fields, handles pending state, Cmd/Ctrl+Enter submits, Escape cancels. */
-export function CrudForm({ fields, validate, onSubmit, onCancel, submitLabel = "Save" }: CrudFormProps): ReactElement {
+export function CrudForm({
+  fields,
+  validate,
+  onSubmit,
+  onCancel,
+  submitLabel = "Save",
+  pendingLabel = "Saving…",
+  cancelLabel = "Cancel",
+  showPasswordLabel = "Show password",
+  hidePasswordLabel = "Hide password",
+}: CrudFormProps): ReactElement {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [pending, setPending] = useState(false);
+  const [revealed, setRevealed] = useState<Record<string, boolean>>({});
 
   async function submit(form: HTMLFormElement): Promise<void> {
     const data = new FormData(form);
@@ -66,8 +86,25 @@ export function CrudForm({ fields, validate, onSubmit, onCancel, submitLabel = "
           <Label htmlFor={field.name}>{field.label}</Label>
           {field.type === "textarea" ? (
             <textarea id={field.name} name={field.name} rows={4} className={TEXTAREA_CLASS} />
+          ) : field.type === "password" ? (
+            <div className="flex gap-2">
+              <Input
+                id={field.name}
+                name={field.name}
+                type={revealed[field.name] ? "text" : "password"}
+                autoComplete={field.autoComplete}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                className="shrink-0 whitespace-nowrap"
+                onClick={() => setRevealed((current) => ({ ...current, [field.name]: !current[field.name] }))}
+              >
+                {revealed[field.name] ? hidePasswordLabel : showPasswordLabel}
+              </Button>
+            </div>
           ) : (
-            <Input id={field.name} name={field.name} type={field.type ?? "text"} />
+            <Input id={field.name} name={field.name} type={field.type ?? "text"} autoComplete={field.autoComplete} />
           )}
           {errors[field.name] && <ErrorMessage message={errors[field.name]} />}
         </div>
@@ -75,11 +112,11 @@ export function CrudForm({ fields, validate, onSubmit, onCancel, submitLabel = "
       {errors.form && <ErrorMessage message={errors.form} />}
       <div className="flex gap-2">
         <Button type="submit" disabled={pending}>
-          {pending ? "Saving…" : submitLabel}
+          {pending ? pendingLabel : submitLabel}
         </Button>
         {onCancel && (
           <Button type="button" variant="outline" onClick={onCancel}>
-            Cancel
+            {cancelLabel}
           </Button>
         )}
       </div>

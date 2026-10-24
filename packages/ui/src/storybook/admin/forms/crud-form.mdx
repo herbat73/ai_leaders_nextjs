@@ -15,9 +15,11 @@ Formularz sterowany listą pól: sam obsługuje walidację po stronie klienta, b
 
 <Canvas of={CrudFormStories.ServerErrors} />
 
+<Canvas of={CrudFormStories.PasswordField} />
+
 ## Kiedy użyć
 
-- Prosty formularz admina z polami tekstowymi: `text`, `email` lub `textarea` (tylko te trzy typy).
+- Prosty formularz admina z polami tekstowymi: `text`, `email`, `password` lub `textarea` (tylko te cztery typy).
 - Gdy walidacja to wspólny schemat Zod z `core` (przekaż go w `validate`), a zapis idzie przez `apiCall` do trasy API.
 - Gdy chcesz mieć jednakowe zachowanie na każdym formularzu: błędy przy polach, blokada podwójnego wysłania, `Cmd/Ctrl+Enter`, `Escape`.
 
@@ -81,12 +83,14 @@ Pola: `Label` + `Input` z `border-input`, `placeholder:text-muted-foreground`, p
 | pending | Przycisk zapisu `disabled` i etykieta `Saving…`; po zakończeniu wraca. | `onSubmit` zwraca obietnicę, która jeszcze się nie rozstrzygnęła. |
 | błąd serwera | Błędy pod polami; klucz `form` jako ogólny błąd nad przyciskami. Pola nie są czyszczone. | `onSubmit` zwraca mapę błędów (story `ServerErrors`). |
 | sukces | Błędy znikają, formularz jest czyszczony (`form.reset()`). | `onSubmit` zwraca `null`. |
+| pole hasła | Pole zamaskowane; przycisk obok pokazuje jego treść i zmienia tekst na „ukryj”. Stan pokazania jest lokalny dla pola. | Story `PasswordField`, przycisk „Pokaż hasło”. |
 | bez anulowania | Brak przycisku anuluj; `Escape` nic nie robi. | Brak `onCancel` (story `WithoutCancel`). |
 
 Uwaga: formularz nie ma propu `disabled` ani stanu tylko-do-odczytu.
 
 ## Dostępność
 
+- Przełącznik hasła to zwykły `Button` z tekstem (bez `aria-pressed`): czytnik odczytuje aktualną akcję („Pokaż hasło” lub „Ukryj hasło”). Ustaw `autoComplete`, żeby menedżery haseł działały.
 - Każde pole ma `Label` powiązany przez `htmlFor`/`id` równe `name` pola — `name` musi być unikalne na stronie.
 - Błędy są w `ErrorMessage` z `role="alert"` i ogłaszane po pojawieniu się. Pole nie dostaje jednak `aria-invalid` ani `aria-describedby`, więc powiązanie błędu z polem jest tylko wizualne i przez kolejność w DOM.
 - Formularz ma `noValidate` — walidację przeglądarki zastępuje `validate`; bez niej błędy zwraca tylko serwer.
@@ -115,8 +119,11 @@ Uwaga: formularz nie ma propu `disabled` ani stanu tylko-do-odczytu.
 
 | Prop | Typ | Opis |
 |---|---|---|
-| `fields` | `CrudFormField[]` | Pola: `name`, `label`, opcjonalnie `type` (`text` domyślnie, `email`, `textarea`). |
+| `fields` | `CrudFormField[]` | Pola: `name`, `label`, opcjonalnie `type` (`text` domyślnie, `email`, `password`, `textarea`) i `autoComplete` (token HTML, np. `username`, `current-password`, `new-password`). Pole `password` dostaje przycisk pokaż/ukryj. |
 | `validate` | `(values) => Record<string, string> or null` | Opcjonalna walidacja klienta. `null` oznacza poprawne wartości. |
 | `onSubmit` | `(values) => Promise<Record<string, string> or null>` | Wymagany. Błędy serwera lub `null` przy sukcesie. |
 | `onCancel` | `() => void` | Opcjonalny. Włącza przycisk anuluj i skrót `Escape`. |
-| `submitLabel` | `string` | Domyślnie `Save`. Etykiety `Saving…` i `Cancel` są na sztywno po angielsku. |
+| `submitLabel` | `string` | Domyślnie `Save`. |
+| `pendingLabel` | `string` | Tekst przycisku zapisu w stanie pending. Domyślnie `Saving…`, więc przekaż polski. |
+| `cancelLabel` | `string` | Tekst przycisku anuluj. Domyślnie `Cancel`, więc przekaż polski. |
+| `showPasswordLabel` / `hidePasswordLabel` | `string` | Teksty przełącznika pól `password`. Domyślnie `Show password` / `Hide password`, więc przekaż polskie. |

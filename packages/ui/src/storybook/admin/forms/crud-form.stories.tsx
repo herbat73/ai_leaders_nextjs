@@ -35,3 +35,17 @@ export const ServerErrors: Story = {
 };
 
 export const WithoutCancel: Story = { args: { onCancel: undefined, submitLabel: "Create" } };
+
+export const PasswordField: Story = {
+  args: {
+    fields: [
+      { name: "email", label: "E-mail", type: "email", autoComplete: "username" },
+      { name: "password", label: "Hasło", type: "password", autoComplete: "current-password" },
+    ],
+    onCancel: undefined,
+    submitLabel: "Zaloguj",
+    pendingLabel: "Logowanie…",
+    showPasswordLabel: "Pokaż hasło",
+    hidePasswordLabel: "Ukryj hasło",
+  },
+};

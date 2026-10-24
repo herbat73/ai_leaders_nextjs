@@ -7,6 +7,12 @@ const nextConfig: NextConfig = {
   redirects() {
     return Promise.resolve([{ source: "/returns/lookup", destination: "/", permanent: true }]);
   },
+  // The invite token is part of the path, so the page must never leak it through a `Referer` header.
+  headers() {
+    return Promise.resolve([
+      { source: "/admin/invite/:token*", headers: [{ key: "Referrer-Policy", value: "no-referrer" }] },
+    ]);
+  },
 };
 
 export default nextConfig;
