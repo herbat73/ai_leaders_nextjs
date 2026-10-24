@@ -19,12 +19,12 @@ Engine: om-auto-create-pr-loop (steps: 21, --loop: no, threshold exceeded)
 | 1 | 1.6 | Composition and login/logout/accept routes | inline | done | 24ddb45 |
 | 1 | 1.7 | First-agent command (agent:create) | inline | done | 14f9884 |
 | 1 | 1.8 | Login and invite pages | inline | done | df71011 |
-| 2 | 2.1 | authenticate hook in apiHandler and makeCrudRoute | inline | done | — |
-| 2 | 2.2 | agent-auth.ts guards and open-redirect sanitizer | inline | done | — |
-| 2 | 2.3 | Guard the existing admin surface | inline | done | — |
-| 2 | 2.4 | Identity on timeline events | inline | done | — |
-| 2 | 2.5 | proxy.ts optimistic check | inline | done | — |
-| 2 | 2.6 | Close the blocker (README, platform-primitives) | inline | done | — |
+| 2 | 2.1 | authenticate hook in apiHandler and makeCrudRoute | inline | done | 4e933eb |
+| 2 | 2.2 | agent-auth.ts guards and open-redirect sanitizer | inline | done | eccf2c2 |
+| 2 | 2.3 | Guard the existing admin surface | inline | done | 1fafdfd |
+| 2 | 2.4 | Identity on timeline events | inline | done | 3139361 |
+| 2 | 2.5 | proxy.ts optimistic check | inline | done | eb303dc |
+| 2 | 2.6 | Close the blocker (README, platform-primitives) | inline | done | 3eba0fd |
 | 3 | 3.1 | List and invite API | inline | todo | — |
 | 3 | 3.2 | Disable API | inline | todo | — |
 | 3 | 3.3 | /admin/agents screen | inline | todo | — |

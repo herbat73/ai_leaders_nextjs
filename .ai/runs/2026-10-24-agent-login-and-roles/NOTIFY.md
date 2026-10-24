@@ -11,3 +11,8 @@
 - Phase 1 complete; targeted gate green; curl and browser verification recorded in checkpoint-1-checks.md.
 - Decision: login page uses a shared `sanitizeAdminNext` (core) and `getCurrentAgent()`; both reused by Phase 2.
 - Decision: CrudForm gained a `password` field kind (show/hide), `autoComplete`, `pendingLabel`, `cancelLabel` (docs page and story updated).
+
+## 2026-10-24 — checkpoint 2
+- Phase 2 complete; guard, proxy, identity on events verified (checkpoint-2-checks.md).
+- Blocker for merge, not for the run: human QA by a reviewer is required (risk-high, `needs-qa`); the run does not add `qa-approved`.
+- Decision: `ReturnService.transition(id, status, note, agent)` takes the note as `string | undefined` (required position) so the agent can follow it.
