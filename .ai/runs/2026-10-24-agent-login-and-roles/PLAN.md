@@ -20,7 +20,7 @@ Engine: om-auto-create-pr-loop (steps: 21, --loop: no, threshold exceeded)
 | 1 | 1.7 | First-agent command (agent:create) | inline | done | 14f9884 |
 | 1 | 1.8 | Login and invite pages | inline | done | df71011 |
 | 2 | 2.1 | authenticate hook in apiHandler and makeCrudRoute | inline | done | — |
-| 2 | 2.2 | agent-auth.ts guards and open-redirect sanitizer | inline | todo | — |
+| 2 | 2.2 | agent-auth.ts guards and open-redirect sanitizer | inline | done | — |
 | 2 | 2.3 | Guard the existing admin surface | inline | todo | — |
 | 2 | 2.4 | Identity on timeline events | inline | todo | — |
 | 2 | 2.5 | proxy.ts optimistic check | inline | todo | — |
