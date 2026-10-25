@@ -1,4 +1,4 @@
-import type { ReturnMethod, ReturnResolution, TrackerEventKey, TrackerStageId, WhatNowKey } from "@easyrms/core";
+import type { RequestResolution, ReturnMethod, TrackerEventKey, TrackerStageId, WhatNowKey } from "@easyrms/core";
 
 import { statusLabels } from "../_lib/status-labels";
 
@@ -38,7 +38,13 @@ export const trackerCopy = {
   } satisfies Record<WhatNowKey, string>,
   summaryHeading: "Szczegóły zwrotu",
   resolutionLabel: "Rozwiązanie",
-  resolutions: { refund: "Zwrot pieniędzy", store_credit: "Kredyt sklepowy", exchange: "Wymiana" } satisfies Record<ReturnResolution, string>,
+  resolutions: {
+    refund: "Zwrot pieniędzy",
+    store_credit: "Kredyt sklepowy",
+    exchange: "Wymiana",
+    repair: "Naprawa",
+    replacement: "Wymiana na nowy egzemplarz",
+  } satisfies Record<RequestResolution, string>,
   amountLabel: "Kwota",
   exchangeNoteLabel: "Opis wymiany",
   methodLabel: "Sposób zwrotu",

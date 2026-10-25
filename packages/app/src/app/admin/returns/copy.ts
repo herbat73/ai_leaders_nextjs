@@ -1,4 +1,4 @@
-import type { ReturnMethod, ReturnReasonCode, ReturnResolution, ReturnStatus, StoredReturnStatus } from "@easyrms/core";
+import type { ItemReasonCode, RequestResolution, ReturnMethod, ReturnStatus, StoredReturnStatus } from "@easyrms/core";
 
 /** Polish copy for the agent pages (AD-N3): one constant, colocated; status values stay language-neutral. */
 export const returnsCopy = {
@@ -60,9 +60,16 @@ export const returnsCopy = {
       better_price: "Lepsza cena gdzie indziej",
       mistake: "Zamówienie przez pomyłkę",
       other: "Inny powód",
-    } satisfies Record<ReturnReasonCode, string>,
+      defective: "Wada produktu",
+    } satisfies Record<ItemReasonCode, string>,
     resolution: "Rozwiązanie",
-    resolutions: { refund: "Zwrot pieniędzy", store_credit: "Kredyt sklepowy", exchange: "Wymiana" } satisfies Record<ReturnResolution, string>,
+    resolutions: {
+      refund: "Zwrot pieniędzy",
+      store_credit: "Kredyt sklepowy",
+      exchange: "Wymiana",
+      repair: "Naprawa",
+      replacement: "Wymiana na nowy egzemplarz",
+    } satisfies Record<RequestResolution, string>,
     resolutionAmount: "Kwota",
     exchangeNote: "Opis wymiany",
     returnMethod: "Sposób zwrotu",

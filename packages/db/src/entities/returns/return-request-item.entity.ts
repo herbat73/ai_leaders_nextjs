@@ -16,6 +16,8 @@ export const ReturnRequestItemSchema = defineEntity({
     unitPrice: p.decimal().precision(12).scale(2),
     reasonCode: p.string().length(32),
     comment: p.text().nullable(),
+    // Complaints only.
+    serialNumber: p.string().length(100).nullable(),
   },
   indexes: [{ name: "return_request_items_line_ref_index", properties: ["lineRef"] }],
   uniques: [{ name: "return_request_items_return_request_id_line_ref_unique", properties: ["returnRequest", "lineRef"] }],
