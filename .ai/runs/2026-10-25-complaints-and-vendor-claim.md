@@ -23,7 +23,7 @@ Phases and steps are those of the spec's Implementation Plan (Phase 1 steps 1-6,
 
 ### Phase 1: Complaints
 
-- [ ] 1.1 Core: complaint model
+- [x] 1.1 Core: complaint model — b9909a7
 - [ ] 1.2 DB: migration and repository
 - [ ] 1.3 Service and API
 - [ ] 1.4 Customer wizard and tracker
