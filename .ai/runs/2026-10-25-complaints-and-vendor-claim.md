@@ -27,7 +27,7 @@ Phases and steps are those of the spec's Implementation Plan (Phase 1 steps 1-6,
 - [x] 1.2 DB: migration and repository — a292ed9
 - [x] 1.3 Service and API — f7590bb
 - [x] 1.4 Customer wizard and tracker — 8e626b7
-- [ ] 1.5 Admin inbox and decision card
+- [x] 1.5 Admin inbox and decision card — 04a11c3
 - [ ] 1.6 Docs and records
 
 ### Phase 2: Vendor claim
