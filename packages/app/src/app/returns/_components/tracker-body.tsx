@@ -2,7 +2,7 @@ import { formatDatePl, formatEventTime, formatMoney, trackerEventView, trackerVi
 import { Banner, StageList, Timeline, type Stage } from "@easyrms/ui/public";
 import type { ReactElement } from "react";
 
-import { trackerCopy as copy } from "./tracker-copy";
+import { complaintTrackerCopy, trackerCopy as copy } from "./tracker-copy";
 
 /**
  * The customer-facing tracker sections (status, what now, summary, items, timeline) for one return. Shared by the
@@ -11,6 +11,10 @@ import { trackerCopy as copy } from "./tracker-copy";
  */
 export function TrackerBody({ detail }: { detail: ReturnDetailView }): ReactElement {
   const { request, decisionNote, items, events } = detail;
+  const complaint = request.kind === "complaint";
+  const kindCopy = complaint
+    ? complaintTrackerCopy
+    : { stagesLabel: copy.stagesLabel, summaryHeading: copy.summaryHeading, whatNow: copy.whatNow };
   const view = trackerView(request.status);
   const stages: Stage[] = view.stages.map((stage) => ({ id: stage.id, label: copy.stages[stage.id], state: stage.state }));
   const closed = view.closed
@@ -32,7 +36,7 @@ export function TrackerBody({ detail }: { detail: ReturnDetailView }): ReactElem
         <h2 id="tracker-status" className="text-lg font-semibold">
           {copy.currentStatus}: {copy.statusLabels[request.status]}
         </h2>
-        <StageList stages={stages} closed={closed} label={copy.stagesLabel} />
+        <StageList stages={stages} closed={closed} label={kindCopy.stagesLabel} />
         {view.showReplyTarget && <p className="text-sm">{copy.replyTarget}</p>}
       </section>
 
@@ -40,12 +44,12 @@ export function TrackerBody({ detail }: { detail: ReturnDetailView }): ReactElem
         <h2 id="tracker-what-now" className="text-lg font-semibold">
           {copy.whatNowHeading}
         </h2>
-        <p className="text-sm">{copy.whatNow[view.whatNow]}</p>
+        <p className="text-sm">{kindCopy.whatNow[view.whatNow]}</p>
       </section>
 
       <section aria-labelledby="tracker-summary" className="space-y-3">
         <h2 id="tracker-summary" className="text-lg font-semibold">
-          {copy.summaryHeading}
+          {kindCopy.summaryHeading}
         </h2>
         <dl className="grid grid-cols-1 gap-x-6 gap-y-1 text-sm sm:grid-cols-[max-content_minmax(0,1fr)] sm:gap-y-2">
           <dt className="text-muted-foreground">{copy.submittedOn}</dt>
@@ -77,6 +81,18 @@ export function TrackerBody({ detail }: { detail: ReturnDetailView }): ReactElem
               <dd>{copy.methods[request.returnMethod]}</dd>
             </>
           )}
+          {complaint && request.defectDiscoveredOn && (
+            <>
+              <dt className="text-muted-foreground">{complaintTrackerCopy.discoveredOnLabel}</dt>
+              <dd>{formatDatePl(new Date(`${request.defectDiscoveredOn}T12:00:00Z`))}</dd>
+            </>
+          )}
+          {complaint && request.defectDescription && (
+            <>
+              <dt className="text-muted-foreground">{complaintTrackerCopy.defectLabel}</dt>
+              <dd className="whitespace-pre-wrap break-words">{request.defectDescription}</dd>
+            </>
+          )}
         </dl>
       </section>
 
@@ -88,7 +104,14 @@ export function TrackerBody({ detail }: { detail: ReturnDetailView }): ReactElem
           <ul className="space-y-1 text-sm">
             {items.map((item) => (
               <li key={item.lineRef} className="flex justify-between gap-4">
-                <span className="break-words">{item.name}</span>
+                <span className="break-words">
+                  {item.name}
+                  {item.serialNumber && (
+                    <span className="block text-muted-foreground">
+                      {complaintTrackerCopy.serialLabel}: {item.serialNumber}
+                    </span>
+                  )}
+                </span>
                 <span className="shrink-0 text-muted-foreground">{copy.itemQuantity(item.quantity)}</span>
               </li>
             ))}

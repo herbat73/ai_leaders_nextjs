@@ -6,7 +6,7 @@ import type { ReturnDetailView } from "@easyrms/core";
 import { createRequestScope } from "@/server/container";
 import { GUEST_SESSION_COOKIE, getGuestSessionService } from "@/server/guest-session";
 import { TrackerBody } from "../_components/tracker-body";
-import { trackerCopy as copy } from "../_components/tracker-copy";
+import { complaintTrackerCopy, trackerCopy as copy } from "../_components/tracker-copy";
 
 export const dynamic = "force-dynamic";
 
@@ -42,7 +42,7 @@ export default async function TrackerPage({ params }: { params: Promise<{ rma: s
         <Link href="/returns" className="text-sm underline underline-offset-4">
           {copy.back}
         </Link>
-        <h1 className="text-2xl font-semibold">{copy.title}</h1>
+        <h1 className="text-2xl font-semibold">{request.kind === "complaint" ? complaintTrackerCopy.title : copy.title}</h1>
         <p className="text-sm text-muted-foreground">{copy.confirmation}</p>
         <p className="text-sm">
           {copy.reference}: <strong className="font-mono text-base">{request.rma}</strong>

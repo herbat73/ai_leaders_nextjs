@@ -70,3 +70,22 @@ export const trackerCopy = {
   statusLabels,
   currentStatus: "Aktualny status",
 } as const;
+
+/** The strings that read differently for a complaint (kind `complaint`); everything else is shared with returns. */
+export const complaintTrackerCopy = {
+  title: "Status reklamacji",
+  stagesLabel: "Etapy reklamacji",
+  summaryHeading: "Szczegóły reklamacji",
+  defectLabel: "Opis wady",
+  discoveredOnLabel: "Wada zauważona",
+  serialLabel: "Numer seryjny",
+  whatNow: {
+    ...trackerCopy.whatNow,
+    what_now_submitted: "Sprawdzamy Twoją reklamację. Nie musisz nic robić.",
+    what_now_approved: "Spakuj reklamowany produkt i odeślij go wybranym sposobem. Podaj numer RMA na paczce.",
+    what_now_received: "Mamy Twój produkt i go oceniamy. Nie musisz nic robić.",
+    what_now_in_service: "Twój produkt jest naprawiany lub sprawdzany. Nie musisz nic robić.",
+    what_now_resolved: "Reklamacja została rozpatrzona. Dziękujemy!",
+    what_now_rejected: "Reklamacja została zamknięta. Jeśli masz pytania, skontaktuj się z nami, podając numer RMA.",
+  } satisfies Record<WhatNowKey, string>,
+} as const;

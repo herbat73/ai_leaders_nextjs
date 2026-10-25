@@ -18,6 +18,7 @@ export * from "./services/mail/mail.port";
 export * from "./services/orders/order-lookup.port";
 export * from "./services/orders/order-source";
 export * from "./services/returns/complaint-eligibility";
+export * from "./services/returns/complaint-wizard-steps";
 export * from "./services/returns/complaint-quote";
 export * from "./services/returns/complaint-sla";
 export * from "./services/returns/decision-note";

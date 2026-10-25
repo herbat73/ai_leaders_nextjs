@@ -41,6 +41,7 @@ export default async function ReturnsOverviewPage() {
               <li key={request.rma}>
                 <Link href={`/returns/${request.rma}`} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 hover:bg-muted">
                   <span className="font-mono">{request.rma}</span>
+                  <span className="text-sm">{copy.kinds[request.kind]}</span>
                   <span className="text-sm">{statusLabels[request.status]}</span>
                   <span className="text-sm text-muted-foreground">
                     {copy.submittedOn} {formatDatePl(request.createdAt)}
@@ -52,9 +53,14 @@ export default async function ReturnsOverviewPage() {
         )}
       </section>
 
-      <Link href="/returns/new" className={actionClassName()}>
-        {copy.start}
-      </Link>
+      <div className="flex flex-wrap gap-3">
+        <Link href="/returns/new" className={actionClassName()}>
+          {copy.start}
+        </Link>
+        <Link href="/returns/complaint/new" className={actionClassName("secondary")}>
+          {copy.startComplaint}
+        </Link>
+      </div>
     </main>
   );
 }
