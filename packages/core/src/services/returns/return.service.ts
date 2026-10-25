@@ -28,7 +28,7 @@ import {
   type ReturnListItem,
   type ReturnRepository,
   type ReturnRequest,
-  type ReturnResolution,
+  type RequestResolution,
   type ReturnStatus,
   type StoredReturnStatus,
 } from "./types";
@@ -57,7 +57,7 @@ export interface ReturnSubmitResult {
   created: boolean;
   rma: string;
   status: ReturnStatus | "unknown";
-  resolution: ReturnResolution | null;
+  resolution: RequestResolution | null;
   resolutionAmount: ResolutionAmountView | null;
 }
 
