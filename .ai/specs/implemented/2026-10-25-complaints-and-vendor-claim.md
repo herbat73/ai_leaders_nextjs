@@ -1,6 +1,6 @@
 # Complaints with the vendor claim flow
 
-Status: Implemented (PR #36). Open Questions Q1–Q11 were answered by the owner on 2026-10-25. **The five design choices marked "proposed" below (R07 deferral, escalation as a badge only, shared quantity pool, no shipping deduction on complaint refunds, 20-character vendor-rejection note) are the author's and still need the owner's confirmation;** the legal wording and the real-mail privacy check also remain open. Builds on `2026-10-22-return-agent-decision.md`, `2026-10-22-return-customer-portal.md` and `2026-10-24-agent-login-and-roles.md` (all implemented) and on `doc/platform-primitives.md`.
+Status: Implemented (PR #36). Open Questions Q1–Q11 were answered by the owner on 2026-10-25, and the owner **confirmed on 2026-10-25 the five design choices marked "proposed" below** (R07 deferral, escalation as a badge only, shared quantity pool, no shipping deduction on complaint refunds, 20-character vendor-rejection note; recorded as D14 and in the brief's R07 and Q07 rows). Still open outside the code: legal wording for R02/R04 and the shipping-cost rule, and the customer-data retention decision before real mail is enabled.
 
 ## 📝 TLDR
 Customers who receive a defective product can today only start a return: the wizard has no defect description, serial number or repair-or-replace remedy, and an agent cannot pass a confirmed defect on to the supplier. Proposed (future behavior): a customer files a complaint (UC-03) on the same wizard, an agent decides it with the 14-day response deadline visible and an escalation badge after 10 days (R04, Q07), and for a confirmed defect the agent sends a claim to the vendor by e-mail and records the vendor's answer and credit note (UC-12). The owner chose this slice (D12, D13, 2026-10-25). There is no data on complaint volume or on how many complaints reach a vendor.
@@ -89,6 +89,7 @@ Copy is Polish only (D07). Admin pages use shadcn components, customer pages pla
 - **Per-process rate limits** and other open items from the login work are unchanged.
 
 ## 📝 Decisions in play
+_The proposals below were confirmed by the owner on 2026-10-25 (D14)._
 Relies on: D07 (Polish only), D09 (one app, API under `/api/<concept>`), D10 and D11 (agent identity, `MANAGE_RULES`), D12 and D13 (this slice, vendor claim by e-mail), N03 (resolution per request, not per item), R02, R04 (with Q07 escalation), R05, R06, R11 (refund limit applies to complaint refunds), R15 (decision note for rejection), Q07, Q10.
 Proposes, with the owner to approve:
 - **R07 deferred in part:** photos, video and serial-number requirements are not enforced (text only, Q2); record as "Odroczone" like R08 and R16 do.
