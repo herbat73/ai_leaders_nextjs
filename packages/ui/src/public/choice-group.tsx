@@ -26,8 +26,8 @@ export function ChoiceGroup({ legend, options, value, onChange, error }: ChoiceG
   const errorId = `${name}-error`;
 
   return (
-    <fieldset aria-describedby={error ? errorId : undefined} className="space-y-2">
-      <legend className="mb-2 text-sm font-medium text-foreground">{legend}</legend>
+    <fieldset aria-describedby={error ? errorId : undefined} className="space-y-2.5">
+      <legend className="mb-2 font-semibold text-foreground">{legend}</legend>
       {options.map((option) => {
         const inputId = `${name}-${option.value}`;
         const reasonId = `${inputId}-reason`;
@@ -40,8 +40,8 @@ export function ChoiceGroup({ legend, options, value, onChange, error }: ChoiceG
             key={option.value}
             htmlFor={inputId}
             className={[
-              "flex items-start gap-3 rounded-lg border bg-background p-3 shadow-sm has-[:checked]:border-primary has-[:checked]:ring-1 has-[:checked]:ring-primary has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring/60",
-              option.disabled ? "cursor-not-allowed border-border opacity-70" : "cursor-pointer border-input hover:bg-muted",
+              "flex items-start gap-3.5 rounded-lg border-[1.5px] bg-card px-4 py-3.5 has-[:checked]:border-primary has-[:checked]:bg-accent has-[:checked]:ring-1 has-[:checked]:ring-primary has-[:focus-visible]:ring-[3px] has-[:focus-visible]:ring-ring/35",
+              option.disabled ? "cursor-not-allowed border-border opacity-70" : "cursor-pointer border-border hover:border-input",
             ].join(" ")}
           >
             <input
@@ -53,7 +53,7 @@ export function ChoiceGroup({ legend, options, value, onChange, error }: ChoiceG
               disabled={option.disabled}
               onChange={() => onChange(option.value)}
               aria-describedby={[describedBy, error ? errorId : null].filter(Boolean).join(" ") || undefined}
-              className="mt-1 size-4 accent-primary"
+              className="mt-0.5 size-5 accent-primary"
             />
             <span className="block">
               <span className="block text-sm font-medium text-foreground">{option.label}</span>
@@ -72,7 +72,8 @@ export function ChoiceGroup({ legend, options, value, onChange, error }: ChoiceG
         );
       })}
       {error && (
-        <p id={errorId} role="alert" className="text-sm text-destructive">
+        <p id={errorId} role="alert" className="text-sm font-medium text-destructive">
+          <span aria-hidden="true">⚠ </span>
           {error}
         </p>
       )}

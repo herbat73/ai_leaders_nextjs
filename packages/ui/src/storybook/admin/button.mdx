@@ -18,10 +18,11 @@ Przycisk akcji na stronach admina (shadcn). Jedna akcja = jeden `Button`; warian
 | Główna akcja ekranu lub formularza (zapisz, zatwierdź). Najwyżej **jedna** na widok. | `default` |
 | Akcja poboczna obok głównej (np. „Dodaj notatkę”). | `secondary` |
 | Anuluj, wróć, akcja neutralna w toolbarze. | `outline` |
+| Akcja trzeciorzędna bez ramki (np. „Pokaż więcej”). | `ghost` |
 | Akcja nieodwracalna lub negatywna decyzja (odrzuć zwrot, usuń). Zawsze po potwierdzeniu w `Dialog`. | `destructive` |
 | Wywołanie nawigacji, która ma wyglądać jak przycisk | `asChild` + `<Link>` |
 
-Rozmiary: `default` (h-9) wszędzie; `sm` (h-8) tylko w gęstych miejscach: wiersz tabeli, toolbar.
+Rozmiary: `default` (min. 44 px) wszędzie; `sm` (min. 34 px) tylko w gęstych miejscach: wiersz tabeli, toolbar; `lg` (min. 52 px) dla jedynej akcji ekranu w panelu.
 
 ## Kiedy nie użyć
 
@@ -38,7 +39,7 @@ Rozmiary: `default` (h-9) wszędzie; `sm` (h-8) tylko w gęstych miejscach: wier
 
 ## Tokeny
 
-`bg-primary` / `text-primary-foreground` (default), `bg-secondary` (secondary), `border-input` + `bg-background` (outline), `bg-destructive` / `text-destructive-foreground` (destructive), `ring-ring` (fokus), promień `rounded-md`. Nie nadpisuj kolorów przez `className`.
+`bg-primary` / `text-primary-foreground`, hover `bg-primary-hover` (default); `border-primary` + `bg-card` + `text-primary`, hover `bg-accent` (secondary); `border-input` + `bg-card` (outline); `text-secondary-foreground`, hover `bg-muted` (ghost); `bg-destructive` / `text-destructive-foreground` (destructive); fokus `ring-[3px] ring-ring/35`; promień `rounded-control` (10 px; `sm` ma `rounded-md`, 8 px); `font-semibold`. Nie nadpisuj kolorów przez `className`.
 
 ## Stany
 

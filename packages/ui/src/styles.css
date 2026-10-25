@@ -1,65 +1,72 @@
 @import "tw-animate-css";
 
 /* shadcn/ui theme tokens (neutral). Imported by the app's globals.css after Tailwind. */
+/* Brand: TwójSklep portal mockup (doc/portal-reklamacje/mockup/styles.css). Names differ, values are the mockup's:
+   brand = primary, brand-dark = primary-hover, brand-tint = accent, ink = foreground, ink-3 = muted-foreground,
+   line = border, bg = background, ok/warn/danger/info (+ -bg) = the four tones. */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.5 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.985 0 0);
-  --success: oklch(0.5 0.14 150);
-  --success-foreground: oklch(0.985 0 0);
-  --warning: oklch(0.78 0.16 75);
-  --warning-foreground: oklch(0.25 0.05 75);
-  --info: oklch(0.52 0.19 255);
-  --info-foreground: oklch(0.985 0 0);
+  --background: #f5f7fa;
+  --foreground: #16202c;
+  --card: #ffffff;
+  --card-foreground: #16202c;
+  --popover: #ffffff;
+  --popover-foreground: #16202c;
+  --primary: #0f766e;
+  --primary-foreground: #ffffff;
+  --primary-hover: #0b5953;
+  --secondary: #eef2f6;
+  --secondary-foreground: #44505e;
+  --muted: #eef2f6;
+  --muted-foreground: #5f6b7a;
+  --accent: #e6f4f1;
+  --accent-foreground: #0b5953;
+  --destructive: #c42b1c;
+  --destructive-foreground: #ffffff;
+  --success: #12804a;
+  --success-foreground: #ffffff;
+  --warning: #f59e0b;
+  --warning-foreground: #3d2c00;
+  --info: #1d4ed8;
+  --info-foreground: #ffffff;
   /* Subtle = tinted surface for a message or badge: background, text, border. */
-  --destructive-subtle: oklch(0.96 0.03 25);
-  --destructive-subtle-foreground: oklch(0.45 0.18 27);
-  --destructive-subtle-border: oklch(0.87 0.07 25);
-  --success-subtle: oklch(0.96 0.04 150);
-  --success-subtle-foreground: oklch(0.35 0.09 150);
-  --success-subtle-border: oklch(0.85 0.08 150);
-  --warning-subtle: oklch(0.97 0.05 85);
-  --warning-subtle-foreground: oklch(0.4 0.1 60);
-  --warning-subtle-border: oklch(0.87 0.1 85);
-  --info-subtle: oklch(0.96 0.03 245);
-  --info-subtle-foreground: oklch(0.38 0.12 255);
-  --info-subtle-border: oklch(0.85 0.07 245);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --radius: 0.625rem;
+  --destructive-subtle: #fdecea;
+  --destructive-subtle-foreground: #c42b1c;
+  --destructive-subtle-border: #f2b8b2;
+  --success-subtle: #e7f6ee;
+  --success-subtle-foreground: #12804a;
+  --success-subtle-border: #b5e0c8;
+  --warning-subtle: #fff4e3;
+  --warning-subtle-foreground: #a35200;
+  --warning-subtle-border: #f3d29e;
+  --info-subtle: #eaf0fd;
+  --info-subtle-foreground: #1d4ed8;
+  --info-subtle-border: #c3d3f7;
+  --border: #d9e0e8;
+  --input: #b9c4d0;
+  --ring: #0f766e;
+  --radius: 0.75rem;
+  --shadow-card: 0 1px 2px rgba(22, 32, 44, 0.06), 0 2px 8px rgba(22, 32, 44, 0.05);
+  --shadow-overlay: 0 12px 40px rgba(22, 32, 44, 0.18);
 }
 
 @custom-variant dark (&:is(.dark *));
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  --background: #0c1517;
+  --foreground: #e7eef1;
+  --card: #132123;
+  --card-foreground: #e7eef1;
+  --popover: #132123;
+  --popover-foreground: #e7eef1;
+  --primary: #2fb8a9;
+  --primary-foreground: #04201d;
+  --primary-hover: #52cbbd;
+  --secondary: #1b2d30;
+  --secondary-foreground: #c3d2d6;
+  --muted: #1b2d30;
+  --muted-foreground: #9db1b6;
+  --accent: #173532;
+  --accent-foreground: #99f6e4;
   --destructive: oklch(0.704 0.191 22.216);
   --destructive-foreground: oklch(0.145 0 0);
   --success: oklch(0.72 0.17 150);
@@ -80,9 +87,11 @@
   --info-subtle: oklch(0.26 0.05 250);
   --info-subtle-foreground: oklch(0.88 0.07 245);
   --info-subtle-border: oklch(0.4 0.09 250);
-  --border: oklch(1 0 0 / 15%);
-  --input: oklch(1 0 0 / 20%);
-  --ring: oklch(0.556 0 0);
+  --border: #26393c;
+  --input: #3a5054;
+  --ring: #2fb8a9;
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-overlay: 0 12px 40px rgba(0, 0, 0, 0.6);
   color-scheme: dark;
 }
 
@@ -97,6 +106,7 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
@@ -124,6 +134,13 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --radius-md: calc(var(--radius) - 2px);
+  /* Mockup radii: fields and small buttons 8px, buttons 10px, cards and option cards 12px. */
+  --radius-md: calc(var(--radius) - 4px);
+  --radius-control: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
+  --shadow-xs: var(--shadow-card);
+  --shadow-sm: var(--shadow-card);
+  --shadow-lg: var(--shadow-overlay);
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 }

@@ -43,7 +43,7 @@ export function WizardShell(props: WizardShellProps): ReactElement {
   return (
     <div className="space-y-6">
       <Stepper steps={steps} currentId={currentId} label={stepperLabel} doneLabel={stepDoneLabel} />
-      <h2 ref={headingRef} tabIndex={-1} className="text-xl font-semibold text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/60">
+      <h2 ref={headingRef} tabIndex={-1} className="text-xl font-semibold text-foreground focus:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/35">
         {heading}
       </h2>
       <div>{children}</div>

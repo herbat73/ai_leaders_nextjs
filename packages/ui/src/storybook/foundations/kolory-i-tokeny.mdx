@@ -8,7 +8,7 @@ import { Swatch, SwatchGrid, ToneRow } from "../docs/blocks";
 
 Wszystkie kolory to zmienne CSS w `packages/ui/src/styles.css`, w dwóch zestawach (`:root` i `.dark`), mapowane na klasy Tailwind przez `@theme inline`. Próbki poniżej są **żywe**: przełącz motyw w pasku narzędzi Storybooka, a zmienią się razem z tokenami.
 
-Motyw jest neutralny (szarości shadcn) plus cztery tony semantyczne. Marka klienta (white-label) to osobna, przyszła warstwa: podmieni się ją nadpisując te same zmienne, bez zmian w komponentach.
+Paleta pochodzi z makiety portalu (`doc/portal-reklamacje/mockup/styles.css`): marka **teal** (`--primary` `#0f766e`), grafitowy tekst, chłodne szarości i cztery tony semantyczne. Nazwy z makiety mapują się tak: `brand` = `primary`, `brand-dark` = `primary-hover`, `brand-tint` = `accent`, `ink` = `foreground`, `ink-3` = `muted-foreground`, `line` = `border`, `bg` = `background`, `ok/warn/danger/info` (+ `-bg`) = tony `success/warning/destructive/info` (solid i subtle). Marka klienta (white-label) to osobna, przyszła warstwa: podmieni się ją nadpisując te same zmienne, bez zmian w komponentach.
 
 **Reguła:** w klasach używaj nazwy tokena (`bg-card`, `text-muted-foreground`, `border-input`). Nie używaj kolorów palety Tailwind (`red-500`) ani wartości hex. `npm run docs:check` łapie surowe kolory.
 
@@ -19,7 +19,7 @@ Motyw jest neutralny (szarości shadcn) plus cztery tony semantyczne. Marka klie
   <Swatch token="card" foreground="card-foreground" role="karta, panel (`Card`, `StatTile`)" />
   <Swatch token="popover" foreground="popover-foreground" role="warstwa nad stroną (`Select`, `Dialog`)" />
   <Swatch token="muted" foreground="muted-foreground" role="wyciszona powierzchnia, tekst pomocniczy" />
-  <Swatch token="accent" foreground="accent-foreground" role="podświetlenie pozycji menu, hover w `Select`" />
+  <Swatch token="accent" foreground="accent-foreground" role="miętowe tło wybranej opcji i hover (`brand-tint`): karta opcji, `Select`, hover przycisku `secondary`" />
   <Swatch token="secondary" foreground="secondary-foreground" role="akcja poboczna, tło kontrolek" />
 </SwatchGrid>
 
@@ -29,12 +29,14 @@ Motyw jest neutralny (szarości shadcn) plus cztery tony semantyczne. Marka klie
 | `muted-foreground` | `text-muted-foreground` | podpis, opis pod polem, metadane (na `background` i `card`) | treść niezbędna do działania ekranu |
 | `border` | `border-border` | obramowania kart, separatory | obramowania pól (to `input`) |
 | `input` | `border-input` | obramowanie pól formularzy | separatory |
-| `ring` | `ring-ring` | pierścień fokusu | dekoracja |
+| `ring` | `ring-ring/35` | pierścień fokusu (3 px, teal 35%, jak `--focus` w makiecie) | dekoracja |
+| `primary-hover` | `bg-primary-hover` | hover przycisku głównego | stan spoczynku |
 
 ## Akcje
 
 <SwatchGrid>
-  <Swatch token="primary" foreground="primary-foreground" role="akcja główna (`Button` default), zaznaczenie" />
+  <Swatch token="primary" foreground="primary-foreground" role="akcja główna (`Button` default), zaznaczenie, bieżący krok" />
+  <Swatch token="primary-hover" foreground="primary-foreground" role="hover akcji głównej (`brand-dark`)" />
   <Swatch token="destructive" foreground="destructive-foreground" role="akcja destrukcyjna, błąd pola" />
 </SwatchGrid>
 
@@ -62,21 +64,25 @@ Wartości policzone skryptem na kolorach z `styles.css` (próg: 4,5:1 dla tekstu
 
 | Para | Jasny | Ciemny |
 |---|---|---|
-| `foreground` na `background` | 19,8:1 | 19,0:1 |
-| `muted-foreground` na `background` | 6,0:1 | 7,6:1 |
-| `muted-foreground` na `muted` | 5,5:1 | 5,8:1 |
-| `destructive` (tekst błędu) na `background` | 4,8:1 | 6,8:1 |
-| `destructive-foreground` na `destructive` | 4,6:1 | 6,8:1 |
-| `success-foreground` na `success` | 5,4:1 | 7,7:1 |
-| `warning-foreground` na `warning` | 7,9:1 | 10,2:1 |
-| `info-foreground` na `info` | 5,3:1 | 7,3:1 |
-| `*-subtle-foreground` na `*-subtle` (4 tony) | 7,1 do 9,8:1 | 10,5 do 11,2:1 |
+| `foreground` na `background` | 15,3:1 | 15,8:1 |
+| `muted-foreground` na `background` | 5,1:1 | 8,3:1 |
+| `muted-foreground` na `muted` | 4,8:1 | 6,4:1 |
+| `primary-foreground` na `primary` | 5,5:1 | 7,0:1 |
+| `primary` (tekst, link) na `card` | 5,5:1 | 6,7:1 |
+| `accent-foreground` na `accent` | 7,2:1 | 10,5:1 |
+| `destructive-foreground` na `destructive` | 5,7:1 | (oklch, jak wcześniej) 6,8:1 |
+| `success-foreground` na `success` | 5,0:1 | 7,7:1 |
+| `warning-foreground` na `warning` | 6,3:1 | 10,2:1 |
+| `info-foreground` na `info` | 6,7:1 | 7,3:1 |
+| `*-subtle-foreground` na `*-subtle` (jasny: `success` 4,5, `warning` 5,1, `destructive` 5,0, `info` 5,9) | 4,5 do 5,9:1 | 10,5 do 11,2:1 |
+
+`muted-foreground` jest o odcień ciemniejszy od `ink-3` z makiety (`#5f6b7a` zamiast `#6b7685`), żeby zostać ponad 4,5:1 także na `muted`.
 
 Zmieniasz token? Sprawdź każdą parę ponownie, w obu motywach.
 
 ## Reguły użycia
 
 - **Jedna rola, jeden token.** Nie używaj `bg-primary` do „ładnego kółka”, jeśli to nie jest akcja ani zaznaczenie.
-- **Przezroczystość tylko do stanów** (`hover:bg-primary/90`, `ring-ring/60`); nie do tworzenia nowych kolorów.
+- **Przezroczystość tylko do stanów** (`hover:bg-primary/90`, `ring-ring/35`); nie do tworzenia nowych kolorów.
 - **Nowy kolor?** Dodaj token w obu motywach, mapowanie w `@theme inline`, wpis w tej tabeli i wartości kontrastu. Bez tego nie trafia do komponentu.
 - **Cień i obramowanie zamiast koloru** do oddzielania powierzchni (zobacz „Odstępy, promienie i cienie”).

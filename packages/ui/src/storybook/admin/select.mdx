@@ -59,7 +59,7 @@ import {
 
 ## Tokeny
 
-Wyzwalacz: `border-input`, `ring-ring` (fokus), `border-destructive` (invalid), `text-muted-foreground` (placeholder, ikona). Lista: `bg-popover`, `text-popover-foreground`, `border`, `shadow-md`. Opcja aktywna: `bg-accent`, `text-accent-foreground`. Etykieta grupy: `text-muted-foreground`. Separator: `bg-border`.
+Wyzwalacz: `border-[1.5px] border-input` na `bg-card`, `min-h-[46px]`, fokus `border-primary` + `ring-[3px] ring-ring/35`, `border-destructive` + `bg-destructive-subtle` (invalid), `text-muted-foreground` (placeholder, ikona). Lista: `bg-popover`, `text-popover-foreground`, `border`, `shadow-lg`. Opcja aktywna: `bg-accent`, `text-accent-foreground`. Etykieta grupy: `text-muted-foreground`. Separator: `bg-border`.
 
 ## Stany
 
@@ -68,7 +68,7 @@ Wyzwalacz: `border-input`, `ring-ring` (fokus), `border-destructive` (invalid), 
 | default (placeholder) | Tekst `text-muted-foreground`. | brak wartości |
 | z wartością | Pokazuje etykietę wybranej opcji. | `defaultValue` lub `value` |
 | open | Lista w portalu z animacją, przewijana, ze wskaźnikiem zaznaczenia. | klik, `Enter`, `Space`, strzałki |
-| focus-visible | Pierścień 3 px `ring-ring/50`. | klawiatura |
+| focus-visible | Pierścień 3 px `ring-ring/35`. | klawiatura |
 | opcja aktywna | `bg-accent`. | strzałki lub hover |
 | opcja disabled | `opacity-50`, brak zdarzeń. | `disabled` na `SelectItem` |
 | disabled | `opacity-50`, `cursor-not-allowed`. | `disabled` na `Select` |

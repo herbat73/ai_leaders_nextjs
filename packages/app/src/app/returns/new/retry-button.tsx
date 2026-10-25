@@ -7,7 +7,7 @@ import type { ReactElement } from "react";
 export function RetryButton({ label }: { label: string }): ReactElement {
   const router = useRouter();
   return (
-    <button type="button" onClick={() => router.refresh()} className="underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60">
+    <button type="button" onClick={() => router.refresh()} className="underline underline-offset-4 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/35">
       {label}
     </button>
   );

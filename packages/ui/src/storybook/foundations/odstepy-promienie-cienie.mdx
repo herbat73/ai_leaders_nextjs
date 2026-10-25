@@ -26,13 +26,14 @@ Reguły:
 
 ## Promienie
 
-Baza to `--radius` (0,625 rem); `rounded-md` = baza − 2 px, `rounded-lg` = baza.
+Wartości pochodzą z makiety portalu (`doc/portal-reklamacje/mockup/styles.css`). Baza to `--radius` (0,75 rem = 12 px); `rounded-lg` = baza, `rounded-control` = baza − 2 px (10 px), `rounded-md` = baza − 4 px (8 px).
 
 | Klasa | Użycie |
 |---|---|
-| `rounded-md` | kontrolki admina: `Button`, `Input`, `Select`, `Badge` |
-| `rounded-lg` | powierzchnie i kontrolki publiczne: `Card`, `Alert`, `Banner`, pola publiczne, karty opcji |
-| `rounded-full` | wyłącznie kółka kroków i punkty osi czasu |
+| `rounded-control` (10 px) | przyciski: `Button`, `ActionButton` |
+| `rounded-md` (8 px) | pola i listy: `Input`, `Textarea`, `Select`, pola publiczne, `Alert`, `Banner`, `Button size="sm"` |
+| `rounded-lg` (12 px) | powierzchnie: `Card`, `StatTile`, `Dialog`, karty opcji |
+| `rounded-full` | kółka kroków, punkty osi czasu, `Badge` (pigułka) |
 
 Nie mieszaj promieni na jednej powierzchni. Nie używaj `rounded-none`/`rounded-xl` do „wyróżnienia”.
 
@@ -42,9 +43,10 @@ Powierzchnie oddzielamy **obramowaniem** (`border`), cień jest tylko lekki.
 
 | Klasa | Użycie |
 |---|---|
-| `shadow-sm` | `Card`, `StatTile`, karty opcji, pola publiczne, `Input` admina |
-| `shadow-xs` | prymitywy shadcn dodane później: `Textarea`, `Select`, `Checkbox` (różnica `sm`/`xs` jest wizualnie niemal niewidoczna; nie rozstrzygaj jej w ekranie) |
-| `shadow-md` / `shadow-lg` | wyłącznie warstwy nad stroną: `SelectContent` (md), `DialogContent` (lg) |
+| `shadow-sm` (= `shadow-xs`) | `Card`, `StatTile`; to jeden token `--shadow-card` z makiety, `xs` jest jego aliasem |
+| `shadow-lg` | wyłącznie warstwy nad stroną: `SelectContent`, `DialogContent` (`--shadow-overlay`) |
+
+Pola formularzy nie mają cienia: oddziela je grubsza ramka `border-[1.5px] border-input`.
 
 Karta w karcie jest zakazana: grupuj `Separator`em lub nagłówkiem, nie kolejną `Card`.
 
@@ -54,4 +56,4 @@ Tylko Radix: `Dialog`, `Select` i `Tooltip` używają `z-50` i renderują się w
 
 ## Fokus
 
-Każdy element interaktywny ma widoczny fokus z klawiatury: pierścień `ring-2 ring-ring` (admin; shadcn dodaje też `ring-[3px] ring-ring/50` w nowszych prymitywach) lub `ring-ring/60` (public). Nigdy `outline-none` bez zastępczego pierścienia.
+Każdy element interaktywny ma widoczny fokus z klawiatury: pierścień `ring-[3px] ring-ring/35` (admin i public; odpowiada `--focus` z makiety: 3 px, teal 35%). Nigdy `outline-none` bez zastępczego pierścienia.

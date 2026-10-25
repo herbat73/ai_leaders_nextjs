@@ -34,7 +34,7 @@ export function Field({ label, hint, error, children }: FieldProps): ReactElemen
   return (
     <FieldContext.Provider value={{ id, describedBy, invalid: Boolean(error) }}>
       <div>
-        <label htmlFor={id} className="mb-1 block text-sm font-medium text-foreground">
+        <label htmlFor={id} className="mb-1.5 block font-semibold text-foreground">
           {label}
         </label>
         {hint && (
@@ -44,7 +44,8 @@ export function Field({ label, hint, error, children }: FieldProps): ReactElemen
         )}
         {children}
         {error && (
-          <p id={errorId} role="alert" className="mt-1 text-sm text-destructive">
+          <p id={errorId} role="alert" className="mt-1.5 text-sm font-medium text-destructive">
+            <span aria-hidden="true">⚠ </span>
             {error}
           </p>
         )}

@@ -20,7 +20,7 @@ export interface StageListProps {
 export function StageList({ stages, closed, label }: StageListProps): ReactElement {
   if (closed) {
     return (
-      <div role="group" aria-label={label} className="rounded-lg border border-border bg-muted px-4 py-3">
+      <div role="group" aria-label={label} className="rounded-md border border-border bg-muted px-4 py-3">
         <p className="text-sm font-semibold text-foreground">{closed.label}</p>
         {closed.reason && <p className="mt-1 text-sm text-muted-foreground">{closed.reason}</p>}
       </div>
@@ -34,9 +34,9 @@ export function StageList({ stages, closed, label }: StageListProps): ReactEleme
           <span
             aria-hidden="true"
             className={[
-              "flex size-6 shrink-0 items-center justify-center rounded-full border text-xs font-semibold",
+              "flex size-[26px] shrink-0 items-center justify-center rounded-full border text-xs font-semibold",
               stage.state === "upcoming" ? "border-border text-muted-foreground" : "border-primary bg-primary text-primary-foreground",
-              stage.state === "current" ? "ring-2 ring-ring/60 ring-offset-2 ring-offset-background" : "",
+              stage.state === "current" ? "ring-4 ring-accent" : "",
             ].join(" ")}
           >
             {stage.state === "done" ? "✓" : index + 1}

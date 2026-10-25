@@ -5,7 +5,7 @@ import { cn } from "../lib/utils";
 export function Table({ className, ...props }: React.TableHTMLAttributes<HTMLTableElement>): React.ReactElement {
   return (
     <div className="relative w-full overflow-auto">
-      <table className={cn("w-full caption-top text-sm", className)} {...props} />
+      <table className={cn("w-full caption-top border-collapse text-base", className)} {...props} />
     </div>
   );
 }
@@ -19,15 +19,15 @@ export function TableBody(props: React.HTMLAttributes<HTMLTableSectionElement>):
 }
 
 export function TableRow({ className, ...props }: React.HTMLAttributes<HTMLTableRowElement>): React.ReactElement {
-  return <tr className={cn("border-b transition-colors hover:bg-muted/50", className)} {...props} />;
+  return <tr className={cn("border-b transition-colors hover:bg-background", className)} {...props} />;
 }
 
 export function TableHead({ className, ...props }: React.ThHTMLAttributes<HTMLTableCellElement>): React.ReactElement {
-  return <th className={cn("h-10 px-3 text-left align-middle font-medium text-muted-foreground", className)} {...props} />;
+  return <th className={cn("h-11 px-3.5 text-left align-middle text-[0.8125rem] font-semibold uppercase tracking-wide text-muted-foreground", className)} {...props} />;
 }
 
 export function TableCell({ className, ...props }: React.TdHTMLAttributes<HTMLTableCellElement>): React.ReactElement {
-  return <td className={cn("p-3 align-middle", className)} {...props} />;
+  return <td className={cn("px-3.5 py-3 align-middle", className)} {...props} />;
 }
 
 export function TableCaption({ className, ...props }: React.HTMLAttributes<HTMLTableCaptionElement>): React.ReactElement {

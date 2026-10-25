@@ -46,7 +46,7 @@ import { Checkbox, Label } from "@easyrms/ui/admin";
 
 ## Tokeny
 
-`border-input` (ramka), `bg-primary` i `text-primary-foreground` oraz `border-primary` (zaznaczone), `ring-ring` (fokus), `border-destructive` i `ring-destructive` (invalid), `rounded-[4px]`, `size-4`; w ciemnym motywie tło `bg-input/30`.
+`border-[1.5px] border-input` + `bg-card` (ramka), `bg-primary` i `text-primary-foreground` oraz `border-primary` (zaznaczone), fokus `ring-[3px] ring-ring/35`, `border-destructive` (invalid), `rounded-[5px]`, `size-5`.
 
 ## Stany
 
@@ -55,7 +55,7 @@ import { Checkbox, Label } from "@easyrms/ui/admin";
 | unchecked | Pusta ramka `border-input`. | domyślnie |
 | checked | Tło `bg-primary`, ikona znacznika. | `checked` lub `defaultChecked` |
 | indeterminate | Stan pośredni (`data-state=indeterminate`), pokazywany przez wskaźnik Radix. | `checked="indeterminate"` |
-| focus-visible | Obrys 3 px `ring-ring/50` i `border-ring`. | nawigacja klawiaturą |
+| focus-visible | Obrys 3 px `ring-ring/35` i `border-ring`. | nawigacja klawiaturą |
 | disabled | `opacity-50`, kursor `not-allowed`. | `disabled` |
 | invalid | `border-destructive`, pierścień `ring-destructive/20`. | `aria-invalid` |
 

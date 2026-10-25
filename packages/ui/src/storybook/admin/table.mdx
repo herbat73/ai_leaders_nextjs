@@ -52,14 +52,14 @@ import { Badge, Table, TableBody, TableCaption, TableCell, TableHead, TableHeade
 
 ## Tokeny
 
-`border-b` (wiersze), `hover:bg-muted/50` (wiersz), `text-muted-foreground` (nagłówek kolumny i podpis), `text-sm`, odstępy `h-10 px-3` (nagłówek) i `p-3` (komórka).
+`border-b` (wiersze), `hover:bg-background` (wiersz), `text-muted-foreground` (nagłówek kolumny: wersaliki `text-[0.8125rem] font-semibold uppercase tracking-wide`, i podpis), `text-base`, odstępy `h-11 px-3.5` (nagłówek) i `px-3.5 py-3` (komórka).
 
 ## Stany
 
 | Stan | Zachowanie |
 |---|---|
 | default | Wiersze z dolną ramką; ostatni wiersz bez ramki. |
-| hover wiersza | Tło `bg-muted/50`. |
+| hover wiersza | Tło `bg-background`. |
 | przepełnienie | Przewijanie poziome w kontenerze. |
 | focus / disabled / loading / empty / error | Brak — obsługuje je `DataTable` lub komponent otaczający. |
 
