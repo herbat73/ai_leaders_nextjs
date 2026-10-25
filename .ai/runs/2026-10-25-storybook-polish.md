@@ -27,6 +27,8 @@ Docs only; `docs:check` and `storybook:build` do not verify class claims, so the
 
 ## Progress
 
+PR: #34
+
 > Convention: `- [ ]` pending, `- [x]` done. Append ` — <commit sha>` when a step lands. Do not rename step titles.
 
 ### Phase 1: Correct stale token claims
