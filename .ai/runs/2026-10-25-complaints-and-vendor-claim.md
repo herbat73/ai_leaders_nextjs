@@ -37,4 +37,4 @@ Phases and steps are those of the spec's Implementation Plan (Phase 1 steps 1-6,
 - [x] 2.3 Claim persistence and state machine — 13ac335
 - [x] 2.4 Claim service and routes — 2e29997
 - [x] 2.5 Admin UI — 2918c22
-- [ ] 2.6 Docs, QA evidence and close-out
+- [x] 2.6 Docs, QA evidence and close-out — e2e82e3
