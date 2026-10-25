@@ -85,9 +85,14 @@ export interface ReturnRequest {
 
 /** A request as the inbox and the API show it: the request plus values derived from the clock and the state machine. */
 export interface ReturnListItem extends ReturnRequest {
+  /** Returns: the internal 2-business-day reply target. Complaints: the statutory answer day (14 calendar days, R04). */
   dueAt: Date;
   overdue: boolean;
   allowedTransitions: ReturnStatus[];
+  /** Complaints only: still unanswered from the escalation day on (Q07). */
+  escalated?: boolean;
+  /** Complaints only: calendar days to `dueAt` while unanswered (negative once passed); `null` once answered. */
+  daysLeft?: number | null;
 }
 
 export type ReturnEventActor = "customer" | "agent" | "system";

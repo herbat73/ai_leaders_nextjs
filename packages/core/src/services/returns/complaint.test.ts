@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { money } from "../../domain/money";
 import { complaintSubmitSchema } from "../../validators/returns/complaint-submit.schema";
 import { complaintQuoteSchema } from "../../validators/returns/complaint-quote.schema";
+import { quoteRequestSchema, submitRequestSchema } from "../../validators/returns/return-kind.schema";
 import { returnStatusUpdateSchema } from "../../validators/returns/return-status-update.schema";
 import type { ReturnOrder } from "../orders/order-lookup.port";
 import { calculateComplaintQuote } from "./complaint-quote";
@@ -177,5 +178,47 @@ describe("returnStatusUpdateSchema defectConfirmed", () => {
   it("passes the finding through and omits it when absent", () => {
     expect(returnStatusUpdateSchema.parse({ status: "received", defectConfirmed: false })).toEqual({ status: "received", defectConfirmed: false });
     expect(returnStatusUpdateSchema.parse({ status: "received" })).toEqual({ status: "received" });
+  });
+});
+
+describe("kind dispatch", () => {
+  const now = new Date("2026-10-25T10:00:00Z");
+  const complaintBody = {
+    kind: "complaint",
+    items: [{ lineRef: "L1", quantity: 1 }],
+    defectDescription: "The heating element stopped working after a week.",
+    defectDiscoveredOn: "2026-10-20",
+    resolution: "replacement",
+    returnMethod: "store",
+    acknowledged: true,
+    idempotencyKey: "6f1c2b1e-0a52-4c8e-9a76-3c8a1c1d2e3f",
+  };
+  const returnBody = {
+    items: [{ lineRef: "L1", quantity: 1, reasonCode: "size" }],
+    resolution: "refund",
+    returnMethod: "store",
+    acknowledged: true,
+    idempotencyKey: "6f1c2b1e-0a52-4c8e-9a76-3c8a1c1d2e3f",
+  };
+
+  it("treats a body without kind as a return", () => {
+    expect(submitRequestSchema(now).safeParse(returnBody).success).toBe(true);
+    expect(submitRequestSchema(now).safeParse(complaintBody).success).toBe(true);
+  });
+
+  it("does not let a complaint remedy through the return schema, or the reverse", () => {
+    expect(submitRequestSchema(now).safeParse({ ...returnBody, resolution: "repair" }).success).toBe(false);
+    expect(submitRequestSchema(now).safeParse({ ...complaintBody, resolution: "exchange" }).success).toBe(false);
+  });
+
+  it("keeps the path of an issue from the chosen schema", () => {
+    const result = submitRequestSchema(now).safeParse({ ...complaintBody, defectDescription: "short" });
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error.issues[0]?.path).toEqual(["defectDescription"]);
+  });
+
+  it("dispatches quotes the same way", () => {
+    expect(quoteRequestSchema.safeParse({ items: [{ lineRef: "L1", quantity: 1 }], returnMethod: "store", resolution: "exchange" }).success).toBe(true);
+    expect(quoteRequestSchema.safeParse({ kind: "complaint", items: [{ lineRef: "L1", quantity: 1 }], returnMethod: "store", resolution: "exchange" }).success).toBe(false);
   });
 });

@@ -10,18 +10,25 @@ import {
 } from "../../errors";
 import type { ApiLogger } from "../../http/types";
 import { CUSTOMER_RATE_RULES, rateKeys, type RateLimiter } from "../../security/rate-limiter";
+import type { ComplaintSubmitBody } from "../../validators/returns/complaint-submit.schema";
 import type { ReturnSubmitBody } from "../../validators/returns/return-submit.schema";
 import { hasPermission } from "../agents/permissions";
 import type { AgentContext } from "../agents/types";
 import { maskEmail, type MailPort, type MailTemplate } from "../mail/mail.port";
-import type { OrderLookup, OrderLookupResult } from "../orders/order-lookup.port";
+import type { OrderLookup, OrderLookupResult, ReturnOrder } from "../orders/order-lookup.port";
 import { requiresManagerApproval, type ApprovalConfig } from "./approval";
+import { calculateComplaintQuote } from "./complaint-quote";
+import { checkComplaintEligibility, warsawDateString } from "./complaint-eligibility";
+import { complaintAwaitsAnswer, complaintDaysLeft, complaintDueAt, complaintEscalated } from "./complaint-sla";
 import { checkDecisionNote } from "./decision-note";
 import { checkEligibility, type EligibilityConfig, type IneligibleReason } from "./eligibility";
 import { calculateQuote, validateQuoteLines, type QuoteConfig } from "./quote";
 import { ORDER_UNAVAILABLE_MESSAGE } from "./return-lookup.service";
-import { returnStateMachine } from "./transitions";
+import { stateMachineFor } from "./transitions";
 import {
+  COMPLAINT_KIND,
+  COMPLAINT_REASON_CODE,
+  RETURN_KIND,
   RETURN_STATUSES,
   type ReturnDetailView,
   type ReturnListFilter,
@@ -59,6 +66,20 @@ export interface ReturnSubmitResult {
   status: ReturnStatus | "unknown";
   resolution: RequestResolution | null;
   resolutionAmount: ResolutionAmountView | null;
+}
+
+/** The order line's name and price at submit time, for the items table. */
+function snapshotOf(
+  byRef: Map<string, ReturnOrder["lines"][number]>,
+  item: { lineRef: string; quantity: number },
+): { lineRef: string; sku: string; name: string; quantity: number; unitPrice: Money } {
+  const line = byRef.get(item.lineRef);
+  if (!line) throw new RangeError(`Unknown order line ${item.lineRef}`);
+  return { lineRef: line.lineRef, sku: line.sku, name: line.name, quantity: item.quantity, unitPrice: line.unitPrice };
+}
+
+function isComplaintBody(input: ReturnSubmitBody | ComplaintSubmitBody): input is ComplaintSubmitBody {
+  return "kind" in input && input.kind === COMPLAINT_KIND;
 }
 
 function toAmountView(amount: Money | null | undefined): ResolutionAmountView | null {
@@ -144,25 +165,39 @@ export class ReturnService {
     status: ReturnStatus,
     decisionNote: string | undefined,
     agent: Pick<AgentContext, "id" | "permissions">,
+    defectConfirmed?: boolean,
   ): Promise<ReturnListItem> {
     const check = checkDecisionNote(status, decisionNote);
     if (!check.ok) throw new ValidationError("Invalid input", { decisionNote: check.message });
+    if (defectConfirmed !== undefined && status !== "received") {
+      throw new ValidationError("Invalid input", { defectConfirmed: "The finding is only recorded when the complaint is received" });
+    }
 
-    const current = await this.returnRepository.findStatus(id);
-    if (current === null) throw new NotFoundError(`Return ${id} not found`);
-    returnStateMachine.assert(current, status);
-    // `assert` only passes for a known status, so `current` is one of the nine here.
-    const from = current as ReturnStatus;
+    const request = await this.returnRepository.findRequest(id);
+    if (!request) throw new NotFoundError(`Return ${id} not found`);
+    const complaint = request.kind === COMPLAINT_KIND;
+    const machine = stateMachineFor(request.kind);
+    machine.assert(request.status, status);
+    // `assert` only passes for a known status, so the stored status is one of the nine here.
+    const from = request.status as ReturnStatus;
+
+    if (status === "received" && complaint && defectConfirmed === undefined) {
+      throw new ValidationError("Invalid input", { defectConfirmed: "Record whether the defect is confirmed" });
+    }
+    if (defectConfirmed !== undefined && !complaint) {
+      throw new ValidationError("Invalid input", { defectConfirmed: "Only a complaint records a finding" });
+    }
 
     if (status === "approved") {
-      const request = await this.returnRepository.findRequest(id);
-      if (!request) throw new NotFoundError(`Return ${id} not found`);
       if (requiresManagerApproval(request, status, this.approvalConfig.refundApprovalLimit) && !hasPermission(agent, "MANAGE_RULES")) {
         throw new ForbiddenError("Approving a refund above the limit needs the MANAGE_RULES permission", "approval_required");
       }
     }
 
-    const outcome = await this.returnRepository.transition(id, from, status, check.note, agent.id);
+    const outcome =
+      defectConfirmed === undefined
+        ? await this.returnRepository.transition(id, from, status, check.note, agent.id)
+        : await this.returnRepository.transition(id, from, status, check.note, agent.id, defectConfirmed);
     switch (outcome.result) {
       case "moved":
         await this.notifyStatusChanged(outcome.request);
@@ -185,7 +220,7 @@ export class ReturnService {
    * The replay shortcut runs before the eligibility check because a retry must not trip over its own consumed
    * quantity or a window that closed after the first attempt; the in-lock lookup still settles two racing retries.
    */
-  async submit(sessionOrderNumber: string, input: ReturnSubmitBody): Promise<ReturnSubmitResult> {
+  async submit(sessionOrderNumber: string, input: ReturnSubmitBody | ComplaintSubmitBody): Promise<ReturnSubmitResult> {
     const sessionKey = rateKeys.quote(sessionOrderNumber);
     if (!this.rateLimiter.consume(sessionKey, CUSTOMER_RATE_RULES.session).allowed) throw new TooManyRequestsError();
 
@@ -210,17 +245,24 @@ export class ReturnService {
     if (earlier) return this.toSubmitResult(this.replayOf(earlier, orderNumber), false);
 
     const lines = input.items.map(({ lineRef, quantity }) => ({ lineRef, quantity }));
-    const quoteInput = { lines, resolution: input.resolution, returnMethod: input.returnMethod };
+    const eligibilityOf = (claimed: Record<string, number>) =>
+      isComplaintBody(input)
+        ? checkComplaintEligibility(order, this.clock(), claimed)
+        : checkEligibility(order, this.clock(), this.eligibilityConfig, claimed);
     const claimedBefore = await this.returnRepository.claimedQuantities(orderNumber);
-    const problems = validateQuoteLines(checkEligibility(order, this.clock(), this.eligibilityConfig, claimedBefore), lines);
+    const problems = validateQuoteLines(eligibilityOf(claimedBefore), lines);
     if (Object.keys(problems).length > 0) throw new ValidationError("Some items cannot be returned", fieldErrorsOf(problems));
+    // The defect cannot predate the delivery (both are Warsaw calendar days; `YYYY-MM-DD` strings compare as dates).
+    if (isComplaintBody(input) && order.deliveredAt && input.defectDiscoveredOn < warsawDateString(order.deliveredAt)) {
+      throw new ValidationError("The defect cannot predate the delivery", { defectDiscoveredOn: "before_delivery" });
+    }
 
     const outcome = await this.returnRepository.withOrderLock(orderNumber, async (tx) => {
       const existing = await tx.findByIdempotencyKey(input.idempotencyKey);
       if (existing) return { created: false, request: this.replayOf(existing, orderNumber) };
 
       const claimed = await tx.claimedQuantities(orderNumber);
-      const recheck = validateQuoteLines(checkEligibility(order, this.clock(), this.eligibilityConfig, claimed), lines);
+      const recheck = validateQuoteLines(eligibilityOf(claimed), lines);
       const taken = Object.entries(recheck).filter(([, reason]) => reason === "already_claimed");
       if (taken.length > 0) {
         throw new ConflictError("Some items were claimed by another request", fieldErrorsOf(Object.fromEntries(taken)));
@@ -228,36 +270,44 @@ export class ReturnService {
       if (Object.keys(recheck).length > 0) throw new ValidationError("Some items cannot be returned", fieldErrorsOf(recheck));
 
       // Recomputed here: amounts sent by the client are never read (R12).
-      const quote = calculateQuote(order, quoteInput, this.quoteConfig);
+      const quote = isComplaintBody(input)
+        ? calculateComplaintQuote(order, { lines, resolution: input.resolution })
+        : calculateQuote(order, { lines, resolution: input.resolution, returnMethod: input.returnMethod }, this.quoteConfig);
       const byRef = new Map(order.lines.map((line) => [line.lineRef, line]));
       const request = await tx.createWithItems({
         orderNumber,
         customerEmail: order.customerEmail,
-        items: input.items.map((item) => {
-          const line = byRef.get(item.lineRef);
-          if (!line) throw new RangeError(`Unknown order line ${item.lineRef}`);
-          return {
-            lineRef: line.lineRef,
-            sku: line.sku,
-            name: line.name,
-            quantity: item.quantity,
-            unitPrice: line.unitPrice,
-            reasonCode: item.reasonCode,
-            ...(item.comment ? { comment: item.comment } : {}),
-          };
-        }),
+        kind: isComplaintBody(input) ? COMPLAINT_KIND : RETURN_KIND,
+        items: isComplaintBody(input)
+          ? input.items.map((item) => ({
+              ...snapshotOf(byRef, item),
+              reasonCode: COMPLAINT_REASON_CODE,
+              ...(item.serialNumber ? { serialNumber: item.serialNumber } : {}),
+            }))
+          : input.items.map((item) => ({
+              ...snapshotOf(byRef, item),
+              reasonCode: item.reasonCode,
+              ...(item.comment ? { comment: item.comment } : {}),
+            })),
         resolution: input.resolution,
         resolutionAmount: quote.amount,
-        ...(input.resolution === "exchange" && input.exchangeNote ? { exchangeNote: input.exchangeNote } : {}),
+        ...(!isComplaintBody(input) && input.resolution === "exchange" && input.exchangeNote ? { exchangeNote: input.exchangeNote } : {}),
         returnMethod: input.returnMethod,
         idempotencyKey: input.idempotencyKey,
+        ...(isComplaintBody(input)
+          ? { defectDescription: input.defectDescription, defectDiscoveredOn: input.defectDiscoveredOn }
+          : {}),
       });
       return { created: true, request };
     });
 
     const { request, created } = outcome;
     if (created) {
-      await this.notify("return_submitted", request.customerEmail, { rma: request.rma, resolution: request.resolution ?? null });
+      await this.notify("return_submitted", request.customerEmail, {
+        rma: request.rma,
+        resolution: request.resolution ?? null,
+        kind: request.kind,
+      });
     }
     return this.toSubmitResult(request, created);
   }
@@ -297,12 +347,20 @@ export class ReturnService {
   }
 
   private toListItem(request: ReturnRequest, now: Date): ReturnListItem {
+    const allowedTransitions = [...stateMachineFor(request.kind).allowed(request.status)];
+    if (request.kind === COMPLAINT_KIND) {
+      const due = complaintDueAt(request.createdAt);
+      const open = complaintAwaitsAnswer(request.status);
+      return {
+        ...request,
+        dueAt: due,
+        overdue: open && now.getTime() > due.getTime(),
+        allowedTransitions,
+        escalated: complaintEscalated(request.status, request.createdAt, now),
+        daysLeft: open ? complaintDaysLeft(request.createdAt, now) : null,
+      };
+    }
     const due = dueAt(request.createdAt);
-    return {
-      ...request,
-      dueAt: due,
-      overdue: overdue(request.status, due, now),
-      allowedTransitions: [...returnStateMachine.allowed(request.status)],
-    };
+    return { ...request, dueAt: due, overdue: overdue(request.status, due, now), allowedTransitions };
   }
 }

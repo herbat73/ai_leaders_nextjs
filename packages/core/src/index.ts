@@ -38,6 +38,7 @@ export * from "./tabular";
 export * from "./validators/discovery";
 export * from "./validators/returns/complaint-quote.schema";
 export * from "./validators/returns/complaint-submit.schema";
+export * from "./validators/returns/return-kind.schema";
 export * from "./validators/returns/return-list-query.schema";
 export * from "./validators/returns/return-lookup.schema";
 export * from "./validators/returns/return-quote.schema";

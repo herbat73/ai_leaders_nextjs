@@ -11,6 +11,6 @@ export const { PATCH } = makeCrudRoute({
   resolve: resolveReturnService,
   patch: {
     schema: returnStatusUpdateSchema,
-    handler: (service, id, input, agent) => service.transition(id, input.status, input.decisionNote, agent),
+    handler: (service, id, input, agent) => service.transition(id, input.status, input.decisionNote, agent, input.defectConfirmed),
   },
 });

@@ -157,7 +157,7 @@ describe("ReturnService.submit", () => {
       customerEmail: ANNA_EMAIL,
       items: [{ lineRef: "L1", sku: "BUT-TRK-42", name: "Buty trekkingowe Tatra, rozm. 42", unitPrice: money(34999) }],
     });
-    expect(sent).toEqual([{ template: "return_submitted", to: ANNA_EMAIL, data: { rma: "RMA-2026-00001", resolution: "refund" } }]);
+    expect(sent).toEqual([{ template: "return_submitted", to: ANNA_EMAIL, data: { rma: "RMA-2026-00001", resolution: "refund", kind: "return" } }]);
   });
 
   it("has no amount for an exchange and keeps the note", async () => {
