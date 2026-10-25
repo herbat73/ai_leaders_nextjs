@@ -1,6 +1,6 @@
 # Execution plan: complaints with the vendor claim flow
 
-Source doc: .ai/specs/2026-10-25-complaints-and-vendor-claim.md
+Source doc: .ai/specs/implemented/2026-10-25-complaints-and-vendor-claim.md
 
 ## Goal
 Implement the spec: customers file complaints (kind `complaint`) on the existing return flow; agents decide them with a 14-day deadline and escalation badge; for a confirmed defect an agent sends a claim to a vendor by e-mail and records the answer (Phase 2, with a real SMTP adapter).
