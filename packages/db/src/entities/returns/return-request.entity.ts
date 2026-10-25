@@ -18,6 +18,10 @@ export const ReturnRequestSchema = defineEntity({
     currency: p.string().length(3).columnType("char(3)").default("PLN"),
     exchangeNote: p.text().nullable(),
     returnMethod: p.string().length(24).nullable(),
+    // Complaints only; null on returns.
+    defectDescription: p.text().nullable(),
+    defectDiscoveredOn: p.string().columnType("date").nullable(),
+    defectConfirmed: p.boolean().nullable(),
     idempotencyKey: p.uuid().nullable().unique(),
     createdAt: p.datetime().onCreate(() => new Date()),
     updatedAt: p

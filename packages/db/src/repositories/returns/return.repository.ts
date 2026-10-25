@@ -3,17 +3,17 @@ import type { EntityManager } from "@mikro-orm/postgresql";
 import {
   DECISION_STATUSES,
   formatRma,
+  COMPLAINT_REASON_CODE,
+  COMPLAINT_RESOLUTIONS,
+  REQUEST_KINDS,
   RETURN_KIND,
   RETURN_STATUSES,
   toReturnStatus,
   type ApiLogger,
   ConflictError,
-  money,
-  parseMoney,
   RETURN_METHODS,
   RETURN_REASON_CODES,
   RETURN_RESOLUTIONS,
-  type Money,
   type NewReturnRequest,
   type ReturnDetail,
   type ReturnEvent,
@@ -35,6 +35,7 @@ import {
   type ReturnRequestEventEntity,
   type ReturnRequestItemEntity,
 } from "../../entities";
+import { fromDecimal, toDecimal } from "../../decimal";
 
 /**
  * Joins the caller's transaction when there is one, otherwise opens its own (the default, NESTED, is a savepoint).
@@ -47,17 +48,6 @@ const joinOrOpen = (): { propagation: TransactionPropagation } => ({ propagation
 const RELEASING_STATUSES = ["cancelled", "rejected"];
 
 const IDEMPOTENCY_CONSTRAINT = "return_requests_idempotency_key_unique";
-
-/** Integer grosze to the `numeric(12,2)` text form, without a float round trip. */
-function toDecimal(m: Money): string {
-  const abs = Math.abs(m.amountMinor);
-  return `${m.amountMinor < 0 ? "-" : ""}${Math.floor(abs / 100)}.${String(abs % 100).padStart(2, "0")}`;
-}
-
-/** Stored decimals are written by this repository only, so they always parse. */
-function fromDecimal(value: string | number): Money {
-  return parseMoney(String(value)) ?? money(0);
-}
 
 /** Narrows a stored string to a union of the domain; an unrecognised value (hand edit) becomes `null` (unknown). */
 function oneOf<T extends string>(values: readonly T[], value: string | null | undefined): T | null {
@@ -72,8 +62,10 @@ function toItem(entity: ReturnRequestItemEntity): ReturnItem {
     quantity: entity.quantity,
     unitPrice: fromDecimal(entity.unitPrice),
     // Written only by this repository from the domain union.
-    reasonCode: oneOf(RETURN_REASON_CODES, entity.reasonCode) ?? "other",
+    reasonCode: oneOf([...RETURN_REASON_CODES, COMPLAINT_REASON_CODE], entity.reasonCode) ?? "other",
     comment: entity.comment ?? null,
+    // Absent unless the item carries one, so the shape of return items is unchanged.
+    ...(entity.serialNumber ? { serialNumber: entity.serialNumber } : {}),
   };
 }
 
@@ -81,17 +73,20 @@ function toDomain(entity: ReturnRequestEntity): ReturnRequest {
   return {
     id: entity.id,
     rma: entity.rma,
-    // `kind` is a column for later specs; only "return" exists today.
-    kind: RETURN_KIND,
+    // An unrecognised stored kind (hand edit) reads as a return, the only kind older rows can have.
+    kind: oneOf(REQUEST_KINDS, entity.kind) ?? RETURN_KIND,
     orderNumber: entity.orderNumber,
     customerEmail: entity.customerEmail,
     reason: entity.reason ?? null,
     status: toReturnStatus(entity.status),
     hasDecisionNote: Boolean(entity.decisionNote),
-    resolution: oneOf(RETURN_RESOLUTIONS, entity.resolution),
+    resolution: oneOf([...RETURN_RESOLUTIONS, ...COMPLAINT_RESOLUTIONS], entity.resolution),
     resolutionAmount: entity.resolutionAmount === null || entity.resolutionAmount === undefined ? null : fromDecimal(entity.resolutionAmount),
     returnMethod: oneOf(RETURN_METHODS, entity.returnMethod),
     exchangeNote: entity.exchangeNote ?? null,
+    defectDescription: entity.defectDescription ?? null,
+    defectDiscoveredOn: entity.defectDiscoveredOn ?? null,
+    defectConfirmed: entity.defectConfirmed ?? null,
     createdAt: entity.createdAt,
     updatedAt: entity.updatedAt,
   };
@@ -123,12 +118,13 @@ export class MikroOrmReturnRepository implements ReturnRepository {
   }
 
   async list(filter: ReturnListFilter = {}): Promise<ReturnRequest[]> {
-    const where =
+    const statusWhere =
       filter.status === undefined
         ? {}
         : filter.status === "unknown"
           ? { status: { $nin: [...RETURN_STATUSES] } }
           : { status: filter.status };
+    const where = { ...statusWhere, ...(filter.kind === undefined ? {} : { kind: filter.kind }) };
     const rows = await this.em.find(ReturnRequestSchema, where, { orderBy: { createdAt: "desc", id: "desc" } });
     const requests = rows.map(toDomain);
     const corrupt = requests.filter((request) => request.status === "unknown").map((request) => request.id);
@@ -212,13 +208,15 @@ export class MikroOrmReturnRepository implements ReturnRepository {
           orderNumber: input.orderNumber,
           customerEmail: input.customerEmail,
           rma: formatRma(Number(seq), createdAt),
-          kind: RETURN_KIND,
+          kind: input.kind ?? RETURN_KIND,
           status: "submitted",
           resolution: input.resolution,
           resolutionAmount: input.resolutionAmount ? toDecimal(input.resolutionAmount) : null,
           exchangeNote: input.exchangeNote ?? null,
           returnMethod: input.returnMethod,
           idempotencyKey: input.idempotencyKey,
+          defectDescription: input.defectDescription ?? null,
+          defectDiscoveredOn: input.defectDiscoveredOn ?? null,
           createdAt,
           updatedAt: createdAt,
         });
@@ -232,6 +230,7 @@ export class MikroOrmReturnRepository implements ReturnRepository {
             unitPrice: toDecimal(item.unitPrice),
             reasonCode: item.reasonCode,
             comment: item.comment ?? null,
+            serialNumber: item.serialNumber ?? null,
           });
         }
         tx.create(ReturnRequestEventSchema, {
@@ -255,14 +254,25 @@ export class MikroOrmReturnRepository implements ReturnRepository {
     }
   }
 
-  transition(id: number, from: ReturnStatus, to: ReturnStatus, note: string | null, agentId: number): Promise<TransitionOutcome> {
+  transition(
+    id: number,
+    from: ReturnStatus,
+    to: ReturnStatus,
+    note: string | null,
+    agentId: number,
+    defectConfirmed?: boolean,
+  ): Promise<TransitionOutcome> {
     // Runs on the callback's EntityManager: `this.em` is a plain fork and would run outside the transaction.
     return this.em.transactional(async (tx): Promise<TransitionOutcome> => {
       const now = new Date();
       // `nativeUpdate` skips the `onUpdate` hook, so `updatedAt` is set here; the note is touched only by decisions.
-      const data = (DECISION_STATUSES as readonly ReturnStatus[]).includes(to)
-        ? { status: to, updatedAt: now, decisionNote: note }
-        : { status: to, updatedAt: now };
+      const data = {
+        status: to,
+        updatedAt: now,
+        ...((DECISION_STATUSES as readonly ReturnStatus[]).includes(to) ? { decisionNote: note } : {}),
+        // The agent's finding is written by the move to `received` only; later moves leave it as it is.
+        ...(to === "received" && defectConfirmed !== undefined ? { defectConfirmed } : {}),
+      };
       const updated = await tx.nativeUpdate(ReturnRequestSchema, { id, status: from }, data);
 
       if (updated === 0) {

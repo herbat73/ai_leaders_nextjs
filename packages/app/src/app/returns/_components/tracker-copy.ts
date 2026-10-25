@@ -1,4 +1,4 @@
-import type { ReturnMethod, ReturnResolution, TrackerEventKey, TrackerStageId, WhatNowKey } from "@easyrms/core";
+import type { RequestResolution, ReturnMethod, TrackerEventKey, TrackerStageId, WhatNowKey } from "@easyrms/core";
 
 import { statusLabels } from "../_lib/status-labels";
 
@@ -38,7 +38,13 @@ export const trackerCopy = {
   } satisfies Record<WhatNowKey, string>,
   summaryHeading: "Szczegóły zwrotu",
   resolutionLabel: "Rozwiązanie",
-  resolutions: { refund: "Zwrot pieniędzy", store_credit: "Kredyt sklepowy", exchange: "Wymiana" } satisfies Record<ReturnResolution, string>,
+  resolutions: {
+    refund: "Zwrot pieniędzy",
+    store_credit: "Kredyt sklepowy",
+    exchange: "Wymiana",
+    repair: "Naprawa",
+    replacement: "Wymiana na nowy egzemplarz",
+  } satisfies Record<RequestResolution, string>,
   amountLabel: "Kwota",
   exchangeNoteLabel: "Opis wymiany",
   methodLabel: "Sposób zwrotu",
@@ -63,4 +69,23 @@ export const trackerCopy = {
   } satisfies Record<TrackerEventKey, string>,
   statusLabels,
   currentStatus: "Aktualny status",
+} as const;
+
+/** The strings that read differently for a complaint (kind `complaint`); everything else is shared with returns. */
+export const complaintTrackerCopy = {
+  title: "Status reklamacji",
+  stagesLabel: "Etapy reklamacji",
+  summaryHeading: "Szczegóły reklamacji",
+  defectLabel: "Opis wady",
+  discoveredOnLabel: "Wada zauważona",
+  serialLabel: "Numer seryjny",
+  whatNow: {
+    ...trackerCopy.whatNow,
+    what_now_submitted: "Sprawdzamy Twoją reklamację. Nie musisz nic robić.",
+    what_now_approved: "Spakuj reklamowany produkt i odeślij go wybranym sposobem. Podaj numer RMA na paczce.",
+    what_now_received: "Mamy Twój produkt i go oceniamy. Nie musisz nic robić.",
+    what_now_in_service: "Twój produkt jest naprawiany lub sprawdzany. Nie musisz nic robić.",
+    what_now_resolved: "Reklamacja została rozpatrzona. Dziękujemy!",
+    what_now_rejected: "Reklamacja została zamknięta. Jeśli masz pytania, skontaktuj się z nami, podając numer RMA.",
+  } satisfies Record<WhatNowKey, string>,
 } as const;

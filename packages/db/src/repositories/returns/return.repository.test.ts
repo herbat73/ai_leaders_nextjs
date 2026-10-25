@@ -452,3 +452,74 @@ describe("findRequest", () => {
   });
 });
 
+
+function complaintInput(order: string, overrides: Partial<NewReturnRequest> = {}): NewReturnRequest {
+  return {
+    orderNumber: order,
+    customerEmail: "c@example.com",
+    kind: "complaint",
+    items: [{ lineRef: "L1", sku: "SKU-1", name: "Kettle", quantity: 1, unitPrice: money(19990), reasonCode: "defective", serialNumber: "SN-42" }],
+    resolution: "repair",
+    resolutionAmount: null,
+    returnMethod: "courier",
+    idempotencyKey: randomUUID(),
+    defectDescription: "The heating element stopped working after a week.",
+    defectDiscoveredOn: "2026-10-20",
+    ...overrides,
+  };
+}
+
+describe("complaints", () => {
+  it("stores the defect fields, serial number and complaint resolution", async () => {
+    const created = await repository().createWithItems(complaintInput("K-1"));
+
+    expect(created).toMatchObject({
+      kind: "complaint",
+      resolution: "repair",
+      resolutionAmount: null,
+      defectDescription: "The heating element stopped working after a week.",
+      defectDiscoveredOn: "2026-10-20",
+      defectConfirmed: null,
+    });
+    const detail = await repository().findDetail(created.id);
+    expect(detail?.items[0]).toMatchObject({ reasonCode: "defective", serialNumber: "SN-42" });
+  });
+
+  it("keeps returns as returns with no defect fields", async () => {
+    const created = await repository().createWithItems(portalInput("K-2"));
+    expect(created).toMatchObject({ kind: "return", defectDescription: null, defectDiscoveredOn: null, defectConfirmed: null });
+  });
+
+  it("counts complaint quantities together with returns", async () => {
+    await repository().createWithItems(complaintInput("K-3"));
+    await repository().createWithItems(portalInput("K-3", { items: [{ lineRef: "L1", sku: "SKU-1", name: "Kettle", quantity: 2, unitPrice: money(19990), reasonCode: "size" }] }));
+    expect(await repository().claimedQuantities("K-3")).toEqual({ L1: 3 });
+  });
+
+  it("filters the list by kind", async () => {
+    const complaint = await repository().createWithItems(complaintInput("K-4"));
+    await repository().createWithItems(portalInput("K-4"));
+    const listed = await repository().list({ kind: "complaint" });
+    expect(listed.map((r) => r.id)).toContain(complaint.id);
+    expect(listed.every((r) => r.kind === "complaint")).toBe(true);
+  });
+
+  it("writes the agent's finding with the move to received only", async () => {
+    const created = await repository().createWithItems(complaintInput("K-5"));
+    await repository().transition(created.id, "submitted", "approved", null, agentId);
+    await repository().transition(created.id, "approved", "in_transit", null, agentId);
+    const received = await repository().transition(created.id, "in_transit", "received", null, agentId, true);
+    expect(received).toMatchObject({ result: "moved", request: { defectConfirmed: true } });
+
+    const resolved = await repository().transition(created.id, "received", "in_service", null, agentId, false);
+    expect(resolved).toMatchObject({ result: "moved", request: { defectConfirmed: true } });
+  });
+
+  it("leaves the finding null when a return reaches received without one", async () => {
+    const created = await repository().createWithItems(portalInput("K-6"));
+    await repository().transition(created.id, "submitted", "approved", null, agentId);
+    await repository().transition(created.id, "approved", "in_transit", null, agentId);
+    const received = await repository().transition(created.id, "in_transit", "received", null, agentId);
+    expect(received).toMatchObject({ result: "moved", request: { defectConfirmed: null } });
+  });
+});

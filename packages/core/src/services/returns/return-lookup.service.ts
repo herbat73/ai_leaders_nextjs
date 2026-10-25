@@ -2,10 +2,12 @@ import { formatMoney } from "../../domain/money";
 import { NotFoundError, ServiceUnavailableError, TooManyRequestsError, ValidationError } from "../../errors";
 import { CUSTOMER_RATE_RULES, rateKeys, type RateLimiter } from "../../security/rate-limiter";
 import type { OrderLookup, OrderLookupResult, ReturnOrder } from "../orders/order-lookup.port";
+import { calculateComplaintQuote } from "./complaint-quote";
+import { checkComplaintEligibility } from "./complaint-eligibility";
 import { checkEligibility, type EligibilityConfig, type IneligibleReason, type OrderEligibility } from "./eligibility";
 import type { GuestSessionService } from "./guest-session.service";
 import { calculateQuote, toQuoteView, validateQuoteLines, type QuoteConfig, type ReturnQuoteView } from "./quote";
-import type { ReturnMethod, ReturnRepository, ReturnResolution } from "./types";
+import type { ComplaintResolution, RequestKind, ReturnMethod, ReturnRepository, ReturnResolution } from "./types";
 
 /** One neutral message for a wrong order number and a wrong e-mail alike. */
 export const LOOKUP_NOT_FOUND_MESSAGE = "We could not find an order matching these details";
@@ -36,13 +38,15 @@ export interface ReturnLookupOutcome {
   sessionToken: string | null;
 }
 
-export interface ReturnQuoteRequest {
+export type ReturnQuoteRequest = {
   /** Canonical order number from the verified session. */
   sessionOrderNumber: string;
   items: { lineRef: string; quantity: number }[];
   returnMethod: ReturnMethod;
-  resolution: ReturnResolution;
-}
+} & (
+  | { kind?: "return"; resolution: ReturnResolution }
+  | { kind: "complaint"; resolution: ComplaintResolution }
+);
 
 /**
  * Customer-side reads: order lookup (limiters, order port, eligibility, session) and quote. Only the canonical order
@@ -123,13 +127,16 @@ export class ReturnLookupService {
    * The lookup view for the verified session's order, re-fetched from the port (no limiter budget, no session issued):
    * what the wizard page needs to render the picker. Undelivered orders come back with `deliveredAt: null` and no lines.
    */
-  async describeOrder(sessionOrderNumber: string): Promise<ReturnLookupView> {
+  async describeOrder(sessionOrderNumber: string, kind: RequestKind = "return"): Promise<ReturnLookupView> {
     const result: OrderLookupResult = await this.orderLookup.getByNumber(sessionOrderNumber);
     if (result.status === "unavailable") throw new ServiceUnavailableError(ORDER_UNAVAILABLE_MESSAGE);
     if (result.status === "not_found") throw new NotFoundError("Order not found");
     const order = result.order;
     const claimed = await this.returnRepository.claimedQuantities(order.orderNumber);
-    const eligibility = checkEligibility(order, this.clock(), this.eligibilityConfig, claimed);
+    const eligibility =
+      kind === "complaint"
+        ? checkComplaintEligibility(order, this.clock(), claimed)
+        : checkEligibility(order, this.clock(), this.eligibilityConfig, claimed);
     if (eligibility.status === "not_delivered") {
       return { orderNumber: order.orderNumber, deliveredAt: null, lines: [], trackingUrl: eligibility.trackingUrl };
     }
@@ -156,7 +163,9 @@ export class ReturnLookupService {
 
     const order = result.order;
     const claimed = await this.returnRepository.claimedQuantities(order.orderNumber);
-    const eligibility = checkEligibility(order, this.clock(), this.eligibilityConfig, claimed);
+    const eligibility = input.kind === "complaint"
+      ? checkComplaintEligibility(order, this.clock(), claimed)
+      : checkEligibility(order, this.clock(), this.eligibilityConfig, claimed);
     const problems = validateQuoteLines(eligibility, input.items);
     const refs = Object.keys(problems);
     if (refs.length > 0) {
@@ -164,11 +173,10 @@ export class ReturnLookupService {
       for (const ref of refs) fields[`items.${ref}`] = problems[ref] as IneligibleReason;
       throw new ValidationError("Some items cannot be returned", fields);
     }
-    const quote = calculateQuote(
-      order,
-      { lines: input.items, resolution: input.resolution, returnMethod: input.returnMethod },
-      this.quoteConfig,
-    );
+    const quote =
+      input.kind === "complaint"
+        ? calculateComplaintQuote(order, { lines: input.items, resolution: input.resolution }, this.quoteConfig.shippingFee.currency)
+        : calculateQuote(order, { lines: input.items, resolution: input.resolution, returnMethod: input.returnMethod }, this.quoteConfig);
     return toQuoteView(quote, this.quoteConfig.shippingFee.currency);
   }
 

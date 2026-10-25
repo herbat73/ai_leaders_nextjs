@@ -3,7 +3,6 @@ import "server-only";
 import { asFunction, asValue, createContainer, InjectionMode, type AwilixContainer } from "awilix";
 import {
   createFakeOrderLookup,
-  createLogMailPort,
   limitHashConcurrency,
   ScryptPasswordHasher,
   RateLimiter,
@@ -21,10 +20,13 @@ import {
   type PasswordHasher,
   type ReturnLookupService,
   type ReturnService,
+  type SupplierClaimService,
+  type SupplierService,
 } from "@easyrms/core";
 import { getOrm, registerDb } from "@easyrms/db";
 
 import { getAgentSessionService } from "./agent-session";
+import { createMailPort } from "./mail";
 import { getGuestSessionService } from "./guest-session";
 import { getApprovalConfig, getEligibilityConfig, getQuoteConfig } from "./return-config";
 
@@ -40,6 +42,8 @@ export interface Cradle {
   passwordHasher: PasswordHasher;
   returnLookupService: ReturnLookupService;
   returnService: ReturnService;
+  supplierService: SupplierService;
+  supplierClaimService: SupplierClaimService;
 }
 
 const logger: ApiLogger & MailLogger = {
@@ -75,7 +79,7 @@ function getRootContainer(): Promise<AwilixContainer> {
     const container = createContainer({ injectionMode: InjectionMode.PROXY, strict: true });
     container.register({
       logger: asValue(logger),
-      mailPort: asFunction(createLogMailPort).singleton(),
+      mailPort: asFunction(createMailPort).singleton(),
       orderLookup: asFunction(createOrderLookup).singleton(),
       guestSessionService: asFunction(getGuestSessionService).singleton(),
       agentSessionService: asFunction(getAgentSessionService).singleton(),
@@ -131,4 +135,14 @@ export function resolveAgentService(): Promise<AgentService> {
 /** Resolved from the core-only container, so it never builds the ORM. */
 export function resolveCaseSampleService(): CaseSampleService {
   return (getCoreContainer() as AwilixContainer<Cradle>).cradle.caseSampleService;
+}
+
+/** Resolver for supplier routes: one request scope per call. */
+export function resolveSupplierService(): Promise<SupplierService> {
+  return createRequestScope().then((scope) => scope.cradle.supplierService);
+}
+
+/** Resolver for supplier claim routes: one request scope per call. */
+export function resolveSupplierClaimService(): Promise<SupplierClaimService> {
+  return createRequestScope().then((scope) => scope.cradle.supplierClaimService);
 }

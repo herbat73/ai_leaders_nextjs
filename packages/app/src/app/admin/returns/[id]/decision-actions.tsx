@@ -27,10 +27,13 @@ function statusLabel(status: string | undefined): string {
 export function DecisionActions({
   id,
   allowed,
+  complaint = false,
   approvalBlocked = false,
 }: {
   id: number;
   allowed: ReturnStatus[];
+  /** A complaint records the agent's finding with the move to `received` (two buttons instead of one). */
+  complaint?: boolean;
   /** True when approving needs `MANAGE_RULES` this agent lacks (refund above the limit); the server stays authoritative. */
   approvalBlocked?: boolean;
 }): ReactElement {
@@ -55,12 +58,16 @@ export function DecisionActions({
   const typed = note.trim().length;
   const noteIsValid = checkDecisionNote("rejected", note).ok;
 
-  async function move(status: ReturnStatus, decisionNote?: string): Promise<void> {
+  async function move(status: ReturnStatus, decisionNote?: string, defectConfirmed?: boolean): Promise<void> {
     setPendingStatus(status);
     setError(null);
     const result = await apiCall(`/api/returns/${id}`, {
       method: "PATCH",
-      body: decisionNote === undefined ? { status } : { status, decisionNote },
+      body: {
+        status,
+        ...(decisionNote === undefined ? {} : { decisionNote }),
+        ...(defectConfirmed === undefined ? {} : { defectConfirmed }),
+      },
     });
     setPendingStatus(null);
 
@@ -87,7 +94,9 @@ export function DecisionActions({
     if (noteIsValid && !isBusy) void move("rejected", note.trim());
   }
 
-  const direct = allowed.filter((status) => status !== "rejected");
+  // For a complaint the move to `received` is offered as two buttons that carry the finding.
+  const askFinding = complaint && allowed.includes("received");
+  const direct = allowed.filter((status) => status !== "rejected" && !(askFinding && status === "received"));
   const canReject = allowed.includes("rejected");
 
   if (allowed.length === 0 && error === null) return <p className="text-sm text-muted-foreground">{copy.noActions}</p>;
@@ -108,6 +117,16 @@ export function DecisionActions({
             </Button>
           );
         })}
+        {askFinding && (
+          <>
+            <Button disabled={isBusy} onClick={() => void move("received", undefined, true)}>
+              {copy.receivedConfirmed}
+            </Button>
+            <Button variant="outline" disabled={isBusy} onClick={() => void move("received", undefined, false)}>
+              {copy.receivedNotConfirmed}
+            </Button>
+          </>
+        )}
         {canReject && !rejecting && (
           <Button id={REJECT_BUTTON_ID} variant="destructive" disabled={isBusy} onClick={() => setRejecting(true)}>
             {returnsCopy.actionLabels.rejected}
