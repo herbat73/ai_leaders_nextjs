@@ -35,6 +35,6 @@ Phases and steps are those of the spec's Implementation Plan (Phase 1 steps 1-6,
 - [x] 2.1 Mail — 89cbf20
 - [x] 2.2 Suppliers — 96d4dda
 - [x] 2.3 Claim persistence and state machine — 13ac335
-- [ ] 2.4 Claim service and routes
+- [x] 2.4 Claim service and routes — 2e29997
 - [ ] 2.5 Admin UI
 - [ ] 2.6 Docs, QA evidence and close-out
