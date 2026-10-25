@@ -11,12 +11,9 @@ import {
   toReturnStatus,
   type ApiLogger,
   ConflictError,
-  money,
-  parseMoney,
   RETURN_METHODS,
   RETURN_REASON_CODES,
   RETURN_RESOLUTIONS,
-  type Money,
   type NewReturnRequest,
   type ReturnDetail,
   type ReturnEvent,
@@ -38,6 +35,7 @@ import {
   type ReturnRequestEventEntity,
   type ReturnRequestItemEntity,
 } from "../../entities";
+import { fromDecimal, toDecimal } from "../../decimal";
 
 /**
  * Joins the caller's transaction when there is one, otherwise opens its own (the default, NESTED, is a savepoint).
@@ -50,17 +48,6 @@ const joinOrOpen = (): { propagation: TransactionPropagation } => ({ propagation
 const RELEASING_STATUSES = ["cancelled", "rejected"];
 
 const IDEMPOTENCY_CONSTRAINT = "return_requests_idempotency_key_unique";
-
-/** Integer grosze to the `numeric(12,2)` text form, without a float round trip. */
-function toDecimal(m: Money): string {
-  const abs = Math.abs(m.amountMinor);
-  return `${m.amountMinor < 0 ? "-" : ""}${Math.floor(abs / 100)}.${String(abs % 100).padStart(2, "0")}`;
-}
-
-/** Stored decimals are written by this repository only, so they always parse. */
-function fromDecimal(value: string | number): Money {
-  return parseMoney(String(value)) ?? money(0);
-}
 
 /** Narrows a stored string to a union of the domain; an unrecognised value (hand edit) becomes `null` (unknown). */
 function oneOf<T extends string>(values: readonly T[], value: string | null | undefined): T | null {

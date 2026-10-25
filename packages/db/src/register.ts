@@ -3,6 +3,7 @@ import type { EntityManager, MikroORM } from "@mikro-orm/postgresql";
 
 import { MikroOrmAgentRepository } from "./repositories/agents/agent.repository";
 import { MikroOrmReturnRepository } from "./repositories/returns/return.repository";
+import { MikroOrmSupplierClaimRepository } from "./repositories/supplier-claims/supplier-claim.repository";
 import { MikroOrmSupplierRepository } from "./repositories/suppliers/supplier.repository";
 
 /**
@@ -16,5 +17,6 @@ export function registerDb(container: AwilixContainer, orm: MikroORM): void {
     returnRepository: asClass(MikroOrmReturnRepository).scoped(),
     agentRepository: asClass(MikroOrmAgentRepository).scoped(),
     supplierRepository: asClass(MikroOrmSupplierRepository).scoped(),
+    supplierClaimRepository: asClass(MikroOrmSupplierClaimRepository).scoped(),
   });
 }

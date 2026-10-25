@@ -9,6 +9,7 @@ import { Migration20261023202921 } from "../migrations/Migration20261023202921";
 import { Migration20261024192605 } from "../migrations/Migration20261024192605";
 import { Migration20261025180000 } from "../migrations/Migration20261025180000";
 import { Migration20261025190000 } from "../migrations/Migration20261025190000";
+import { Migration20261025200000 } from "../migrations/Migration20261025200000";
 
 export const MIGRATIONS = {
   initial: "Migration20261013164552",
@@ -17,6 +18,7 @@ export const MIGRATIONS = {
   agentLogin: "Migration20261024192605",
   complaints: "Migration20261025180000",
   suppliers: "Migration20261025190000",
+  supplierClaims: "Migration20261025200000",
 } as const;
 
 const migrationsList = [
@@ -26,6 +28,7 @@ const migrationsList = [
   { name: MIGRATIONS.agentLogin, class: Migration20261024192605 },
   { name: MIGRATIONS.complaints, class: Migration20261025180000 },
   { name: MIGRATIONS.suppliers, class: Migration20261025190000 },
+  { name: MIGRATIONS.supplierClaims, class: Migration20261025200000 },
 ];
 
 export interface TestDatabase {
