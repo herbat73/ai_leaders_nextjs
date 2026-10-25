@@ -18,6 +18,9 @@ export function AdminShell({ agent, children }: { agent: AgentContext; children:
             <Link href="/admin/returns" className="font-medium underline-offset-4 hover:underline">
               {copy.returns}
             </Link>
+            <Link href="/admin/supplier-claims" className="font-medium underline-offset-4 hover:underline">
+              {copy.claims}
+            </Link>
             <Link href="/admin/suppliers" className="font-medium underline-offset-4 hover:underline">
               {copy.suppliers}
             </Link>

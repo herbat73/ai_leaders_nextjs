@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { approvalBlockedFor, formatDatePl, formatEventTime, formatMoney, type ReturnDetailView, type ReturnEvent } from "@easyrms/core";
-import { Badge, Card, CardContent, CardHeader, CardTitle, Timeline, type TimelineEvent } from "@easyrms/ui/admin";
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Timeline, type TimelineEvent } from "@easyrms/ui/admin";
 
 import { requireAgentPage } from "@/server/agent-auth";
 import { createRequestScope } from "@/server/container";
@@ -9,7 +9,10 @@ import { getApprovalConfig } from "@/server/return-config";
 import { AdminShell } from "../../_shell/admin-shell";
 import { returnsCopy } from "../copy";
 import { statusBadgeVariant } from "../status-badge";
+import { claimBadgeVariant } from "../../supplier-claims/status-badge";
+import { claimsCopy } from "../../supplier-claims/copy";
 import { DecisionActions } from "./decision-actions";
+import { SupplierClaimForm } from "./supplier-claim-form";
 
 export const dynamic = "force-dynamic";
 
@@ -51,6 +54,14 @@ export default async function ReturnCardPage({ params }: { params: Promise<{ id:
   if (!/^\d+$/.test(rawId) || !Number.isSafeInteger(id) || id < 1) notFound();
 
   const { request, decisionNote, items, events } = await loadDetail(id);
+
+  // The vendor claim section: only for a complaint whose defect was confirmed.
+  const claimable = request.kind === "complaint" && request.defectConfirmed === true;
+  const scope = await createRequestScope();
+  const [existingClaim, suppliers] = claimable
+    ? await Promise.all([scope.cradle.supplierClaimService.findForComplaint(id), scope.cradle.supplierService.list()])
+    : [null, []];
+  const activeSuppliers = suppliers.filter((supplier) => supplier.active);
 
   return (
     <AdminShell agent={agent}>
@@ -202,6 +213,47 @@ export default async function ReturnCardPage({ params }: { params: Promise<{ id:
             )}
           </CardContent>
         </Card>
+
+        {claimable && (
+          <Card>
+            <CardHeader>
+              <CardTitle>{claimsCopy.section.heading}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {existingClaim ? (
+                <div className="flex flex-wrap items-center gap-3 text-sm">
+                  <span className="font-medium">{existingClaim.ref}</span>
+                  <span>{existingClaim.supplierName}</span>
+                  <Badge variant={claimBadgeVariant[existingClaim.status]}>{claimsCopy.statusLabels[existingClaim.status]}</Badge>
+                  <Link href={`/admin/supplier-claims/${existingClaim.id}`} className="underline underline-offset-4">
+                    {claimsCopy.section.open}
+                  </Link>
+                </div>
+              ) : activeSuppliers.length === 0 ? (
+                <div className="flex flex-wrap items-center gap-3 text-sm">
+                  <span>{claimsCopy.section.noSuppliers}</span>
+                  <Button asChild size="sm" variant="outline">
+                    <Link href="/admin/suppliers">{claimsCopy.section.addSupplier}</Link>
+                  </Button>
+                </div>
+              ) : (
+                <SupplierClaimForm
+                  returnId={request.id}
+                  suppliers={activeSuppliers.map(({ id: supplierId, name, guidelines }) => ({ id: supplierId, name, guidelines }))}
+                  composition={{
+                    rma: request.rma,
+                    orderNumber: request.orderNumber,
+                    items,
+                    defectDescription: request.defectDescription ?? "",
+                    defectDiscoveredOn: request.defectDiscoveredOn ?? null,
+                    agent: { displayName: agent.displayName, email: agent.email },
+                  }}
+                  mailDelivers={scope.cradle.mailPort.delivers === true}
+                />
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardHeader>
