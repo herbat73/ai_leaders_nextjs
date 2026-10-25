@@ -33,7 +33,7 @@ Phases and steps are those of the spec's Implementation Plan (Phase 1 steps 1-6,
 ### Phase 2: Vendor claim
 
 - [x] 2.1 Mail — 89cbf20
-- [ ] 2.2 Suppliers
+- [x] 2.2 Suppliers — 96d4dda
 - [ ] 2.3 Claim persistence and state machine
 - [ ] 2.4 Claim service and routes
 - [ ] 2.5 Admin UI
