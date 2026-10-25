@@ -31,5 +31,5 @@ Docs only; `docs:check` and `storybook:build` do not verify class claims, so the
 
 ### Phase 1: Correct stale token claims
 
-- [ ] 1.1 Fix inactive-tab colour in tabs.mdx
-- [ ] 1.2 Fix row hover in table, data-table and breakdown-table pages
+- [x] 1.1 Fix inactive-tab colour in tabs.mdx — 02737a6
+- [x] 1.2 Fix row hover in table, data-table and breakdown-table pages — 02737a6
