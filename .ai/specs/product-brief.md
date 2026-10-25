@@ -1,16 +1,16 @@
 # Portal zwrotów i reklamacji (EasyRMS) — product brief
 
-- Date: 2026-10-21
+- Date: 2026-10-21 (odświeżony 2026-10-25: kolejny wycinek, D12–D13, Q16–Q19)
 - Mode: own (from early concept); Owner: Adam Adamczyk; Pass: concept synthesis (aa-product-brief)
 - Evidence basis: wyłącznie koncepcja zespołu (5 dokumentów, v0.1 z 13.10.2026) i klikalny mockup. Koncepcja nie cytuje wywiadów, danych ze zgłoszeń ani pomiarów; KPI mają tylko wartości docelowe („propozycja”) bez punktu wyjścia. Najważniejsze nieprzetestowane przekonanie: że wielokrotne dopytywanie klientów o dane jest głównym kosztem obsługi (A01).
-- Coverage: 63 claims — 51 sourced (interview 0, data 0, document 49, product 2, benchmark 0), 0 synthetic, 12 assumed; 3 entries on the collection plan
+- Coverage: 65 claims — 53 sourced (interview 0, data 0, document 51, product 2, benchmark 0), 0 synthetic, 12 assumed; 3 entries on the collection plan
 - Synthetic hypotheses outside Coverage: 0
-- Definition of Ready signed by: signed (Adam Adamczyk, 2026-10-23) — decyzje potwierdzone, Q01, Q03, Q04 i Q13 odpowiedziane; brak dowodów problemu (A01) pozostaje otwarty; ready for: research + spec writing and implementation of the first slice (return end to end)
+- Definition of Ready signed by: signed (Adam Adamczyk, 2026-10-23) — decyzje potwierdzone, Q01, Q03, Q04 i Q13 odpowiedziane; brak dowodów problemu (A01) pozostaje otwarty; ready for: research + spec writing and implementation of the first slice (return end to end); 2026-10-25: spec writing dla wycinka reklamacji z roszczeniem do dostawcy (D12, D13), bez gotowości do planowania implementacji do czasu odpowiedzi na Q16–Q19
 - Sources: doc/portal-reklamacje/README.md, doc/portal-reklamacje/docs/01…05, doc/portal-reklamacje/mockup/src/
 
 ## Decision summary
 
-Koncepcja proponuje samoobsługowy portal zwrotów, reklamacji, szkód transportowych i braków w przesyłce, z panelem obsługi (agent, kierownik, magazyn) i portalem dostawcy — 15 use case'ów MVP, 24 ekrany, wszystkie obecne w mockupie. Właściciel (Adam Adamczyk) potwierdził w sesji 2026-10-23 wszystkie reguły, non-goale i decyzje (R01–R16, N01–N04, D01–D07) jako `active`; R14 i D05 zastąpiły R17 i D08 (limity zamiast CAPTCHA; sesja gościa zamiast linku e-mail), obie z przeglądem security przed publicznym wdrożeniem. Potwierdzenie dotyczy decyzji, nie dowodów: problem i KPI nadal stoją na założeniach. Problem (ręczna obsługa mailowo-telefoniczna z dopytywaniem) i wszystkie KPI są opisane przez zespół, bez danych — Problems i Goals stoją na założeniach A01–A05. Największe rozbieżności to architektura (trzy aplikacje na subdomenach i `/api/v1/*` vs monorepo z jedną aplikacją Next.js, Q03) oraz model danych (istniejąca encja `ReturnRequest` vs model `Claim` z 4 typami i 9 statusami, Q04). Następny krok: właściciel wybiera pierwszy wycinek zakresu (Q13) i zbiera punkt wyjścia dla KPI (Collection plan), potem `om-spec-writing` dla tego wycinka.
+Koncepcja proponuje samoobsługowy portal zwrotów, reklamacji, szkód transportowych i braków w przesyłce, z panelem obsługi (agent, kierownik, magazyn) i portalem dostawcy — 15 use case'ów MVP, 24 ekrany, wszystkie obecne w mockupie. Właściciel (Adam Adamczyk) potwierdził w sesji 2026-10-23 wszystkie reguły, non-goale i decyzje (R01–R16, N01–N04, D01–D07) jako `active`; R14 i D05 zastąpiły R17 i D08 (limity zamiast CAPTCHA; sesja gościa zamiast linku e-mail), obie z przeglądem security przed publicznym wdrożeniem. Potwierdzenie dotyczy decyzji, nie dowodów: problem i KPI nadal stoją na założeniach. Problem (ręczna obsługa mailowo-telefoniczna z dopytywaniem) i wszystkie KPI są opisane przez zespół, bez danych — Problems i Goals stoją na założeniach A01–A05. Największe rozbieżności to architektura (trzy aplikacje na subdomenach i `/api/v1/*` vs monorepo z jedną aplikacją Next.js, Q03) oraz model danych (istniejąca encja `ReturnRequest` vs model `Claim` z 4 typami i 9 statusami, Q04). Pierwszy wycinek (zwrot end-to-end, Q13) i logowanie agenta są wdrożone. 2026-10-25 właściciel wybrał kolejny wycinek (D12): reklamacje klienta (UC-03), decyzja agenta w reklamacji (UC-10) i roszczenie do dostawcy (UC-12) wysyłane e-mailem z ręcznym zapisem odpowiedzi i noty (D13); portal dostawcy (D-01) trafia do Later. Dla tego wycinka nie ma żadnych danych: A01, A04, A07 pozostają nieprzetestowane, a A05 (portal dostawcy) nie blokuje wycinka, ale pozostaje niezweryfikowane; nieznane są też liczba reklamacji i odsetek trafiających do dostawcy. Następny krok: `om-spec-writing` dla tego wycinka, równolegle rozmowy z dostawcami (E00-T03) i odpowiedzi na Q16–Q19.
 
 ## Vision
 
@@ -59,8 +59,9 @@ Benchmark odłożony: Claimlane wskazano jako wzorzec, ale nie sprawdzono go na 
 
 ## Scope
 
-- **Now (proposal):** UC-01…UC-15 oznaczone w koncepcji jako MVP. `[DOCUMENT]` docs/02 §2.1 — zakres jest duży jak na pierwsze wydanie; wycinek do ustalenia (Q13). Propozycja do decyzji: UC-01 + UC-02 + UC-06 + UC-10 (zwrot end-to-end: zgłoszenie → status → decyzja agenta), rozszerzające istniejącą funkcję „return requests”.
-- **Later:** UC-16 B2B, serwis zewnętrzny (C2), rozwiązanie per pozycja, język EN, rola FINANCE w UI. `[DOCUMENT]` docs/01 §1.3, §1.5
+- **Now:** reklamacje z roszczeniem do dostawcy (D12, D13): UC-03 (zgłoszenie reklamacji przez klienta), UC-10 rozszerzone o reklamacje, UC-12 (roszczenie do dostawcy wysyłane e-mailem, agent zapisuje odpowiedź i notę kredytową). Powiązane reguły: R02, R04 (z eskalacją po 10 dniach, Q07), R05, R07. `[DOCUMENT]` decyzja właściciela 2026-10-25, `.ai/specs/research/decisions/2026-10-25-next-slice-complaints-vendor-claim.md`.
+- **Done:** pierwszy wycinek, zwrot end-to-end (UC-01, 02, 06, 10, Q13; PR #23, #27) oraz logowanie i role agenta (D10, D11; PR #33). Pozostała część D06 (UC-01…UC-15) nie jest w Now.
+- **Later:** UC-16 B2B, serwis zewnętrzny (C2), rozwiązanie per pozycja, język EN, rola FINANCE w UI; portal dostawcy (D-01, wyjęty z wycinka przez D13), inspekcja magazynowa (B-03), silnik reguł, szkody transportowe i braki w przesyłce. `[DOCUMENT]` docs/01 §1.3, §1.5, decyzja właściciela 2026-10-25
 - **Not doing:** see Non-goals
 
 ## Concept surface
@@ -158,6 +159,8 @@ Wartości R01, R03, R08–R10 i R12 są zaimplementowane w mockupie tak samo jak
 | D09 | 2026-10-23 | Jedna aplikacja Next.js z powłokami jako trasy (portal klienta `/` i `/returns`, panel `/admin`, API `/api/<concept>`); subdomeny ewentualnie później przez rewrite | zgodność z monorepo i AGENTS.md; prostszy pierwszy wycinek (Q03) | Adam Adamczyk | active | architektura | owner + architektura | decyzja w sesji 2026-10-23; odpowiedź na Q03 z 2026-10-22 | D04 |
 | D10 | 2026-10-24 | Agenci logują się e-mailem i hasłem przechowywanym w naszej bazie (hash scrypt, sesja 8 h w podpisanym ciasteczku); konta zakłada się zaproszeniem, pierwszego agenta komenda `npm run agent:create` | brak zewnętrznego dostawcy tożsamości w pierwszym wycinku; tożsamość agenta na każdym zdarzeniu | Adam Adamczyk | active | security (przegląd przed publicznym wdrożeniem) | owner + security | spec agent-login-and-roles (Q1, Q2, Q4, Q5, Q12), zatwierdzona przez właściciela 2026-10-24; wdrożona w PR #33 | none |
 | D11 | 2026-10-24 | Uprawnienie `MANAGE_RULES` (jedyne uprawnienie na roli `AGENT`) daje też zarządzanie agentami (zaproszenie, wyłączenie) oraz zatwierdzanie zwrotów pieniędzy powyżej 2000 zł (`EASYRMS_REFUND_APPROVAL_LIMIT`) | R11 wymaga akceptacji powyżej limitu; jedno uprawnienie zamiast osobnej roli `MANAGER` (Q05) | Adam Adamczyk | active | finance (R11) | owner + finance | spec agent-login-and-roles (Q10, Q11), zatwierdzona przez właściciela 2026-10-24; wdrożona w PR #33 | none |
+| D12 | 2026-10-25 | Kolejny wycinek po zwrotach: reklamacje klienta (UC-03), decyzja agenta w reklamacji (UC-10) i roszczenie do dostawcy (UC-12) w jednym wycinku | właściciel wybrał kierunek; brak danych wspierających wybór (A01, A04 nieprzetestowane) | Adam Adamczyk | active | unknown | owner | decyzja w sesji 2026-10-25, `.ai/specs/research/decisions/2026-10-25-next-slice-complaints-vendor-claim.md` | none |
+| D13 | 2026-10-25 | Roszczenie do dostawcy wysyłane e-mailem; agent zapisuje odpowiedź dostawcy i notę kredytową w systemie; bez logowania dostawcy, portal D-01 poza wycinkiem | najtańszy pierwszy krok, nie zależy od A05 | Adam Adamczyk | active | unknown | owner | decyzja w sesji 2026-10-25, `.ai/specs/research/decisions/2026-10-25-next-slice-complaints-vendor-claim.md` | none |
 
 ## Riskiest assumptions
 
@@ -167,7 +170,7 @@ Wartości R01, R03, R08–R10 i R12 są zaimplementowane w mockupie tak samo jak
 | A02 | Większość klientów zgłasza z telefonu `[ASSUMPTION]` docs/01 §1.5 | medium | brak | inne priorytety UX (D02) | udział mobile w ruchu sklepu / na stronie kontaktu | pending | unknown | untested |
 | A03 | Bon +10% przesunie ≥ 25% zwrotów na bon/wymianę `[ASSUMPTION]` docs/01 §1.1 | medium | brak | R12 i retencja przychodu do rewizji | dzisiejszy udział bonów/wymian; test A/B w portalu | pending | unknown | untested |
 | A04 | ≥ 35% zgłoszeń da się rozstrzygnąć prostymi regułami `[ASSUMPTION]` docs/01 §1.1 | high | liczniki trafień reguł w mockupie to dane demo | silnik reguł (UC-09, UC-14) mniej wart w MVP | przepuścić historyczne zgłoszenia przez R08–R10 (jak „Symuluj” w B-05) | pending | unknown | untested |
-| A05 | Dostawcy przyjmą reklamacje przez portal i uznają ≥ 60% wartości `[ASSUMPTION]` docs/01 §1.1 | medium | brak | UC-12 i D-01 do późniejszej fazy | rozmowa z 2–3 kluczowymi dostawcami o formacie i kanale | pending | unknown | untested |
+| A05 | Dostawcy przyjmą reklamacje przez portal i uznają ≥ 60% wartości `[ASSUMPTION]` docs/01 §1.1 | medium | brak | portal dostawcy (D-01) do późniejszej fazy; wycinek reklamacji z e-mailem (D13) nie zależy od A05 | rozmowa z 2–3 kluczowymi dostawcami o formacie i kanale | pending | unknown | untested |
 | A06 | Magazyn przyjmie pracę skan + tablet `[ASSUMPTION]` docs/01 §1.3 B3 | low | brak | inny układ B-03 | obserwacja przyjęcia zwrotów w magazynie | pending | unknown | untested |
 | A07 | Cele KPI są osiągalne i mierzalne `[ASSUMPTION]` docs/01 §1.1 | high | brak punktu wyjścia | brak kryterium sukcesu | zebrać baseline (Collection plan) | pending | unknown | untested |
 
@@ -198,6 +201,10 @@ none
 | Q13 | Pierwszy wycinek zakresu: czy zwrot end-to-end (UC-01, 02, 06, 10) zamiast całego D06? | yes — spec | owner | answered 2026-10-22 | Zwrot end-to-end: UC-01, UC-02, UC-06, UC-10. Reklamacje, szkody transportowe, silnik reguł, magazyn i dostawcy w kolejnych specyfikacjach. |
 | Q14 | Szkoda transportowa: 1 czy 2 zdjęcia minimum (produkt + opakowanie)? | no | owner | answered 2026-10-22 | Minimum 1 zdjęcie (zgodnie z walidatorem w docs); mockup (2 zdjęcia) do dostosowania. Dotyczy wycinka szkód transportowych. |
 | Q15 | Logowanie agenta: panel `/admin` i `PATCH /api/returns/[id]` nie mają dziś uwierzytelniania (AD-A2), więc każdy z dostępem do aplikacji może zatwierdzać i odrzucać, a zdarzenia nie wskazują agenta. Potrzebna osobna specyfikacja logowania i ról agenta. | yes — blokuje publiczne wdrożenie (portal klienta jest w tej samej aplikacji) | właściciel produktu (Adam Adamczyk) | answered 2026-10-24 | Tak — spec `agent-login-and-roles` (D10, D11): logowanie e-mailem i hasłem, sesja 8 h, tożsamość agenta na zdarzeniach, ekran zarządzania agentami, limit zwrotu 2000 zł dla `MANAGE_RULES`, podgląd K-05 (Q06). Wdrożone w PR #33; przegląd security i akceptacja finansów dla R11 pozostają przed publicznym wdrożeniem. |
+| Q16 | Co musi zawierać roszczenie do dostawcy i jak działa kontrola wytycznych dostawcy z UC-12 (jakie wytyczne, skąd je brać)? | yes — spec roszczenia | owner / zakupy | open | |
+| Q17 | Kto wysyła e-mail do dostawcy i z jakiego adresu (dziś `MailPort` ma tylko adapter logujący)? | yes — implementacja UC-12 | owner / IT | open | |
+| Q18 | Jak zapisujemy notę kredytową dostawcy i kto odpowiada za przepływ pieniędzy (finanse)? | no — tylko zapis w systemie, bez księgowania | owner + finance | open | |
+| Q19 | Jak system śledzi R04 („brak odpowiedzi w 14 dni = uznanie”) i co oznacza dla klienta; czy sformułowanie sprawdzi prawnik? | yes — spec reklamacji | owner + legal | open | |
 
 ## Definition of Ready addendum (own)
 
@@ -207,4 +214,6 @@ Problems i Target group opierają się tylko na opisie zespołu — brak wywiad�
 
 1. Próbka ok. 50 ostatnich spraw zwrotów/reklamacji (mail/telefon): liczba dopytań, czas do rozwiązania, typ, wartość → A01, A04, Q02. Właściciel: kierownik obsługi; termin: do ustalenia.
 2. Punkt wyjścia KPI: kontakty WISMR, udział bonów/wymian, % odpowiedzi w 14 dni, udział mobile → A02, A03, A07. Właściciel: BI/e-commerce; termin: do ustalenia.
-3. Rozmowa z 2–3 kluczowymi dostawcami o formacie reklamacji i kanale (portal / e-mail / EDI) → A05. Właściciel: zakupy; termin: do ustalenia.
+3. Rozmowa z 2–3 kluczowymi dostawcami o formacie reklamacji i kanale (portal / e-mail / EDI) → A05, Q16. Właściciel: zakupy; termin: do ustalenia. Od 2026-10-25 idzie równolegle z pisaniem specyfikacji wycinka reklamacji (D12, D13), nie jest jej warunkiem wstępnym; wynik zdecyduje o ewentualnym portalu dostawcy.
+
+Odświeżenie 2026-10-25: właściciel wybrał kolejny wycinek (D12, D13) bez nowych danych; gotowość obejmuje spec writing dla tego wycinka. Pytania Q16–Q19 trzeba rozstrzygnąć przed planowaniem implementacji. Liczba reklamacji i odsetek trafiających do dostawcy są nieznane, a dowody problemu (A01) nadal brakują.
