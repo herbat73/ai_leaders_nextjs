@@ -58,7 +58,7 @@ function QuantityInput({ quantity, max, label, describedBy, onCommit }: { quanti
         if (n !== null) onCommit(n);
         setDraft(null);
       }}
-      className="h-10 w-16 rounded-lg border border-input bg-background px-2 text-center text-foreground focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none"
+      className="h-10 w-16 rounded-md border-[1.5px] border-input bg-card px-2 text-center text-foreground focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-ring/35 focus-visible:outline-none"
     />
   );
 }
@@ -69,7 +69,7 @@ export function LinePicker({ legend, lines, decreaseLabel, increaseLabel, onTogg
   const errorId = `${base}-error`;
   return (
     <fieldset aria-describedby={error ? errorId : undefined} className="space-y-2">
-      <legend className="mb-2 text-sm font-medium text-foreground">{legend}</legend>
+      <legend className="mb-2 font-semibold text-foreground">{legend}</legend>
       {lines.map((line) => {
         const checkId = `${base}-${line.id}`;
         const reasonId = `${checkId}-reason`;
@@ -79,8 +79,8 @@ export function LinePicker({ legend, lines, decreaseLabel, increaseLabel, onTogg
           <div
             key={line.id}
             className={[
-              "rounded-lg border bg-background p-3 shadow-sm",
-              line.eligible ? (line.selected ? "border-primary ring-1 ring-primary" : "border-input") : "border-border opacity-70",
+              "rounded-lg border-[1.5px] bg-card px-4 py-3.5",
+              line.eligible ? (line.selected ? "border-primary bg-accent ring-1 ring-primary" : "border-border") : "border-border opacity-70",
             ].join(" ")}
           >
             <div className="flex items-start gap-3">
@@ -91,26 +91,26 @@ export function LinePicker({ legend, lines, decreaseLabel, increaseLabel, onTogg
                 disabled={!line.eligible}
                 onChange={(e) => onToggle(line.id, e.target.checked)}
                 aria-describedby={!line.eligible && line.ineligibleReason ? reasonId : undefined}
-                className="mt-1 size-4 accent-primary"
+                className="mt-0.5 size-5 accent-primary"
               />
               <label htmlFor={checkId} className={`block flex-1 ${line.eligible ? "cursor-pointer" : "cursor-not-allowed"}`}>
-                <span className="block text-sm font-medium text-foreground">{line.title}</span>
+                <span className="block font-semibold text-foreground">{line.title}</span>
                 {line.detail && <span className="block text-sm text-muted-foreground">{line.detail}</span>}
               </label>
             </div>
             {!line.eligible && line.ineligibleReason && (
-              <p id={reasonId} className="mt-1 pl-7 text-sm font-medium text-warning-subtle-foreground">
+              <p id={reasonId} className="mt-1 pl-8 text-sm font-medium text-warning-subtle-foreground">
                 {line.ineligibleReason}
               </p>
             )}
             {line.eligible && line.selected && (
-              <div className="mt-3 flex flex-wrap items-center gap-2 pl-7">
+              <div className="mt-3 flex flex-wrap items-center gap-2 pl-8">
                 <button
                   type="button"
                   aria-label={decreaseLabel}
                   disabled={line.quantity <= 1}
                   onClick={() => onQuantityChange(line.id, line.quantity - 1)}
-                  className="size-10 rounded-lg border border-input text-lg focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                  className="size-10 rounded-md border-[1.5px] border-input bg-card text-lg hover:bg-muted focus-visible:ring-[3px] focus-visible:ring-ring/35 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <span aria-hidden="true">−</span>
                 </button>
@@ -126,7 +126,7 @@ export function LinePicker({ legend, lines, decreaseLabel, increaseLabel, onTogg
                   aria-label={increaseLabel}
                   disabled={atCap}
                   onClick={() => onQuantityChange(line.id, line.quantity + 1)}
-                  className="size-10 rounded-lg border border-input text-lg focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                  className="size-10 rounded-md border-[1.5px] border-input bg-card text-lg hover:bg-muted focus-visible:ring-[3px] focus-visible:ring-ring/35 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <span aria-hidden="true">+</span>
                 </button>

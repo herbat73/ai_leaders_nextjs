@@ -53,9 +53,9 @@ Nie importuj ścieżkami względnymi ponad granicą pakietu. `ui` nie importuje 
 - Powierzchnie: `bg-background`, `bg-card`, `bg-popover`, `bg-muted`, `bg-accent`, `bg-secondary`.
 - Tekst: `text-foreground`, `text-muted-foreground`, `text-card-foreground`, `text-primary-foreground`, `text-destructive`.
 - Obramowanie i fokus: `border-border`, `border-input`, `ring-ring`.
-- Akcje: `bg-primary`, `bg-destructive`.
+- Akcje: `bg-primary` (hover `bg-primary-hover`), `bg-destructive`.
 - Tony: `bg-{success|warning|info|destructive}-subtle` + `text-…-subtle-foreground` + `border-…-subtle-border`; solid `bg-{success|warning|info}` + `text-…-foreground`.
-- Promienie: `rounded-md`, `rounded-lg` (+ `rounded-full` tylko na kółka). Cienie: `shadow-sm`; `shadow-md`/`shadow-lg` tylko warstwy Radix.
+- Promienie: `rounded-md` (8 px, pola), `rounded-control` (10 px, przyciski), `rounded-lg` (12 px, karty), `rounded-full` (kółka, pigułki `Badge`). Cienie: `shadow-sm`; `shadow-lg` tylko warstwy Radix. Fokus: `ring-[3px] ring-ring/35`.
 - Rozmiary tekstu i odstępy: wyłącznie z tabel w `Fundamenty`.
 
 ## Zabronione (łapie je `npm run docs:check`, lint lub review)

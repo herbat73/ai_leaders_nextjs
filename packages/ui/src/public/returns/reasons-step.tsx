@@ -46,7 +46,7 @@ export function ReasonsStep({
         return (
           <section
             key={item.lineId}
-            className="space-y-3 rounded-lg border border-border p-3"
+            className="space-y-3 rounded-lg border border-border bg-card p-5 shadow-sm"
           >
             <h3 className="text-base font-semibold text-foreground">
               {item.title}

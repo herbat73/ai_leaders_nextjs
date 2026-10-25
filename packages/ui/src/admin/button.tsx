@@ -5,16 +5,17 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "../lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-control border border-transparent text-base font-semibold transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/35 disabled:pointer-events-none disabled:opacity-55",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
-        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        outline: "border border-input bg-background hover:bg-secondary",
+        default: "bg-primary text-primary-foreground hover:bg-primary-hover",
+        secondary: "border-primary bg-card text-primary hover:bg-accent",
+        outline: "border-input bg-card text-foreground hover:bg-muted",
+        ghost: "text-secondary-foreground hover:bg-muted hover:text-foreground",
         destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
       },
-      size: { default: "h-9 px-4 py-2", sm: "h-8 px-3 text-xs" },
+      size: { default: "min-h-11 px-[18px] py-2.5", sm: "min-h-[34px] rounded-md px-3 py-1.5 text-sm", lg: "min-h-[52px] px-6 py-3 text-[1.05rem]" },
     },
     defaultVariants: { variant: "default", size: "default" },
   },

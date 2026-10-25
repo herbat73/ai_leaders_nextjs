@@ -49,14 +49,14 @@ import { actionClassName } from "@easyrms/ui/public";
 
 ## Tokeny
 
-`primary`: `bg-primary` / `text-primary-foreground`, `rounded-lg`, `shadow-sm`, `hover:opacity-90`. `secondary`: `border-input`, `bg-background`, `text-foreground`, `hover:bg-muted`. Rozmiary: `default` `px-4 py-2`, `lg` `px-4 py-3 text-sm font-semibold`. `link`: `underline underline-offset-4`, `text-sm`. Wspólne: `ring-ring/60` (fokus), `opacity-60` (disabled). Klasy żyją w jednym miejscu: `actionClassName`.
+`primary`: `bg-primary` / `text-primary-foreground`, `rounded-control` (10 px), `font-semibold`, `hover:bg-primary-hover`. `secondary`: `border-primary`, `bg-card`, `text-primary`, `hover:bg-accent`. Rozmiary: `default` `min-h-11 px-[18px] py-2.5`, `lg` `min-h-[52px] px-6 py-3`. `link`: `text-primary underline underline-offset-4`, `text-sm`. Wspólne: `ring-ring/35` (fokus), `opacity-55` (disabled). Klasy żyją w jednym miejscu: `actionClassName`.
 
 ## Stany
 
 | Stan | Zachowanie | Jak wywołać |
 |---|---|---|
 | default / hover | `primary` `hover:opacity-90`, `secondary` `hover:bg-muted` | — |
-| focus-visible | pierścień 2 px `ring-ring/60`, bez domyślnego outline | klawisz Tab |
+| focus-visible | pierścień 2 px `ring-ring/35`, bez domyślnego outline | klawisz Tab |
 | disabled / pending | `opacity-60`, kursor `not-allowed`; zmień też etykietę na opisującą trwającą akcję („Sprawdzamy…”) | `disabled` |
 | pełna szerokość | `w-full` | `fullWidth` |
 

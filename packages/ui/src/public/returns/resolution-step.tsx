@@ -37,7 +37,7 @@ export function ResolutionStep({ legend, options, value, onChange, error, quote,
       <div aria-live="polite" aria-atomic="true" aria-busy={quote.status === "pending"}>
         {quote.status === "pending" && <p className="text-sm text-muted-foreground">{quote.pendingText}</p>}
         {quote.status === "ready" && (
-          <div className="rounded-lg border border-border bg-muted p-3">
+          <div className="rounded-md bg-muted p-3.5">
             <p className="text-sm font-medium text-foreground">{quote.title}</p>
             <dl className="mt-1 space-y-1 text-sm">
               <div className="flex justify-between gap-4">

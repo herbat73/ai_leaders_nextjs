@@ -44,7 +44,7 @@ import { ErrorMessage, Label, Textarea } from "@easyrms/ui/admin";
 
 ## Tokeny
 
-`border-input`, `bg-transparent`, `placeholder:text-muted-foreground`, `ring-ring` (fokus), `border-destructive` i `ring-destructive` (invalid), `rounded-md`, `shadow-xs`; w ciemnym motywie `bg-input/30`. Rozmiar tekstu `text-base`, od `md` `text-sm`.
+`border-[1.5px] border-input`, `bg-card`, `placeholder:text-muted-foreground`, fokus `border-primary` + `ring-[3px] ring-ring/35`, invalid `border-destructive` + `bg-destructive-subtle`, `rounded-md`, `text-base`, min. wysokość `min-h-24`. To samo ciało co `Input`.
 
 ## Stany
 
@@ -52,7 +52,7 @@ import { ErrorMessage, Label, Textarea } from "@easyrms/ui/admin";
 |---|---|---|
 | default | Ramka `border-input`, placeholder przygaszony. | domyślnie |
 | filled | Wartość w kolorze tekstu; pole rośnie. | `value` lub `defaultValue` |
-| focus-visible | Obrys 3 px `ring-ring/50` i `border-ring`. | klawiatura lub kliknięcie |
+| focus-visible | Obrys 3 px `ring-ring/35` i `border-ring`. | klawiatura lub kliknięcie |
 | disabled | `opacity-50`, `cursor-not-allowed`. | `disabled` |
 | invalid | `border-destructive`, pierścień `ring-destructive/20`. | `aria-invalid` |
 

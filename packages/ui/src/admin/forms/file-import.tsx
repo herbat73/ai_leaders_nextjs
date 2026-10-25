@@ -58,9 +58,9 @@ export function FileImportView({
         onDragLeave={() => onDraggingChange?.(false)}
         onDrop={handleDrop}
         className={cn(
-          "flex w-full flex-col items-center gap-1 rounded-lg border-2 border-dashed px-6 py-8 text-sm transition-colors",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-          dragging ? "border-primary bg-muted" : "border-input hover:bg-muted/50",
+          "flex w-full flex-col items-center gap-1 rounded-lg border-2 border-dashed bg-card px-6 py-8 text-sm transition-colors",
+          "focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/35",
+          dragging ? "border-primary bg-accent" : "border-input hover:border-primary hover:bg-accent",
           disabled && "cursor-not-allowed opacity-50 hover:bg-transparent",
         )}
       >

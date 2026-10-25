@@ -12,7 +12,7 @@ const toneClass: Record<BannerTone, string> = {
 /** Info and success are a polite `status`, warning and error are an assertive `alert`. */
 export function Banner({ tone, children }: { tone: BannerTone; children: ReactNode }): ReactElement {
   return (
-    <div role={tone === "info" || tone === "success" ? "status" : "alert"} className={`rounded-lg border px-4 py-3 text-sm ${toneClass[tone]}`}>
+    <div role={tone === "info" || tone === "success" ? "status" : "alert"} className={`rounded-md border px-4 py-3.5 text-sm ${toneClass[tone]}`}>
       {children}
     </div>
   );

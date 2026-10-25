@@ -33,7 +33,7 @@ export interface CrudFormProps {
 }
 
 const TEXTAREA_CLASS =
-  "flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+  "flex min-h-24 w-full rounded-md border-[1.5px] border-input bg-card px-3 py-2.5 text-base placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-ring/35";
 
 /** Field-driven form: shows errors next to fields, handles pending state, Cmd/Ctrl+Enter submits, Escape cancels. */
 export function CrudForm({

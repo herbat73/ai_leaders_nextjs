@@ -4,7 +4,7 @@ import { Meta } from "@storybook/addon-docs/blocks";
 
 # Typografia
 
-Jedna rodzina: systemowy sans-serif (`system-ui, sans-serif`, ustawiony na `body` w `globals.css`) plus `font-mono` dla identyfikatorów. Nie dodajemy fontów webowych. Strona ma `lang="pl"`.
+Jedna rodzina: stos systemowy z makiety (`--font-sans`: `system-ui, -apple-system, "Segoe UI", Roboto, …`, ustawiony na `body` w `globals.css`) plus `font-mono` dla identyfikatorów. Nie dodajemy fontów webowych. Strona ma `lang="pl"`.
 
 ## Skala
 
@@ -14,20 +14,20 @@ To jest skala, która faktycznie jest w kodzie. Nie wprowadzaj rozmiarów spoza 
 |---|---|---|
 | Tytuł strony publicznej (powitanie) | `text-3xl font-bold tracking-tight` | strona startowa `/` |
 | Tytuł strony (h1) | `text-2xl font-semibold` | `/returns`, `/returns/new`, `/returns/[rma]` |
-| Wartość kafelka statystyki | `text-2xl font-semibold` | `StatTile` |
+| Wartość kafelka statystyki | `text-[1.6rem] font-extrabold tabular-nums` | `StatTile` |
 | Nagłówek kroku kreatora (h2) | `text-xl font-semibold` | `WizardShell` |
 | Nagłówek sekcji (h2) | `text-lg font-semibold` | tracker; w adminie `CardTitle` (`text-lg font-semibold leading-none tracking-tight`), `DialogTitle` |
 | Podnagłówek (h3) | `text-base font-semibold` | `SummaryStep`, `ReasonsStep` |
-| Tekst treści i kontrolki | `text-sm` (admin) / domyślny 16 px (public) | pola, tabele, przyciski admina |
-| Podpis, metadane | `text-xs text-muted-foreground` | `Timeline` (aktor · czas), `StatTile` hint |
+| Tekst treści i kontrolki | domyślny 16 px (`text-base`) w polach, przyciskach i tabelach, `text-sm` na opisy | pola, tabele, przyciski |
+| Podpis, metadane | `text-[0.8125rem]` (`Timeline`) lub `text-xs` + `text-muted-foreground` | `Timeline` (aktor · czas), `StatTile` hint |
 | Identyfikator (RMA, SKU) | `font-mono` | numery RMA w trackerze |
 
-Admin jest gęsty (`text-sm` jako rozmiar bazowy), strona publiczna czytelna (16 px bazowo, `text-sm` tylko na opisy i podpisy).
+Admin i strona publiczna mają ten sam rozmiar bazowy (16 px, jak w makiecie); `text-sm` tylko na opisy i podpisy.
 
 ## Grubości
 
-- `font-medium` (500): etykiety pól, etykiety opcji, przyciski, nagłówki kolumn tabeli.
-- `font-semibold` (600): nagłówki i wartości do zapamiętania.
+- `font-semibold` (600): etykiety pól, przyciski, nagłówki kolumn tabeli (wersaliki), nagłówki i wartości do zapamiętania.
+- `font-extrabold` (800): tylko wartość `StatTile` (KPI).
 - `font-bold` tylko tytuł strony startowej. Nie używaj 400 dla nagłówków.
 
 ## Reguły

@@ -38,7 +38,7 @@ export function SummaryStep({ itemsHeading, items, rows, acknowledgement, submit
         <h3 className="mb-2 text-base font-semibold text-foreground">{itemsHeading}</h3>
         <ul className="space-y-2">
           {items.map((item, i) => (
-            <li key={i} className="rounded-lg border border-border p-3 text-sm">
+            <li key={i} className="rounded-md border border-border bg-card p-3.5 text-sm">
               <p className="font-medium text-foreground">
                 {item.title} <span className="font-normal text-muted-foreground">({item.quantityText})</span>
               </p>
@@ -65,7 +65,7 @@ export function SummaryStep({ itemsHeading, items, rows, acknowledgement, submit
             onChange={(e) => acknowledgement.onChange(e.target.checked)}
             aria-describedby={acknowledgement.error ? ackErrorId : undefined}
             aria-invalid={acknowledgement.error ? true : undefined}
-            className="mt-1 size-4 accent-primary"
+            className="mt-0.5 size-5 accent-primary"
           />
           <span>{acknowledgement.label}</span>
         </label>
