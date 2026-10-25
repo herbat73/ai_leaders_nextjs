@@ -20,6 +20,7 @@ import {
   type PasswordHasher,
   type ReturnLookupService,
   type ReturnService,
+  type SupplierClaimService,
   type SupplierService,
 } from "@easyrms/core";
 import { getOrm, registerDb } from "@easyrms/db";
@@ -42,6 +43,7 @@ export interface Cradle {
   returnLookupService: ReturnLookupService;
   returnService: ReturnService;
   supplierService: SupplierService;
+  supplierClaimService: SupplierClaimService;
 }
 
 const logger: ApiLogger & MailLogger = {
@@ -138,4 +140,9 @@ export function resolveCaseSampleService(): CaseSampleService {
 /** Resolver for supplier routes: one request scope per call. */
 export function resolveSupplierService(): Promise<SupplierService> {
   return createRequestScope().then((scope) => scope.cradle.supplierService);
+}
+
+/** Resolver for supplier claim routes: one request scope per call. */
+export function resolveSupplierClaimService(): Promise<SupplierClaimService> {
+  return createRequestScope().then((scope) => scope.cradle.supplierClaimService);
 }

@@ -4,6 +4,7 @@ import { AgentService } from "./services/agents/agent.service";
 import { CaseSampleService } from "./services/discovery/case-sample.service";
 import { ReturnLookupService } from "./services/returns/return-lookup.service";
 import { ReturnService } from "./services/returns/return.service";
+import { SupplierClaimService } from "./services/supplier-claims/supplier-claim.service";
 import { SupplierService } from "./services/suppliers/supplier.service";
 
 /** Registers core services. Dependencies (ports) are registered by other packages. */
@@ -15,5 +16,6 @@ export function registerCore(container: AwilixContainer): void {
     returnService: asClass(ReturnService).scoped(),
     returnLookupService: asClass(ReturnLookupService).scoped(),
     supplierService: asClass(SupplierService).scoped(),
+    supplierClaimService: asClass(SupplierClaimService).scoped(),
   });
 }
