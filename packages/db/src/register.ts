@@ -3,6 +3,7 @@ import type { EntityManager, MikroORM } from "@mikro-orm/postgresql";
 
 import { MikroOrmAgentRepository } from "./repositories/agents/agent.repository";
 import { MikroOrmReturnRepository } from "./repositories/returns/return.repository";
+import { MikroOrmSupplierRepository } from "./repositories/suppliers/supplier.repository";
 
 /**
  * Registers persistence. `orm` is a singleton (one pool); `em` is a fork per scope,
@@ -14,5 +15,6 @@ export function registerDb(container: AwilixContainer, orm: MikroORM): void {
     em: asFunction(({ orm }: { orm: MikroORM }): EntityManager => orm.em.fork() as EntityManager).scoped(),
     returnRepository: asClass(MikroOrmReturnRepository).scoped(),
     agentRepository: asClass(MikroOrmAgentRepository).scoped(),
+    supplierRepository: asClass(MikroOrmSupplierRepository).scoped(),
   });
 }
