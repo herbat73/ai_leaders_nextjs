@@ -42,6 +42,7 @@ function makeRepository(rows: ReturnRequest[] = [], claimed: Record<string, Reco
     list: async () => rows,
     findDetail: async () => null,
     findStatus: async () => null,
+    findRequest: async () => null,
     createWithItems: unsupported,
     listByOrder: async (orderNumber) => rows.filter((row) => row.orderNumber === orderNumber),
     findByRma: async (rma): Promise<ReturnDetail | null> => {
@@ -77,6 +78,7 @@ function setup(options: { port?: OrderLookup; rows?: ReturnRequest[]; claimed?: 
     rateLimiter: new RateLimiter({ clock }),
     eligibilityConfig: { windowDays: 30 },
     quoteConfig: { shippingFee: money(1000) },
+    approvalConfig: { refundApprovalLimit: money(200000) },
   });
   return { service, guest, returns };
 }

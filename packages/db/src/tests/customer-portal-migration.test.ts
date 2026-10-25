@@ -11,7 +11,7 @@ afterEach(async () => {
 
 async function migrated(): Promise<TestDatabase> {
   db = await createTestDatabase();
-  await db.migrateUp();
+  await db.migrateUp(MIGRATIONS.customerPortal);
   return db;
 }
 
@@ -87,7 +87,7 @@ describe("Migration20261023202921 up", () => {
       `insert into "return_requests" ("rma", "order_number", "customer_email", "reason", "created_at", "updated_at") values ('RMA-2026-00001', 'O', 'c@example.com', 'Too small', now(), now())`,
     );
 
-    await db.migrateUp();
+    await db.migrateUp(MIGRATIONS.customerPortal);
 
     const [row] = await db.query<{ reason: string; currency: string }>(`select "reason", "currency" from "return_requests"`);
     expect(row).toEqual({ reason: "Too small", currency: "PLN" });

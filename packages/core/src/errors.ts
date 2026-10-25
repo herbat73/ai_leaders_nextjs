@@ -1,5 +1,14 @@
+/**
+ * Brand shared by every copy of this module. Next.js can bundle `@easyrms/core` more than once per process (route
+ * bundles and the container built by the first of them), and `instanceof AppError` is false across copies; a
+ * registered symbol is the same everywhere, so `isAppError` still recognises the error.
+ */
+export const APP_ERROR_BRAND = Symbol.for("easyrms.app-error");
+
 /** Base class for errors that map to an HTTP status. Services throw these; they never build responses. */
 export class AppError extends Error {
+  readonly [APP_ERROR_BRAND] = true;
+
   constructor(
     message: string,
     readonly status: number,
@@ -9,6 +18,16 @@ export class AppError extends Error {
     super(message);
     this.name = new.target.name;
   }
+}
+
+/** True for an `AppError` of any copy of this module (see `APP_ERROR_BRAND`); driver errors with a `code` never match. */
+export function isAppError(error: unknown): error is AppError {
+  return (
+    error instanceof Error &&
+    (error as unknown as Record<symbol, unknown>)[APP_ERROR_BRAND] === true &&
+    typeof (error as { status?: unknown }).status === "number" &&
+    typeof (error as { code?: unknown }).code === "string"
+  );
 }
 
 export class ValidationError extends AppError {

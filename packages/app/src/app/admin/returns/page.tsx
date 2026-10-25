@@ -2,7 +2,9 @@ import Link from "next/link";
 import { formatEventTime, RETURN_STATUSES, returnListQuerySchema, type ReturnListItem, type StoredReturnStatus } from "@easyrms/core";
 import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, DataTable, type DataTableColumn } from "@easyrms/ui/admin";
 
+import { requireAgentPage } from "@/server/agent-auth";
 import { createRequestScope } from "@/server/container";
+import { AdminShell } from "../_shell/admin-shell";
 import { returnsCopy } from "./copy";
 import { statusBadgeVariant } from "./status-badge";
 
@@ -46,6 +48,7 @@ export default async function AdminReturnsPage({
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
+  const agent = await requireAgentPage("/admin/returns");
   const requested = (await searchParams).status;
   const parsed = requested === undefined ? undefined : returnListQuerySchema.safeParse({ status: requested });
   const filter = parsed?.success ? parsed.data.status : undefined;
@@ -55,40 +58,42 @@ export default async function AdminReturnsPage({
   const returns = await scope.cradle.returnService.list(filter ? { status: filter } : undefined);
 
   return (
-    <main className="mx-auto max-w-5xl p-8">
-      <Card>
-        <CardHeader>
-          <CardTitle>{copy.title}</CardTitle>
-          <CardDescription>{copy.description(returns.length)}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <nav aria-label={copy.filterLabel} className="flex flex-wrap gap-2">
-            <Button asChild size="sm" variant={filter ? "outline" : "default"}>
-              <Link href="/admin/returns" aria-current={filter ? undefined : "page"}>
-                {copy.allStatuses}
-              </Link>
-            </Button>
-            {FILTERS.map((status) => (
-              <Button key={status} asChild size="sm" variant={filter === status ? "default" : "outline"}>
-                <Link href={`/admin/returns?status=${status}`} aria-current={filter === status ? "page" : undefined}>
-                  {returnsCopy.statusLabels[status]}
+    <AdminShell agent={agent}>
+      <main className="mx-auto max-w-5xl p-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>{copy.title}</CardTitle>
+            <CardDescription>{copy.description(returns.length)}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <nav aria-label={copy.filterLabel} className="flex flex-wrap gap-2">
+              <Button asChild size="sm" variant={filter ? "outline" : "default"}>
+                <Link href="/admin/returns" aria-current={filter ? undefined : "page"}>
+                  {copy.allStatuses}
                 </Link>
               </Button>
-            ))}
-          </nav>
-          {filterIsInvalid && (
-            <p role="status" className="text-sm text-muted-foreground">
-              {copy.invalidFilter}
-            </p>
-          )}
-          <DataTable
-            columns={columns}
-            rows={returns}
-            getRowKey={(item) => item.id}
-            emptyMessage={filter ? copy.emptyFiltered : copy.empty}
-          />
-        </CardContent>
-      </Card>
-    </main>
+              {FILTERS.map((status) => (
+                <Button key={status} asChild size="sm" variant={filter === status ? "default" : "outline"}>
+                  <Link href={`/admin/returns?status=${status}`} aria-current={filter === status ? "page" : undefined}>
+                    {returnsCopy.statusLabels[status]}
+                  </Link>
+                </Button>
+              ))}
+            </nav>
+            {filterIsInvalid && (
+              <p role="status" className="text-sm text-muted-foreground">
+                {copy.invalidFilter}
+              </p>
+            )}
+            <DataTable
+              columns={columns}
+              rows={returns}
+              getRowKey={(item) => item.id}
+              emptyMessage={filter ? copy.emptyFiltered : copy.empty}
+            />
+          </CardContent>
+        </Card>
+      </main>
+    </AdminShell>
   );
 }

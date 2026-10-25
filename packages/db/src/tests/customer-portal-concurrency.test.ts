@@ -158,6 +158,7 @@ describe("a case-variant order number (S8)", () => {
       rateLimiter: new RateLimiter({ clock: () => new Date() }),
       eligibilityConfig: { windowDays: 30 },
       quoteConfig: { shippingFee: money(1000) },
+      approvalConfig: { refundApprovalLimit: money(200000) },
     });
     const body = (idempotencyKey: string) => ({
       items: [{ lineRef: "L1", quantity: 1, reasonCode: "size" as const }],

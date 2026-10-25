@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { ConflictError, ValidationError } from "../errors";
+import { APP_ERROR_BRAND, ConflictError, ForbiddenError, isAppError, UnauthorizedError, ValidationError } from "../errors";
 import { apiHandler } from "./api-handler";
 import type { ApiLogger } from "./types";
 
@@ -155,6 +155,130 @@ describe("apiHandler", () => {
       const [logged] = contextsOf(logger);
       expect(logged.name).toBe("string");
       expect(JSON.stringify(logged)).not.toContain(NOTE);
+    });
+  });
+
+  describe("AppError from another copy of the module", () => {
+    /** What a second bundled copy of `errors.ts` produces: same shape and brand, different class identity. */
+    class ForeignAppError extends Error {
+      readonly [APP_ERROR_BRAND] = true;
+      constructor(readonly status: number, readonly code: string) {
+        super("from another bundle");
+      }
+    }
+
+    it("maps it like a native AppError instead of an opaque 500", async () => {
+      const handler = apiHandler(async () => {
+        throw new ForeignAppError(403, "approval_required");
+      });
+
+      const response = await handler(new Request("http://localhost/api/x"), context);
+
+      expect(response.status).toBe(403);
+      expect(await response.json()).toMatchObject({ ok: false, error: { code: "approval_required" } });
+    });
+
+    it("does not treat lookalikes without the brand, such as driver errors, as AppErrors", async () => {
+      const driver = Object.assign(new Error("duplicate key"), { code: "23505", status: 409 });
+      const logger = makeLogger();
+      const response = await apiHandler(async () => {
+        throw driver;
+      }, { logger })(new Request("http://localhost/api/x"), context);
+
+      expect(isAppError(driver)).toBe(false);
+      expect(isAppError(new ConflictError("x"))).toBe(true);
+      expect(response.status).toBe(500);
+      expect(logger.error).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("authenticate hook", () => {
+    const post = (headers: Record<string, string> = { "x-requested-with": "test" }) =>
+      new Request("http://localhost/api/x", { method: "POST", headers });
+
+    it("passes the principal to the handler as its last argument", async () => {
+      const handler = apiHandler(async (_request, _context, principal: { id: number }) => ({ who: principal.id }), {
+        authenticate: async () => ({ id: 7 }),
+      });
+
+      const response = await handler(new Request("http://localhost/api/x"), context);
+
+      expect(await response.json()).toEqual({ ok: true, data: { who: 7 } });
+    });
+
+    it("maps a rejection to its status and never runs the handler", async () => {
+      const run = vi.fn(async () => ({}));
+      const handler = apiHandler(run, {
+        authenticate: async () => {
+          throw new UnauthorizedError();
+        },
+      });
+
+      const response = await handler(new Request("http://localhost/api/x"), context);
+
+      expect(response.status).toBe(401);
+      expect(await response.json()).toMatchObject({ ok: false, error: { code: "unauthorized" } });
+      expect(run).not.toHaveBeenCalled();
+    });
+
+    it("runs after the CSRF check: a cross-site request is a 403 without authenticating", async () => {
+      const authenticate = vi.fn(async () => ({ id: 1 }));
+      const handler = apiHandler(async () => ({}), { authenticate });
+
+      const response = await handler(post({}), context);
+
+      expect(response.status).toBe(403);
+      expect(authenticate).not.toHaveBeenCalled();
+    });
+
+    it("runs before the handler, which is where the body gets parsed", async () => {
+      const order: string[] = [];
+      const handler = apiHandler(
+        async () => {
+          order.push("handler");
+          return {};
+        },
+        {
+          authenticate: async () => {
+            order.push("authenticate");
+            throw new ForbiddenError("no", "forbidden");
+          },
+        },
+      );
+
+      const response = await handler(post(), context);
+
+      expect(response.status).toBe(403);
+      expect(await response.json()).toMatchObject({ error: { code: "forbidden" } });
+      expect(order).toEqual(["authenticate"]);
+    });
+
+    it("leaves a route without the option exactly as before (the handler's principal is undefined)", async () => {
+      const seen: unknown[] = [];
+      const handler = apiHandler(async (_request, _context, principal) => {
+        seen.push(principal);
+        return { ok: 1 };
+      });
+
+      const response = await handler(post(), context);
+
+      expect(response.status).toBe(200);
+      expect(seen).toEqual([undefined]);
+    });
+
+    it("logs an unexpected failure of the hook as an opaque 500", async () => {
+      const logger = makeLogger();
+      const handler = apiHandler(async () => ({}), {
+        logger,
+        authenticate: async () => {
+          throw new Error("db down");
+        },
+      });
+
+      const response = await handler(new Request("http://localhost/api/x"), context);
+
+      expect(response.status).toBe(500);
+      expect(logger.error).toHaveBeenCalledTimes(1);
     });
   });
 });

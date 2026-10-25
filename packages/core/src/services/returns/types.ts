@@ -77,6 +77,10 @@ export interface ReturnEvent {
   toStatus: StoredReturnStatus;
   note: string | null;
   actor: ReturnEventActor;
+  /** The signed-in agent behind an `agent` event; `null` on legacy, customer and system events. Admin reads only. */
+  agentId?: number | null;
+  /** Display name of that agent, filled by `findDetail` (the admin timeline) and never by `findByRma` (customer). */
+  agentName?: string | null;
   createdAt: Date;
 }
 
@@ -135,6 +139,8 @@ export interface ReturnRepository {
   findDetail(id: number): Promise<ReturnDetail | null>;
   /** Status only, so the service can validate a move without reading the decision note. */
   findStatus(id: number): Promise<StoredReturnStatus | null>;
+  /** The request without its decision note (resolution and amount included), for the approval-limit check. */
+  findRequest(id: number): Promise<ReturnRequest | null>;
   /**
    * Assigns the RMA and writes the row, its items and the `submitted` event in one transaction (joins the caller's).
    * A duplicate `idempotencyKey` surfaces as `ConflictError` (409 `conflict`), never as an unmapped error.
@@ -156,8 +162,8 @@ export interface ReturnRepository {
    */
   withOrderLock<T>(orderNumber: string, fn: (tx: ReturnRepository) => Promise<T>): Promise<T>;
   /**
-   * Atomic compare-and-set from `from` to `to`, writing one event with the status change. `note` becomes the decision
-   * note only for `approved`/`rejected`; no other move touches it.
+   * Atomic compare-and-set from `from` to `to`, writing one event with the status change and the deciding agent.
+   * `note` becomes the decision note only for `approved`/`rejected`; no other move touches it.
    */
-  transition(id: number, from: ReturnStatus, to: ReturnStatus, note: string | null): Promise<TransitionOutcome>;
+  transition(id: number, from: ReturnStatus, to: ReturnStatus, note: string | null, agentId: number): Promise<TransitionOutcome>;
 }

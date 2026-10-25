@@ -1,6 +1,7 @@
 import { asClass, asFunction, asValue, type AwilixContainer } from "awilix";
 import type { EntityManager, MikroORM } from "@mikro-orm/postgresql";
 
+import { MikroOrmAgentRepository } from "./repositories/agents/agent.repository";
 import { MikroOrmReturnRepository } from "./repositories/returns/return.repository";
 
 /**
@@ -12,5 +13,6 @@ export function registerDb(container: AwilixContainer, orm: MikroORM): void {
     orm: asValue(orm),
     em: asFunction(({ orm }: { orm: MikroORM }): EntityManager => orm.em.fork() as EntityManager).scoped(),
     returnRepository: asClass(MikroOrmReturnRepository).scoped(),
+    agentRepository: asClass(MikroOrmAgentRepository).scoped(),
   });
 }
