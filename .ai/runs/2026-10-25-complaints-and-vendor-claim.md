@@ -19,6 +19,8 @@ Phases and steps are those of the spec's Implementation Plan (Phase 1 steps 1-6,
 
 ## Progress
 
+PR: #36
+
 > Convention: `- [ ]` pending, `- [x]` done. Append ` — <commit sha>` when a step lands. Do not rename step titles.
 
 ### Phase 1: Complaints
