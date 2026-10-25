@@ -3,7 +3,6 @@ import "server-only";
 import { asFunction, asValue, createContainer, InjectionMode, type AwilixContainer } from "awilix";
 import {
   createFakeOrderLookup,
-  createLogMailPort,
   limitHashConcurrency,
   ScryptPasswordHasher,
   RateLimiter,
@@ -25,6 +24,7 @@ import {
 import { getOrm, registerDb } from "@easyrms/db";
 
 import { getAgentSessionService } from "./agent-session";
+import { createMailPort } from "./mail";
 import { getGuestSessionService } from "./guest-session";
 import { getApprovalConfig, getEligibilityConfig, getQuoteConfig } from "./return-config";
 
@@ -75,7 +75,7 @@ function getRootContainer(): Promise<AwilixContainer> {
     const container = createContainer({ injectionMode: InjectionMode.PROXY, strict: true });
     container.register({
       logger: asValue(logger),
-      mailPort: asFunction(createLogMailPort).singleton(),
+      mailPort: asFunction(createMailPort).singleton(),
       orderLookup: asFunction(createOrderLookup).singleton(),
       guestSessionService: asFunction(getGuestSessionService).singleton(),
       agentSessionService: asFunction(getAgentSessionService).singleton(),

@@ -14,6 +14,8 @@ export * from "./security";
 export * from "./services/discovery/case-sample-note";
 export * from "./services/discovery/case-sample.service";
 export * from "./services/discovery/case-sample.types";
+export * from "./services/mail/mail-source";
+export * from "./services/mail/mail-templates";
 export * from "./services/mail/mail.port";
 export * from "./services/orders/order-lookup.port";
 export * from "./services/orders/order-source";

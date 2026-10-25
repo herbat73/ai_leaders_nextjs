@@ -19,6 +19,10 @@ describe("maskEmail", () => {
 });
 
 describe("createLogMailPort", () => {
+  it("does not claim to deliver", () => {
+    expect(createLogMailPort({ logger: { info: vi.fn(), error: vi.fn() } }).delivers).toBe(false);
+  });
+
   it("logs only the template and the masked recipient", async () => {
     const logger = { info: vi.fn(), error: vi.fn() };
     const port = createLogMailPort({ logger });

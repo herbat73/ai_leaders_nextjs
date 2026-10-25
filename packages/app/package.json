@@ -17,6 +17,7 @@
     "@easyrms/ui": "*",
     "awilix": "^13.0.5",
     "next": "16.4.1",
+    "nodemailer": "^10.2.1",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "server-only": "^0.0.1"
@@ -28,6 +29,7 @@
     "@storybook/nextjs-vite": "10.6.3",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/node": "^20",
+    "@types/nodemailer": "^8.0.2",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",

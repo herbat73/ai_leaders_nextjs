@@ -29,6 +29,7 @@ describe("isAgentProtectedPath", () => {
     "/",
     "/returns",
     "/returns/new",
+    "/returns/complaint/new",
     "/returns/RMA-2026-00001",
     "/admin/login",
     "/admin/invite/abc123",
