@@ -26,7 +26,7 @@ export const returnsCopy = {
     cancelled: "Anuluj",
   } satisfies Record<ReturnStatus, string>,
   inbox: {
-    title: "Zwroty",
+    title: "Zwroty i reklamacje",
     description: (count: number) => `Liczba zgłoszeń: ${count}`,
     filterLabel: "Filtr statusu",
     allStatuses: "Wszystkie",
@@ -43,7 +43,7 @@ export const returnsCopy = {
     kindBadge: { return: "Zwrot", complaint: "Reklamacja" },
   },
   card: {
-    back: "← Wszystkie zwroty",
+    back: "← Wszystkie zgłoszenia",
     customerView: "Podgląd widoku klienta",
     details: "Zgłoszenie",
     order: "Zamówienie",
@@ -67,6 +67,7 @@ export const returnsCopy = {
     receivedNotConfirmed: "Odebrane: brak wady",
     decisionNote: "Notatka dla klienta (widoczna dla klienta)",
     items: "Zwracane produkty",
+    itemsComplaint: "Reklamowane produkty",
     itemSku: (sku: string) => `SKU: ${sku}`,
     itemQuantity: (quantity: number) => `${quantity} szt.`,
     itemUnitPrice: "cena jedn.",

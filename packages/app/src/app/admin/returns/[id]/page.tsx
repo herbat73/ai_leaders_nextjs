@@ -160,7 +160,7 @@ export default async function ReturnCardPage({ params }: { params: Promise<{ id:
         {items.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle>{copy.items}</CardTitle>
+              <CardTitle>{request.kind === "complaint" ? copy.itemsComplaint : copy.items}</CardTitle>
             </CardHeader>
             <CardContent>
               <ul className="divide-y text-sm">

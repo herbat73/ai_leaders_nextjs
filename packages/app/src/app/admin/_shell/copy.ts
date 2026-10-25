@@ -1,7 +1,7 @@
 /** Polish copy for the admin header (brief D07), one constant colocated with the shell. */
 export const shellCopy = {
   navLabel: "Nawigacja panelu",
-  returns: "Zwroty",
+  returns: "Zwroty i reklamacje",
   claims: "Reklamacje do dostawców",
   suppliers: "Dostawcy",
   agents: "Agenci",
