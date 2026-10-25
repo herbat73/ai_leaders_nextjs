@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { approvalBlockedFor, formatEventTime, formatMoney, type ReturnDetailView, type ReturnEvent } from "@easyrms/core";
+import { approvalBlockedFor, formatDatePl, formatEventTime, formatMoney, type ReturnDetailView, type ReturnEvent } from "@easyrms/core";
 import { Badge, Card, CardContent, CardHeader, CardTitle, Timeline, type TimelineEvent } from "@easyrms/ui/admin";
 
 import { requireAgentPage } from "@/server/agent-auth";
@@ -71,6 +71,8 @@ export default async function ReturnCardPage({ params }: { params: Promise<{ id:
           </CardHeader>
           <CardContent>
             <dl className="grid grid-cols-1 gap-x-6 gap-y-1 text-sm sm:grid-cols-[max-content_minmax(0,1fr)] sm:gap-y-2">
+              <dt className="text-muted-foreground">{copy.kind}</dt>
+              <dd>{copy.kinds[request.kind]}</dd>
               <dt className="text-muted-foreground">{copy.order}</dt>
               <dd className="break-words">{request.orderNumber}</dd>
               <dt className="text-muted-foreground">{copy.customer}</dt>
@@ -108,10 +110,35 @@ export default async function ReturnCardPage({ params }: { params: Promise<{ id:
                   <dd>{copy.returnMethods[request.returnMethod]}</dd>
                 </>
               )}
-              <dt className="text-muted-foreground">{copy.due}</dt>
+              {request.kind === "complaint" && (
+                <>
+                  {request.defectDescription && (
+                    <>
+                      <dt className="text-muted-foreground">{copy.defectDescription}</dt>
+                      <dd className="whitespace-pre-wrap break-words">{request.defectDescription}</dd>
+                    </>
+                  )}
+                  {request.defectDiscoveredOn && (
+                    <>
+                      <dt className="text-muted-foreground">{copy.defectDiscoveredOn}</dt>
+                      <dd>{formatDatePl(new Date(`${request.defectDiscoveredOn}T12:00:00Z`))}</dd>
+                    </>
+                  )}
+                  <dt className="text-muted-foreground">{copy.defectFinding}</dt>
+                  <dd>
+                    {request.defectConfirmed == null
+                      ? copy.defectNotAssessed
+                      : request.defectConfirmed
+                        ? copy.defectConfirmed
+                        : copy.defectNotConfirmed}
+                  </dd>
+                </>
+              )}
+              <dt className="text-muted-foreground">{request.kind === "complaint" ? copy.dueComplaint : copy.due}</dt>
               <dd className="flex flex-wrap items-center gap-2">
                 {formatEventTime(request.dueAt)}
                 {request.overdue && <Badge variant="destructive">{copy.overdue}</Badge>}
+                {request.escalated && <Badge variant="destructive">{copy.escalated}</Badge>}
               </dd>
               <dt className="text-muted-foreground">{copy.decisionNote}</dt>
               <dd className="whitespace-pre-wrap break-words">{decisionNote ?? copy.noDecisionNote}</dd>
@@ -137,6 +164,12 @@ export default async function ReturnCardPage({ params }: { params: Promise<{ id:
                       <span className="text-muted-foreground">{copy.itemReason}: </span>
                       {copy.reasonCodes[item.reasonCode]}
                     </p>
+                    {item.serialNumber && (
+                      <p>
+                        <span className="text-muted-foreground">{copy.serialNumber}: </span>
+                        {item.serialNumber}
+                      </p>
+                    )}
                     {item.comment && (
                       <p className="whitespace-pre-wrap break-words">
                         <span className="text-muted-foreground">{copy.itemComment}: </span>
@@ -163,6 +196,7 @@ export default async function ReturnCardPage({ params }: { params: Promise<{ id:
               <DecisionActions
                 id={request.id}
                 allowed={request.allowedTransitions}
+                complaint={request.kind === "complaint"}
                 approvalBlocked={approvalBlockedFor(agent, request, getApprovalConfig().refundApprovalLimit)}
               />
             )}
