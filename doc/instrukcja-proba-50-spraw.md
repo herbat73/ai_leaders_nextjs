@@ -57,7 +57,7 @@ Najwięcej rozbieżności wychodzi właśnie tu, więc przyjmij jedną zasadę d
 2. Wgraj CSV. Jeśli pojawi się błąd, komunikat wskaże kolumnę i wiersz, ale nie pokaże wartości komórki.
 3. Opcjonalnie zmień progi reguł (what-if) i porównaj wynik z podstawowym.
 4. Pobierz notatkę przyciskiem „Pobierz notatkę” (plik `RRRR-MM-DD-case-sample.md`).
-5. Zapisz notatkę w `.ai/specs/research/` i dołącz CSV obok niej, tak jak przy próbie syntetycznej (`2026-10-26-case-sample-synthetic.*`). **Plik z prawdziwymi danymi nie powinien mieć w nazwie ani treści oznaczenia „syntetyczne”.**
+5. Zapisz notatkę w `.ai/specs/research/` i dołącz CSV obok niej, tak jak przykładowe pliki testowe w `.ai/specs/research/rules_cases_tests/` (`test_rules_*.md` i `.csv`). **Plik z prawdziwymi danymi nie powinien mieć w nazwie ani treści oznaczenia „syntetyczne”.**
 
 ## 6. Jak czytać wynik
 

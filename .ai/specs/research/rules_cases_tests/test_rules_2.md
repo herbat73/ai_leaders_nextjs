@@ -1,11 +1,16 @@
-# Próba przypadków — follow-upy i pokrycie regułami [DATA]
+# [TESTOWE] Próba przypadków — follow-upy i pokrycie regułami [DATA]
+
+> **⚠️ DANE TESTOWE — NIE JEST TO DOWÓD.** Próba została wygenerowana jako zestaw przypadków testowych reguł
+> (`rules_cases_tests`), a nie zebrana z prawdziwych spraw. Liczby poniżej wynikają z założeń przyjętych przy generowaniu
+> danych i **nie wolno** ich używać do oceny hipotez A01 i A04. Do zastąpienia notatką z prawdziwej, zanonimizowanej
+> próby (E00-T01, #14).
 
 - Data: 2026-10-26
 - Liczba spraw (n): 100
 - Okres (miesiące): styczeń 2026 – październik 2026
 - Kanały: E-mail: 56, Telefon: 44
 - Właściciel: kierownik obsługi klienta
-- Źródło: anonimowa próba, zebrana z historii e-maili i rozmów telefonicznych
+- Źródło: dane testowe wygenerowane na potrzeby sprawdzenia reguł (nie historia prawdziwych spraw)
 
 ## A01 — follow-upy są głównym kosztem obsługi
 
