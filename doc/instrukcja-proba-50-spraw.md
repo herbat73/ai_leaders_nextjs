@@ -3,7 +3,7 @@
 Dla: kierownika obsługi klienta. Czas: ok. 2–3 godzin. Cel: sprawdzić na prawdziwych danych dwie hipotezy z briefu (zadanie E00-T01, #14):
 
 - **A01**: dopytania i wymiana wiadomości są głównym kosztem obsługi.
-- **A04**: co najmniej 35% spraw da się rozstrzygnąć prostymi regułami (zwrot do 150 zł, reklamacja lub szkoda transportowa do 60 zł).
+- **A04**: co najmniej 20% spraw da się rozstrzygnąć prostymi regułami (zwrot do 150 zł, reklamacja lub szkoda transportowa do 60 zł).
 
 Wynikiem jest plik CSV, który wgrywasz do narzędzia. Narzędzie niczego nie zapisuje w bazie i zwraca notatkę z liczbami.
 
@@ -61,7 +61,7 @@ Najwięcej rozbieżności wychodzi właśnie tu, więc przyjmij jedną zasadę d
 
 ## 6. Jak czytać wynik
 
-- Przy 50 sprawach przedział ufności 95% to około ±13 punktów. Wynik 30% dla A04 nie przesądza o porażce, jeśli 35% mieści się w przedziale.
+- Przy 50 sprawach przedział ufności 95% to około ±13 punktów. Wynik 15% dla A04 nie przesądza o porażce, jeśli 20% mieści się w przedziale.
 - „Najnowsze 50 spraw” to nie próba losowa, więc prawdziwa niepewność jest większa niż pokazany przedział. Notatka sama to odnotowuje.
 - Wysoki udział spraw rozstrzygniętych regułą nie wspiera A04, jeśli towarzyszy mu dużo „fałszywych akceptacji” (reguła zaakceptowałaby sprawę, którą wy odrzuciliście).
 - Granica poniżej ok. 20% spraw z dopytaniem osłabia A01. To propozycja z briefu, do uzgodnienia z właścicielem produktu.
