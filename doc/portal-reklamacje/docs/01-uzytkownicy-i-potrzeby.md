@@ -18,7 +18,7 @@ Sklep internetowy (elektronika, AGD, wyposażenie domu, odzież) obsługuje dzi�
 |---|---|---|
 | Mniej kontaktów „gdzie jest mój zwrot?” | kontakty WISMR na zgłoszenie | −60% |
 | Kompletność zgłoszeń | % zgłoszeń bez prośby o uzupełnienie | ≥ 85% |
-| Automatyzacja | % zgłoszeń rozstrzygniętych regułą | ≥ 35% |
+| Automatyzacja | % zgłoszeń rozstrzygniętych regułą | ≥ 20% |
 | Czas obsługi | mediana od zgłoszenia do rozwiązania | ≤ 5 dni (zwroty), ≤ 10 dni (reklamacje) |
 | Zgodność z prawem | % reklamacji z odpowiedzią w 14 dni | 100% |
 | Retencja przychodu | udział bonów / wymian zamiast zwrotu pieniędzy | ≥ 25% |
