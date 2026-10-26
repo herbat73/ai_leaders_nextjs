@@ -1,9 +1,16 @@
-# Provenance of sample_rules_2 — owner statement
+# Provenance of the rules case sample — owner statement
 
-- Date, owner: 2026-10-26, Adam Adamczyk (statement given in an `om-discover --refresh` session)
-- Context: `.ai/specs/research/rules_cases/sample_rules_2.{md,csv}` entered the repo on 2026-10-26 as `rules_cases_tests/test_rules_2.*` (PR #41), marked `[TESTOWE]` / "not evidence" in the note and "test data" in `doc/instrukcja-proba-50-spraw.md`. PR #42 renamed the folder and files to `sample_rules_*`; PR #43 removed the test-data banner from the note without changing any number or CSV row, and its source line now reads "1 dane zabrane potrzeby sprawdzenia reguł".
-- Statement: asked whether the sample is real, anonymised cases of the shop or data generated to test the rules, the owner answered "Prawdziwe sprawy".
-- Not stated by the owner: who exported the cases, from which system, the selection of the 100 cases (the guide asks for the 50 most recent), how they were anonymised.
-- Checked in this session: the committed note and the committed CSV do not agree (note: 66% with a follow-up, kinds 42/32/16/10, channels 56/44, 18% settled by rules; CSV re-analysed with the repo's `CaseSampleService`: 62% (52–71%), kinds 40/33/15/12, channels 53/47, 2% (0.6–7%) settled by R08/R09). The owner chose to use the CSV figures. The note's case ids (`C01…`) do not appear in the CSV (`S001…`).
-- Consequence: the CSV is recorded as `[DATA]` on the owner's word; the note's figures are not used. Revisit if the owner finds the CSV was generated, or supplies the export trail.
+- Date, owner: 2026-10-26, Adam Adamczyk (statements given in `om-discover --refresh` and `om-backlog` sessions)
+- Current file: `.ai/specs/research/rules_cases/real_data_for_rules.{md,csv}` (PR #45), 50 cases, July–October 2026. It replaced `sample_rules_2.{md,csv}` (100 cases), which no longer exists. This record keeps its old filename because the brief links to it.
+- History: the first files entered the repo as `rules_cases_tests/test_rules_2.*` (PR #41), marked `[TESTOWE]` / "not evidence" and described as "test data" in `doc/instrukcja-proba-50-spraw.md`. PR #42 renamed them to `sample_rules_*`; PR #43 removed the test-data banner without changing any number or row; PR #45 swapped in the current 50-case set.
+- Statement 1: asked whether the sample is real, anonymised cases of the shop or data generated to test the rules, the owner answered "Prawdziwe sprawy". This was given about the 100-case file; the owner has since replaced that file.
+- Statement 2 (about the current file): the data comes from a small e-shop that currently runs its business on Allegro.
+- Not stated by the owner: who exported the cases, from which system, whether the 50 cases are every case in the period or a selection, how they were pseudonymised, where Allegro-side buyer messages and disputes are stored and whether they are counted in `follow_up_requests` / `messages_exchanged`.
+- Checked in this session (2026-10-26): every figure in `real_data_for_rules.md` reproduces from the CSV (follow-up share 84%, 71–92%; kinds 16/14/11/9; channels 25/25; outcomes 25/4/8/3/10; settled by R08/R09 24%, 14–37%, 12 cases; median days to resolve 3/15/4.5/4). One difference: 75th percentile of messages is 8 from the CSV, 8.75 in the note (interpolation). The earlier note-vs-CSV disagreement no longer exists. Case ids differ between the files (`C01…` in the note, `S01…` in the CSV; the note shows value bands, the CSV exact values); rows align by position and no mapping is recorded.
+- Open observations:
+  - Channel alternates mail/phone strictly across all 50 rows (hence exactly 25/25), case dates ascend every 2–3 days, and kinds follow a near-regular cycle. Not evidence of generated data, but unusual for an export; ask the exporter whether rows were sorted, sampled or assembled by hand.
+  - The note says the cases are the newest ones and the 95% intervals assume a random sample. If the 50 are the shop's whole history for the period (about 12 cases a month), they are the population, not a sample, and the intervals do not apply.
+  - A shop selling on Allegro handles returns, disputes and buyer messages partly inside Allegro, so mail and phone may cover only part of the contact. The 84% follow-up share may be an undercount.
+  - The data describes one small shop; its value mix and the R08/R09 thresholds should not be generalised without a second shop.
+- Consequence: the CSV stays recorded as `[DATA]` on the owner's word, now attributed to a small Allegro-based shop. Its figures are usable for A01 frequency and A04 at the shop level, with the limits above. Revisit when the owner supplies the export trail or the missing items above.
 - Status: active
