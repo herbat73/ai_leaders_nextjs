@@ -147,6 +147,8 @@ Lifecycle:
 
 Exception: `.ai/specs/product-brief.md` is the product context (written by `om-discover` / `aa-product-brief`), not a spec. Keep its fixed name and location, because every `om-*` skill reads it from there; never date, move or archive it.
 
+Read `.ai/specs/product-brief.md` in ranges (`offset`/`limit`, `sed -n`, `head`); never whole. It is large, and a full read wastes context.
+
 Before starting work on a feature, check `.ai/specs/` for an existing spec covering it. For any non-trivial feature or change, write a spec there first and get it reviewed/approved before implementing, rather than jumping straight to code.
 
 ## `.ai/runs/` — autonomous run logs
