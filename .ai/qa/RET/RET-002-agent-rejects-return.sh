@@ -1,23 +1,23 @@
 #!/bin/sh
-# TC-RET-002: an agent signs in, finds a submitted return in the inbox and rejects it with a reason.
+# RET-002: an agent signs in, finds a submitted return in the inbox and rejects it with a reason.
 # Priority: High. Type: UI (agent side) with API setup. Role: agent (QA account with MANAGE_RULES).
 #
 # Setup: the customer side is created through the API (guest lookup, then POST /api/returns) on seeded order PL-10001.
 # The rejection under test releases the held unit (D14), so a passing run leaves nothing behind. When the run fails
 # before the rejection, cleanup rejects the return through the API so the scenario can run again.
-# Prerequisites: same as TC-RET-001 (test-env-up.sh works, .ai/qa/test-env.env holds TEST_AGENT_EMAIL/PASSWORD).
+# Prerequisites: same as RET-001 (test-env-up.sh works, .ai/qa/test-env.env holds TEST_AGENT_EMAIL/PASSWORD).
 # Note: the agent-browser CLI takes the password as an argument; it is a local QA account on a disposable database.
 set -eu
 
 ROOT=$(cd "$(dirname "$0")/../../.." && pwd)
 QA_DIR="$ROOT/.ai/qa"
-ART_DIR="$QA_DIR/artifacts_TC-RET-002"
+ART_DIR="$QA_DIR/artifacts_RET-002"
 ORDER_NUMBER=PL-10001
 ORDER_EMAIL=anna.kowalska@example.pl
 SHORT_NOTE="Za krótko"
-NOTE="Zwrot odrzucony: automatyczny test TC-RET-002, brak podstaw do zwrotu."
+NOTE="Zwrot odrzucony: automatyczny test RET-002, brak podstaw do zwrotu."
 
-[ -f "$QA_DIR/test-env.env" ] || { echo "FAIL: $QA_DIR/test-env.env missing (see TC-RET-001 header)" >&2; exit 2; }
+[ -f "$QA_DIR/test-env.env" ] || { echo "FAIL: $QA_DIR/test-env.env missing (see RET-001 header)" >&2; exit 2; }
 set -a; . "$QA_DIR/test-env.env"; set +a
 
 ENV_OUT=$(sh "$ROOT/.ai/scripts/test-env-up.sh" 2>&1) || { echo "$ENV_OUT" | tail -20 >&2; echo "FAIL: test environment did not start" >&2; exit 2; }
@@ -25,7 +25,7 @@ BASE_URL=$(echo "$ENV_OUT" | sed -n 's/^TEST_ENV_BASE_URL=//p' | tail -1)
 AB=$(sed -n 's/.*"command": *"\([^"]*agent-browser[^"]*\)".*/\1/p' "$QA_DIR/test-env.json" | head -1)
 [ -n "$BASE_URL" ] && [ -x "$AB" ] || { echo "FAIL: no base URL or agent-browser in the descriptor" >&2; exit 2; }
 
-SESSION="qa-tc-ret-002-$$"
+SESSION="qa-ret-002-$$"
 RMA=""
 REJECTED=0
 GUEST_COOKIES=$(mktemp)
@@ -56,7 +56,7 @@ cleanup() {
     RETURN_ID=$(api -b "$AGENT_COOKIES" "$BASE_URL/api/returns" | RMA="$RMA" node -e 'const d=JSON.parse(require("fs").readFileSync(0));const a=d.data.items||d.data;const r=a.find((x)=>x.rma===process.env.RMA);if(r)console.log(r.id)')
     if [ -n "${RETURN_ID:-}" ]; then
       code=$(api -o /dev/null -w '%{http_code}' -b "$AGENT_COOKIES" -X PATCH "$BASE_URL/api/returns/$RETURN_ID" \
-        --data-raw '{"status":"rejected","decisionNote":"TC-RET-002 cleanup: automated test return, units released."}')
+        --data-raw '{"status":"rejected","decisionNote":"RET-002 cleanup: automated test return, units released."}')
       [ "$code" = 200 ] && echo "cleanup: $RMA rejected" || { echo "cleanup FAILED ($code): reject $RMA by hand" >&2; status=1; }
     else
       echo "cleanup FAILED: $RMA not found in the agent list" >&2; status=1
@@ -123,4 +123,4 @@ wait_text "$RMA"
 ROW_STATUS=$(snap | awk -v link="link \"$RMA\"" 'index($0, link) { found = 1; next } found && /cell "/ { if (++n == 4) { print; exit } }')
 case "$ROW_STATUS" in *'"Odrzucone"'*) ;; *) fail "inbox row for $RMA is not rejected: $ROW_STATUS" ;; esac
 
-echo "PASS: TC-RET-002 ($RMA)"
+echo "PASS: RET-002 ($RMA)"

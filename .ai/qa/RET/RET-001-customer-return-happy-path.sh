@@ -1,5 +1,5 @@
 #!/bin/sh
-# TC-RET-001: customer submits a return end to end (order lookup -> wizard -> RMA status page).
+# RET-001: customer submits a return end to end (order lookup -> wizard -> RMA status page).
 # Priority: High. Type: UI. Role: guest customer; an agent (QA account) is used only for cleanup.
 #
 # Prerequisites: `sh .ai/scripts/test-env-up.sh` works on this machine (run om-prepare-test-env once), and
@@ -13,7 +13,7 @@ set -eu
 
 ROOT=$(cd "$(dirname "$0")/../../.." && pwd)
 QA_DIR="$ROOT/.ai/qa"
-ART_DIR="$QA_DIR/artifacts_TC-RET-001"
+ART_DIR="$QA_DIR/artifacts_RET-001"
 ORDER_NUMBER=PL-10001
 ORDER_EMAIL=anna.kowalska@example.pl
 ITEM_NAME="Skarpety"
@@ -26,7 +26,7 @@ BASE_URL=$(echo "$ENV_OUT" | sed -n 's/^TEST_ENV_BASE_URL=//p' | tail -1)
 AB=$(sed -n 's/.*"command": *"\([^"]*agent-browser[^"]*\)".*/\1/p' "$QA_DIR/test-env.json" | head -1)
 [ -n "$BASE_URL" ] && [ -x "$AB" ] || { echo "FAIL: no base URL or agent-browser in the descriptor" >&2; exit 2; }
 
-SESSION="qa-tc-ret-001-$$"
+SESSION="qa-ret-001-$$"
 RMA=""
 COOKIES=$(mktemp)
 mkdir -p "$ART_DIR"
@@ -51,7 +51,7 @@ cleanup() {
     RETURN_ID=$(curl -s -b "$COOKIES" "$BASE_URL/api/returns" | RMA="$RMA" node -e 'const d=JSON.parse(require("fs").readFileSync(0));const a=d.data.items||d.data;const r=a.find((x)=>x.rma===process.env.RMA);if(r)console.log(r.id)')
     if [ -n "${RETURN_ID:-}" ]; then
       code=$(curl -s -o /dev/null -w '%{http_code}' -b "$COOKIES" -X PATCH "$BASE_URL/api/returns/$RETURN_ID" -H 'x-requested-with: fetch' \
-        -H 'content-type: application/json' --data-raw '{"status":"rejected","decisionNote":"TC-RET-001 cleanup: automated test return, units released."}')
+        -H 'content-type: application/json' --data-raw '{"status":"rejected","decisionNote":"RET-001 cleanup: automated test return, units released."}')
       [ "$code" = 200 ] && echo "cleanup: $RMA rejected" || { echo "cleanup FAILED ($code): reject $RMA by hand" >&2; status=1; }
     else
       echo "cleanup FAILED: $RMA not found in the agent list" >&2; status=1
@@ -114,4 +114,4 @@ wait_text "Aktualny status: Zgłoszone"
 wait_text "Skarpety"
 shot 03-status
 
-echo "PASS: TC-RET-001 ($RMA)"
+echo "PASS: RET-001 ($RMA)"
