@@ -75,9 +75,8 @@ review against `doc/code-review-checklist.md`.
 
 Every route and page reuses two shared layers instead of re-implementing fetch/validation/error handling:
 
-- `packages/core/src/http/` — `apiHandler` (maps `AppError`s to status + `{ ok, data } | { ok: false, error }`
-  envelope, logs unexpected failures) and `makeCrudRoute` (schemas + service in, configured handlers out). Routes
-  contain no `try/catch`.
+- `packages/core/src/http/` — `apiHandler` and `makeCrudRoute`; API route rules live in `.claude/rules/api.md`
+  (loaded when working on `packages/app/src/app/api/**` or `packages/core/src/http/**`).
 - `packages/ui/src/admin/` — `api/api-call.ts` (the only sanctioned `fetch('/api/*')` site), `forms/crud-form.tsx`,
   `tables/data-table.tsx`, `feedback/*`.
 
