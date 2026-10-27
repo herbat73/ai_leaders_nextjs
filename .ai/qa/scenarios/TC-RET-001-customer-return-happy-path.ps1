@@ -85,6 +85,7 @@ try {
   ClickRole 'button' 'Dalej'
   WaitText 'Co chcesz otrzymać?'
   ClickRole 'radio' 'Zwrot pieniędzy'
+  WaitText 'Szacowana kwota zwrotu'   # the quote loads asynchronously; an earlier 'Dalej' click is ignored
   ClickRole 'button' 'Dalej'
   WaitText 'Sprawdź i wyślij zgłoszenie'
   Shot '02-summary'
