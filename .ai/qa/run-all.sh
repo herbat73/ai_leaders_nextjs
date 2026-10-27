@@ -39,4 +39,5 @@ for area in $AREAS; do
 done
 
 echo "passed: $pass, failed: $fail (logs: .ai/qa/artifacts_run-all/)"
+[ $((pass + fail)) -gt 0 ] || { echo "no scenarios found for: ${AREAS:-<none>}" >&2; exit 2; }
 [ "$fail" -eq 0 ] || { echo "failed:$failed"; exit 1; }
