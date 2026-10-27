@@ -149,6 +149,12 @@ Exception: `.ai/specs/product-brief.md` is the product context (written by `om-d
 
 Read `.ai/specs/product-brief.md` in ranges (`offset`/`limit`, `sed -n`, `head`); never whole. It is large, and a full read wastes context.
 
+Writing files (keeps large payloads out of context):
+
+- Create a large file in parts: `Write` the skeleton, then `Edit` the sections in.
+- Change a few lines with `Edit` (old/new strings), never by rewriting the whole file with `Write`.
+- Do not paste file contents into Bash heredocs when `Edit` can do it.
+
 Before starting work on a feature, check `.ai/specs/` for an existing spec covering it. For any non-trivial feature or change, write a spec there first and get it reviewed/approved before implementing, rather than jumping straight to code.
 
 ## `.ai/runs/` — autonomous run logs
