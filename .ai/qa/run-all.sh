@@ -11,6 +11,8 @@
 #   AGT-002 uses 9 of the 10 agent logins a minute; RET-004/005 drain the order-lookup limiter.
 # Those fixed pauses are not enough on their own (five agent logins in a row still exceed 10 a minute), so a
 # scenario that fails on a 429 / throttle is retried once after the same pause. PAUSE=<seconds> overrides it.
+# A UI login that is throttled only reports "login did not reach the inbox", and a page that has not hydrated
+# reports 'no field labelled "..."'; both are retried too, so a real UI regression needs to fail twice to count.
 set -u
 
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
@@ -28,8 +30,8 @@ for area in $AREAS; do
     id=$(basename "$f" .sh)
     start=$(date +%s)
     sh "$f" > "$LOG_DIR/$id.log" 2>&1; rc=$?
-    if [ "$rc" -ne 0 ] && grep -q -E '429|throttl' "$LOG_DIR/$id.log"; then
-      echo "      $id hit a rate limiter; retrying once after ${PAUSE}s"; sleep "$PAUSE"
+    if [ "$rc" -ne 0 ] && grep -q -E '429|throttl|login did not reach the inbox|no field labelled' "$LOG_DIR/$id.log"; then
+      echo "      $id failed on a rate limiter or an unhydrated page; retrying once after ${PAUSE}s"; sleep "$PAUSE"
       sh "$f" > "$LOG_DIR/$id.log" 2>&1; rc=$?
     fi
     secs=$(( $(date +%s) - start ))
