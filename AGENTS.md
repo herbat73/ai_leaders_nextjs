@@ -75,9 +75,8 @@ review against `doc/code-review-checklist.md`.
 
 Every route and page reuses two shared layers instead of re-implementing fetch/validation/error handling:
 
-- `packages/core/src/http/` — `apiHandler` (maps `AppError`s to status + `{ ok, data } | { ok: false, error }`
-  envelope, logs unexpected failures) and `makeCrudRoute` (schemas + service in, configured handlers out). Routes
-  contain no `try/catch`.
+- `packages/core/src/http/` — `apiHandler` and `makeCrudRoute`; API route rules live in `.claude/rules/api.md`
+  (loaded when working on `packages/app/src/app/api/**` or `packages/core/src/http/**`).
 - `packages/ui/src/admin/` — `api/api-call.ts` (the only sanctioned `fetch('/api/*')` site), `forms/crud-form.tsx`,
   `tables/data-table.tsx`, `feedback/*`.
 
@@ -106,6 +105,13 @@ routes. Do not add Server Actions. New reusable components: shadcn primitive →
 - **UI:** use shadcn/ui components for admin pages and Tailwind utility classes for public pages; share reusable components via `packages/ui`. Do not add another component library or CSS framework.
 - **Next.js:** prefer Server Components; add `"use client"` only when needed. Keep route handlers thin — delegate to services resolved from the container.
 - **Config and secrets:** read configuration from environment variables (document new ones in the README); never commit secrets.
+
+## Quick reference
+
+- **Build:** `NODE_ENV=production npm run build` (with `NODE_ENV=development` the prerender of `/_global-error` fails).
+- **Test:** `npm test` (core unit tests); `npm run test:db` needs `npm run db:start` and is outside the gate. Gate: `lint`, `typecheck`, `test`, `audit`, `docs:check`, `storybook:build`.
+- **Layout:** `packages/{app,core,db,ui}`, dependency direction `app → ui, core, db`; the Next.js app is in `packages/app`; concepts are same-named folders across layers (no `modules/`).
+- **Gotchas:** restart `next dev` after changing `packages/core/src/http`; stories live in `packages/ui/src/storybook/`, never next to the component; every admin page calls `requireAgentPage`; add a dependency to the workspace that uses it, not the root. Details in "Practical notes" below.
 
 ## Current state
 
@@ -147,6 +153,16 @@ Lifecycle:
 - If a spec is abandoned, superseded, or otherwise no longer relevant, move it to `.ai/specs/archive/` instead of deleting it.
 
 Exception: `.ai/specs/product-brief.md` is the product context (written by `om-discover` / `aa-product-brief`), not a spec. Keep its fixed name and location, because every `om-*` skill reads it from there; never date, move or archive it.
+
+`.ai/specs/product-brief.md` is ~15,626 tok: read it with `offset`/`limit` (or `sed -n`, `head`) or grep for the symbol; never whole.
+
+`.ai/specs/backlog.md` maps backlog ids (E00-T01…, E03, E05) to GitHub issue numbers, epics and shipped PRs. Open it only to look up an id or issue number, and read only the section you need (headings: `# Backlogs`, `## .ai/specs/product-brief.md`); the per-id table is in that section.
+
+Writing files (keeps large payloads out of context):
+
+- Create a large file in parts: `Write` the skeleton, then `Edit` the sections in.
+- Change a few lines with `Edit` (old/new strings), never by rewriting the whole file with `Write`.
+- Do not paste file contents into Bash heredocs when `Edit` can do it.
 
 Before starting work on a feature, check `.ai/specs/` for an existing spec covering it. For any non-trivial feature or change, write a spec there first and get it reviewed/approved before implementing, rather than jumping straight to code.
 
