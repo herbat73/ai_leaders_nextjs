@@ -1,0 +1,10 @@
+{
+  "mode": "local",
+  "base": "main",
+  "head": "fb65ce8",
+  "verdict": "not-applicable",
+  "reason": "docs-only diff, no UI surface",
+  "files": ["AGENTS.md", ".claude/rules/api.md"],
+  "steps": [],
+  "screenshots": []
+}
