@@ -165,10 +165,10 @@ open_card() {
   wait_text "Decyzja"
 }
 
-# A complaint past `received` cannot be rejected or cancelled through the API (no such move), so its unit stays held for
+# A request past `submitted` cannot be rejected or cancelled through the API (no such move), so its unit stays held for
 # good. QA-only escape hatch on the disposable local test database: mark it rejected directly. Not for app code.
 db_release_rma() {
-  db_sql "UPDATE return_requests SET status='rejected' WHERE rma='$1' AND status IN ('received','in_service','resolved')" >/dev/null
+  db_sql "UPDATE return_requests SET status='rejected' WHERE rma='$1' AND status IN ('approved','in_transit','received','in_service','resolved')" >/dev/null
 }
 
 # Releases every unit held by the RMAs this run created: agent login, then reject (needs a note of 30+ characters).
@@ -187,7 +187,7 @@ qa_cleanup() {
       id=${row%% *}; cur=${row#* }
       case "$cur" in
         rejected|cancelled) echo "cleanup: $r already $cur" ;;
-        received|in_service|resolved)
+        approved|in_transit|received|in_service|resolved)
           db_release_rma "$r" && echo "cleanup: $r released in the test database" || { echo "cleanup FAILED: release $r by hand" >&2; status=1; } ;;
         *)
           code=$(agent_api -o /dev/null -w '%{http_code}' -X PATCH "$BASE_URL/api/returns/$id" \
