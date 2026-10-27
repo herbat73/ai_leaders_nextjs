@@ -142,6 +142,17 @@ cleanup_supplier() {
   [ "$code" = 200 ] && echo "cleanup: supplier $SUPPLIER_ID deactivated" || { echo "cleanup FAILED ($code): deactivate supplier $SUPPLIER_ID by hand" >&2; return 1; }
 }
 
+# Second browser session (another agent or a guest) for scenarios that need two people at once.
+ab2() { "$AB" --session "$SESSION-2" "$@"; }
+# Disables the agent with e-mail $1 through the API (QA agents created by a scenario are never deleted, only disabled).
+disable_agent_by_email() {
+  agent_login_api
+  aid=$(agent_api "$BASE_URL/api/agents" | E="$1" node -e 'const d=JSON.parse(require("fs").readFileSync(0));const a=d.data.items||d.data.agents||d.data;const r=a.find((x)=>x.email===process.env.E);if(r)console.log(r.id)')
+  [ -n "${aid:-}" ] || return 0
+  code=$(agent_api -o /dev/null -w '%{http_code}' -X PATCH "$BASE_URL/api/agents/$aid" --data-raw '{"status":"disabled"}')
+  [ "$code" = 200 ] && echo "cleanup: agent $1 disabled" || { echo "cleanup FAILED ($code): disable agent $1 by hand" >&2; return 1; }
+}
+
 # Opens the decision card of $1 from the inbox (the RMA link wraps in a narrow column, so open its href).
 open_card() {
   ab open "$BASE_URL/admin/returns" >/dev/null 2>&1 || fail "cannot open the inbox"
@@ -166,6 +177,7 @@ qa_cleanup() {
   status=$?
   trap - EXIT INT TERM
   ab close >/dev/null 2>&1 || true
+  ab2 close >/dev/null 2>&1 || true
   if command -v cleanup_extra >/dev/null 2>&1; then cleanup_extra || status=1; fi
   for r in $RMA $RMAS; do
     [ -n "$r" ] || continue
