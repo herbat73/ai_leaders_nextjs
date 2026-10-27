@@ -21,13 +21,7 @@ CODE=$(api -o /dev/null -w '%{http_code}' -c "$PLAIN_JAR" -X POST "$BASE_URL/api
 [ "$CODE" = 200 ] || fail "setup: invite not accepted ($CODE)"
 
 step "the agent signs in through the browser and reaches the inbox"
-ab open "$BASE_URL/admin/login" >/dev/null 2>&1 || fail "cannot open the login page"
-wait_text "Logowanie do panelu"
-fill_label "E-mail" "$NEW_EMAIL"
-fill_label "Hasło" "$NEW_PASSWORD"
-click_role button "Zaloguj się"
-ab wait --url "**/admin/returns" >/dev/null 2>&1 || fail "login did not reach the inbox"
-wait_text "Zwroty i reklamacje"
+login_ui_as "$NEW_EMAIL" "$NEW_PASSWORD"
 
 step "negative: the navigation offers no agent management"
 expect_no_snap 'link "Agenci"' "the Agenci link is shown to an agent without the manage permission"

@@ -87,16 +87,23 @@ agent_api() { api -b "$COOKIES" "$@"; }
 return_row_for() { agent_api "$BASE_URL/api/returns" | RMA="$1" node -e 'const d=JSON.parse(require("fs").readFileSync(0));const a=d.data.items||d.data;const r=a.find((x)=>x.rma===process.env.RMA);if(r)console.log(r.id+" "+r.status)'; }
 return_id_for() { return_row_for "$1" | cut -d' ' -f1; }
 
-# Agent signs in through the browser.
-agent_login_ui() {
-  ab open "$BASE_URL/admin/login" >/dev/null 2>&1 || fail "cannot open the login page"
-  wait_text "Logowanie do panelu"
-  fill_label "E-mail" "$TEST_AGENT_EMAIL"
-  fill_label "Hasło" "$TEST_AGENT_PASSWORD"
-  click_role button "Zaloguj się"
-  ab wait --url "**/admin/returns" >/dev/null 2>&1 || fail "login did not reach the inbox"
+# Signs in through the browser as $1 / $2. The login form is server-rendered, so its text can appear before hydration has
+# finished and the fields then reset or are not yet found; retry the whole attempt up to three times before failing.
+login_ui_as() {
+  n=0
+  while :; do
+    n=$((n + 1))
+    ab open "$BASE_URL/admin/login" >/dev/null 2>&1 || fail "cannot open the login page"
+    wait_text "Logowanie do panelu"
+    if ab find label "E-mail" fill "$1" >/dev/null 2>&1 &&
+       ab find label "Hasło" fill "$2" >/dev/null 2>&1 &&
+       ab find role button click --name "Zaloguj się" >/dev/null 2>&1 &&
+       ab wait --url "**/admin/returns" >/dev/null 2>&1; then break; fi
+    [ "$n" -ge 3 ] && fail "login did not reach the inbox"
+  done
   wait_text "Zwroty i reklamacje"
 }
+agent_login_ui() { login_ui_as "$TEST_AGENT_EMAIL" "$TEST_AGENT_PASSWORD"; }
 
 # Agent moves a request through the API; prints the HTTP status. usage: agent_move <id> <status> [defectConfirmed]
 agent_move() {
