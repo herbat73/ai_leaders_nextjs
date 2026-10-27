@@ -90,6 +90,7 @@ ab find role radio click --name "Zwrot w sklepie" >/dev/null 2>&1 || fail "no sh
 click_role button "Dalej"
 wait_text "Co chcesz otrzymać?"
 ab find role radio click --name "Zwrot pieniędzy" >/dev/null 2>&1 || fail "no resolution option"
+wait_text "Szacowana kwota zwrotu"   # the quote loads asynchronously; an earlier "Dalej" click is ignored
 click_role button "Dalej"
 wait_text "Sprawdź i wyślij zgłoszenie"
 shot 02-summary
