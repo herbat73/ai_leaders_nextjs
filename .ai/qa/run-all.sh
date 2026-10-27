@@ -9,12 +9,14 @@
 #
 # Pauses keep the run under the app's rate limiters (see .ai/lessons.md):
 #   AGT-002 uses 9 of the 10 agent logins a minute; RET-004/005 drain the order-lookup limiter.
+# Those fixed pauses are not enough on their own (five agent logins in a row still exceed 10 a minute), so a
+# scenario that fails on a 429 / throttle is retried once after the same pause. PAUSE=<seconds> overrides it.
 set -u
 
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 QA_DIR="$ROOT/.ai/qa"
 LOG_DIR="$QA_DIR/artifacts_run-all"
-PAUSE=75
+PAUSE=${PAUSE:-75}
 mkdir -p "$LOG_DIR"
 
 if [ $# -gt 0 ]; then AREAS="$*"; else AREAS=$(cd "$QA_DIR" && ls -d [A-Z][A-Z][A-Z] 2>/dev/null); fi
@@ -26,6 +28,10 @@ for area in $AREAS; do
     id=$(basename "$f" .sh)
     start=$(date +%s)
     sh "$f" > "$LOG_DIR/$id.log" 2>&1; rc=$?
+    if [ "$rc" -ne 0 ] && grep -q -E '429|throttl' "$LOG_DIR/$id.log"; then
+      echo "      $id hit a rate limiter; retrying once after ${PAUSE}s"; sleep "$PAUSE"
+      sh "$f" > "$LOG_DIR/$id.log" 2>&1; rc=$?
+    fi
     secs=$(( $(date +%s) - start ))
     if [ "$rc" -eq 0 ]; then
       pass=$((pass + 1)); echo "PASS  $id (${secs}s)"
