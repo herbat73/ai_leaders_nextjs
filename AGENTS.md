@@ -147,7 +147,7 @@ Lifecycle:
 
 Exception: `.ai/specs/product-brief.md` is the product context (written by `om-discover` / `aa-product-brief`), not a spec. Keep its fixed name and location, because every `om-*` skill reads it from there; never date, move or archive it.
 
-Read `.ai/specs/product-brief.md` in ranges (`offset`/`limit`, `sed -n`, `head`); never whole. It is large, and a full read wastes context.
+`.ai/specs/product-brief.md` is ~15,626 tok: read it with `offset`/`limit` (or `sed -n`, `head`) or grep for the symbol; never whole.
 
 Writing files (keeps large payloads out of context):
 
