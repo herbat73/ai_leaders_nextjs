@@ -4,6 +4,8 @@
 #
 # Prerequisites: `sh .ai/scripts/test-env-up.sh` works on this machine (run om-prepare-test-env once), and
 # .ai/qa/test-env.env (gitignored) holds TEST_AGENT_EMAIL / TEST_AGENT_PASSWORD of an agent with MANAGE_RULES.
+# Provision it once: `npm run agent:create -- --email <qa email> --name "QA Test Agent"`, open the printed invite link
+# and set a password, then write both variables into that file (never commit it).
 # Order data: the app's fake order source (seeded PL-10001 / anna.kowalska@example.pl, line "Skarpety").
 # Cleanup: the created return is rejected through PATCH /api/returns/[id] so its unit is released (D14) and the
 # scenario can run again. Fail fast on the command line, never with per-test retries.
@@ -26,7 +28,7 @@ AB=$(sed -n 's/.*"command": *"\([^"]*agent-browser[^"]*\)".*/\1/p' "$QA_DIR/test
 
 SESSION="qa-tc-ret-001-$$"
 RMA=""
-COOKIES="$QA_DIR/.tc-ret-001-cookies.$$"
+COOKIES=$(mktemp)
 mkdir -p "$ART_DIR"
 
 ab() { "$AB" --session "$SESSION" "$@"; }
@@ -37,14 +39,15 @@ wait_text() { ab wait --text "$1" >/dev/null 2>&1 || fail "expected text \"$1\" 
 click_role() { ab find role "$1" click --name "$2" >/dev/null 2>&1 || fail "no $1 named \"$2\""; }
 shot() { ab screenshot --full "$ART_DIR/$1.png" >/dev/null 2>&1 || true; }
 
-# Releases the unit held by the created return: agent login, then reject the RMA (30+ character note not required here,
-# the note below satisfies the rule anyway).
+# Releases the unit held by the created return: agent login, then reject the RMA (a rejection needs a note of 30+
+# characters; the one below has it). Runs once: INT/TERM call `exit`, which would fire the EXIT trap a second time.
 cleanup() {
   status=$?
+  trap - EXIT INT TERM
   ab close >/dev/null 2>&1 || true
   if [ -n "$RMA" ]; then
-    curl -s -o /dev/null -c "$COOKIES" -X POST "$BASE_URL/api/agents/login" -H 'x-requested-with: fetch' \
-      -H 'content-type: application/json' --data-raw "{\"email\":\"$TEST_AGENT_EMAIL\",\"password\":\"$TEST_AGENT_PASSWORD\"}"
+    printf '{"email":"%s","password":"%s"}' "$TEST_AGENT_EMAIL" "$TEST_AGENT_PASSWORD" | curl -s -o /dev/null -c "$COOKIES" \
+      -X POST "$BASE_URL/api/agents/login" -H 'x-requested-with: fetch' -H 'content-type: application/json' --data-binary @-
     RETURN_ID=$(curl -s -b "$COOKIES" "$BASE_URL/api/returns" | RMA="$RMA" node -e 'const d=JSON.parse(require("fs").readFileSync(0));const a=d.data.items||d.data;const r=a.find((x)=>x.rma===process.env.RMA);if(r)console.log(r.id)')
     if [ -n "${RETURN_ID:-}" ]; then
       code=$(curl -s -o /dev/null -w '%{http_code}' -b "$COOKIES" -X PATCH "$BASE_URL/api/returns/$RETURN_ID" -H 'x-requested-with: fetch' \
