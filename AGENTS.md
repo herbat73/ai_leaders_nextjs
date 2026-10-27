@@ -149,6 +149,8 @@ Exception: `.ai/specs/product-brief.md` is the product context (written by `om-d
 
 `.ai/specs/product-brief.md` is ~15,626 tok: read it with `offset`/`limit` (or `sed -n`, `head`) or grep for the symbol; never whole.
 
+`.ai/specs/backlog.md` maps backlog ids (E00-T01…, E03, E05) to GitHub issue numbers, epics and shipped PRs. Open it only to look up an id or issue number, and read only the section you need (headings: `# Backlogs`, `## .ai/specs/product-brief.md`); the per-id table is in that section.
+
 Writing files (keeps large payloads out of context):
 
 - Create a large file in parts: `Write` the skeleton, then `Edit` the sections in.
