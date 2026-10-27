@@ -58,3 +58,4 @@ storybook-static/
 # om-prepare-test-env working state
 .ai/qa/test-env*
 .ai/qa/artifacts_*
+.claude/settings.local.json
