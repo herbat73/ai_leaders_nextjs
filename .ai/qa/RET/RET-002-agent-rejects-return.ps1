@@ -1,4 +1,5 @@
 # RET-002: an agent signs in, finds a submitted return in the inbox and rejects it with a reason.
+# Scenario: .ai/qa/RET/RET-002-agent-rejects-return.md
 # Native PowerShell twin of RET-002-agent-rejects-return.sh (same actions and assertions).
 # Prerequisites: .ai/scripts/test-env-up.ps1 exists (run om-prepare-test-env once on this platform) and
 # .ai/qa/test-env.env (gitignored) holds TEST_AGENT_EMAIL / TEST_AGENT_PASSWORD (see RET-001 header).

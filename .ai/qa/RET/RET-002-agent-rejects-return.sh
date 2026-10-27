@@ -1,5 +1,6 @@
 #!/bin/sh
 # RET-002: an agent signs in, finds a submitted return in the inbox and rejects it with a reason.
+# Scenario: .ai/qa/RET/RET-002-agent-rejects-return.md
 # Priority: High. Type: UI (agent side) with API setup. Role: agent (QA account with MANAGE_RULES).
 #
 # Setup: the customer side is created through the API (guest lookup, then POST /api/returns) on seeded order PL-10001.

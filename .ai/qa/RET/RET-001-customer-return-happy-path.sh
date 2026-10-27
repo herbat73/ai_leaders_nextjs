@@ -1,5 +1,6 @@
 #!/bin/sh
 # RET-001: customer submits a return end to end (order lookup -> wizard -> RMA status page).
+# Scenario: .ai/qa/RET/RET-001-customer-return-happy-path.md
 # Priority: High. Type: UI. Role: guest customer; an agent (QA account) is used only for cleanup.
 #
 # Prerequisites: `sh .ai/scripts/test-env-up.sh` works on this machine (run om-prepare-test-env once), and

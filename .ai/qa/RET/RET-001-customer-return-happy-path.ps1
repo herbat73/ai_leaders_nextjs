@@ -1,4 +1,5 @@
 # RET-001: customer submits a return end to end (order lookup -> wizard -> RMA status page).
+# Scenario: .ai/qa/RET/RET-001-customer-return-happy-path.md
 # Native PowerShell twin of RET-001-customer-return-happy-path.sh (same actions and assertions).
 # Prerequisites: .ai/scripts/test-env-up.ps1 exists (run om-prepare-test-env once on this platform) and
 # .ai/qa/test-env.env (gitignored) holds TEST_AGENT_EMAIL / TEST_AGENT_PASSWORD (agent with MANAGE_RULES).
