@@ -4,7 +4,9 @@
 
 - Executable tests are written with **agent-browser only**, as a POSIX `sh` plus a native PowerShell launcher doing the same actions. Do not use Playwright and do not scaffold a TypeScript runner, even when the base skill would propose one.
 - The scripts live next to their scenario, in `.ai/qa/{AREA}/`, and share its base name: `{AREA}-{number}-{slug}.sh` and `.ps1`. Screenshots go to the gitignored `.ai/qa/artifacts_{AREA}-{number}/`. The script ID in headers, session names and output is `{AREA}-{number}`.
-- Model new scripts on `.ai/qa/RET/RET-001-customer-return-happy-path.sh` (env bootstrap, `trap` cleanup, API setup and cleanup).
+- New scripts source the shared helpers `.ai/qa/lib/common.sh` / `common.ps1` (env bootstrap, session, cleanup trap, API setup, `fill_date`, `expect_text`, second session) instead of copying them; model them on `.ai/qa/CMP/CMP-001-customer-files-complaint.sh`. `RET-001` and `RET-002` predate the lib and stay self-contained.
+- Scripts must not exceed the login throttle (10 attempts a minute per IP): log in through the API once per run, and say in the scenario how many attempts a script makes.
+- Only a request still in `submitted` can be released through the API. For any later state, cleanup may update the status directly in the disposable local test database (`db_release_rma` in the lib): the user approved this exception to "SQL only in `db`" for QA scripts only, never for app code and never against a non-local database.
 
 ## Step 8 — markdown scenario (replace)
 
