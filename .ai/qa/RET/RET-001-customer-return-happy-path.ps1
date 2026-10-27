@@ -1,5 +1,6 @@
-# TC-RET-001: customer submits a return end to end (order lookup -> wizard -> RMA status page).
-# Native PowerShell twin of TC-RET-001-customer-return-happy-path.sh (same actions and assertions).
+# RET-001: customer submits a return end to end (order lookup -> wizard -> RMA status page).
+# Scenario: .ai/qa/RET/RET-001-customer-return-happy-path.md
+# Native PowerShell twin of RET-001-customer-return-happy-path.sh (same actions and assertions).
 # Prerequisites: .ai/scripts/test-env-up.ps1 exists (run om-prepare-test-env once on this platform) and
 # .ai/qa/test-env.env (gitignored) holds TEST_AGENT_EMAIL / TEST_AGENT_PASSWORD (agent with MANAGE_RULES).
 # Cleanup rejects the created return through PATCH /api/returns/[id] so its unit is released (D14).
@@ -7,7 +8,7 @@ $ErrorActionPreference = 'Stop'
 
 $Root = (Resolve-Path (Join-Path $PSScriptRoot '..\..\..')).Path
 $QaDir = Join-Path $Root '.ai\qa'
-$ArtDir = Join-Path $QaDir 'artifacts_TC-RET-001'
+$ArtDir = Join-Path $QaDir 'artifacts_RET-001'
 $OrderNumber = 'PL-10001'
 $OrderEmail = 'anna.kowalska@example.pl'
 $ItemName = 'Skarpety'
@@ -26,7 +27,7 @@ $Descriptor = Get-Content (Join-Path $QaDir 'test-env.json') -Raw | ConvertFrom-
 $AgentBrowser = $Descriptor.browser.command
 if (-not $BaseUrl -or -not (Test-Path $AgentBrowser)) { Write-Error 'FAIL: no base URL or agent-browser in the descriptor'; exit 2 }
 
-$Session = "qa-tc-ret-001-$PID"
+$Session = "qa-ret-001-$PID"
 $Rma = ''
 New-Item -ItemType Directory -Force -Path $ArtDir | Out-Null
 
@@ -50,7 +51,7 @@ function Cleanup {
   $items = if ($list.data.items) { $list.data.items } else { $list.data }
   $row = $items | Where-Object { $_.rma -eq $Rma } | Select-Object -First 1
   if (-not $row) { throw "cleanup FAILED: $Rma not found in the agent list" }
-  $body = @{ status = 'rejected'; decisionNote = 'TC-RET-001 cleanup: automated test return, units released.' } | ConvertTo-Json
+  $body = @{ status = 'rejected'; decisionNote = 'RET-001 cleanup: automated test return, units released.' } | ConvertTo-Json
   Invoke-RestMethod -Method Patch -Uri "$BaseUrl/api/returns/$($row.id)" -Headers (Headers) -ContentType 'application/json' -Body $body -WebSession $web | Out-Null
   Write-Host "cleanup: $Rma rejected"
 }
@@ -110,7 +111,7 @@ try {
   WaitText 'Skarpety'
   Shot '03-status'
 
-  Write-Host "PASS: TC-RET-001 ($Rma)"
+  Write-Host "PASS: RET-001 ($Rma)"
 } finally {
   Cleanup
 }

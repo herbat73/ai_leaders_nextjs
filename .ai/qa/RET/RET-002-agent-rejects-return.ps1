@@ -1,21 +1,22 @@
-# TC-RET-002: an agent signs in, finds a submitted return in the inbox and rejects it with a reason.
-# Native PowerShell twin of TC-RET-002-agent-rejects-return.sh (same actions and assertions).
+# RET-002: an agent signs in, finds a submitted return in the inbox and rejects it with a reason.
+# Scenario: .ai/qa/RET/RET-002-agent-rejects-return.md
+# Native PowerShell twin of RET-002-agent-rejects-return.sh (same actions and assertions).
 # Prerequisites: .ai/scripts/test-env-up.ps1 exists (run om-prepare-test-env once on this platform) and
-# .ai/qa/test-env.env (gitignored) holds TEST_AGENT_EMAIL / TEST_AGENT_PASSWORD (see TC-RET-001 header).
+# .ai/qa/test-env.env (gitignored) holds TEST_AGENT_EMAIL / TEST_AGENT_PASSWORD (see RET-001 header).
 # Setup goes through the API; the rejection under test releases the held unit, and cleanup rejects the return when the
 # run fails before that point.
 $ErrorActionPreference = 'Stop'
 
 $Root = (Resolve-Path (Join-Path $PSScriptRoot '..\..\..')).Path
 $QaDir = Join-Path $Root '.ai\qa'
-$ArtDir = Join-Path $QaDir 'artifacts_TC-RET-002'
+$ArtDir = Join-Path $QaDir 'artifacts_RET-002'
 $OrderNumber = 'PL-10001'
 $OrderEmail = 'anna.kowalska@example.pl'
 $ShortNote = 'Za krótko'
-$Note = 'Zwrot odrzucony: automatyczny test TC-RET-002, brak podstaw do zwrotu.'
+$Note = 'Zwrot odrzucony: automatyczny test RET-002, brak podstaw do zwrotu.'
 
 $EnvFile = Join-Path $QaDir 'test-env.env'
-if (-not (Test-Path $EnvFile)) { Write-Error "FAIL: $EnvFile missing (see TC-RET-001 header)"; exit 2 }
+if (-not (Test-Path $EnvFile)) { Write-Error "FAIL: $EnvFile missing (see RET-001 header)"; exit 2 }
 $Creds = @{}
 Get-Content $EnvFile | ForEach-Object { if ($_ -match '^\s*([A-Z_]+)=(.*)$') { $Creds[$Matches[1]] = $Matches[2] } }
 
@@ -28,7 +29,7 @@ $Descriptor = Get-Content (Join-Path $QaDir 'test-env.json') -Raw | ConvertFrom-
 $AgentBrowser = $Descriptor.browser.command
 if (-not $BaseUrl -or -not (Test-Path $AgentBrowser)) { Write-Error 'FAIL: no base URL or agent-browser in the descriptor'; exit 2 }
 
-$Session = "qa-tc-ret-002-$PID"
+$Session = "qa-ret-002-$PID"
 $Rma = ''
 $Rejected = $false
 New-Item -ItemType Directory -Force -Path $ArtDir | Out-Null
@@ -58,7 +59,7 @@ function Cleanup {
   $items = if ($list.data.items) { $list.data.items } else { $list.data }
   $row = $items | Where-Object { $_.rma -eq $Rma } | Select-Object -First 1
   if (-not $row) { throw "cleanup FAILED: $Rma not found in the agent list" }
-  $body = @{ status = 'rejected'; decisionNote = 'TC-RET-002 cleanup: automated test return, units released.' } | ConvertTo-Json
+  $body = @{ status = 'rejected'; decisionNote = 'RET-002 cleanup: automated test return, units released.' } | ConvertTo-Json
   Invoke-RestMethod -Method Patch -Uri "$BaseUrl/api/returns/$($row.id)" -Headers $Headers -ContentType 'application/json' -Body $body -WebSession $web | Out-Null
   Write-Host "cleanup: $Rma rejected"
 }
@@ -129,7 +130,7 @@ try {
   $cells = @($lines[($at + 1)..($lines.Count - 1)] | Where-Object { $_ -match 'cell "' }) | Select-Object -First 4
   if ($at -lt 0 -or $cells.Count -lt 4 -or $cells[3] -notmatch '"Odrzucone"') { Fail "inbox row for $Rma is not rejected: $($cells[3])" }
 
-  Write-Host "PASS: TC-RET-002 ($Rma)"
+  Write-Host "PASS: RET-002 ($Rma)"
 } finally {
   Cleanup
 }
