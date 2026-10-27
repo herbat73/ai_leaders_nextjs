@@ -2,6 +2,7 @@
 # om-prepare-test-env: generated teardown (contract v2) - safe to run twice
 # history:
 #   2026-10-24 generated
+#   2026-10-27 stop postgres with `docker compose stop` when the up script started it that way
 set -eu
 ROOT=$(cd "$(dirname "$0")/.." && cd .. && pwd)
 QA_DIR="$ROOT/.ai/qa"
@@ -23,7 +24,8 @@ rm -f "$PID_FILE"
 
 # stop postgres only when the up script started it
 if grep -q '"startedByThisRun": 1' "$DESCRIPTOR"; then
-  (cd "$ROOT" && npm run db:stop) || true
+  if grep -q '"mode": "docker"' "$DESCRIPTOR"; then (cd "$ROOT" && docker compose stop postgres) || true
+  else (cd "$ROOT" && npm run db:stop) || true; fi
 fi
 
 sed 's/"status": "running"/"status": "stopped"/' "$DESCRIPTOR" > "$DESCRIPTOR.tmp" && mv "$DESCRIPTOR.tmp" "$DESCRIPTOR"

@@ -5,6 +5,7 @@
 #   2026-10-24 generated: wraps the repo's own db:start / db:migrate / next dev (no docker on this host)
 #   2026-10-24 portable port_open (node) instead of bash-only /dev/tcp
 #   2026-10-24 repair: attach to a healthy dev server already on the port (fixes "Another next dev server is already running")
+#   2026-10-27 repair: portable services step - skip db:start when the DB port is already open, use `docker compose` when no PostgreSQL binaries exist (db.sh exited silently on macOS); per-OS agent-browser binary and platform in the descriptor
 set -eu
 
 # ---- project-specific variables ------------------------------------------------
@@ -23,7 +24,9 @@ MIGRATE_CMD="npm run db:migrate"
 FINGERPRINT_INPUTS="package-lock.json package.json packages/db/src/migrations"
 ARTIFACTS="node_modules"
 TTL="${TEST_ENV_CACHE_TTL_SECONDS:-600}"
-BROWSER_BIN_GLOB="$HOME/.cache/agent-tools/agent-browser/v0.35.2/agent-browser-linux-x64"
+OS_NAME=$(uname -s | tr '[:upper:]' '[:lower:]')
+case "$(uname -m)" in arm64|aarch64) ARCH=arm64 ;; *) ARCH=x64 ;; esac
+BROWSER_BIN_GLOB=$(ls "$HOME"/.cache/agent-tools/agent-browser/*/agent-browser-"$OS_NAME"-"$ARCH" 2>/dev/null | tail -1 || true)
 # ---------------------------------------------------------------------------------
 
 FORCE=0; FORCE_REBUILD=0
@@ -99,8 +102,15 @@ fi
 
 # ---- services: repo's own local postgres + migrations ---------------------------
 DB_STARTED_BY_US=0
-if ! port_open "$DB_PORT"; then DB_STARTED_BY_US=1; fi
-npm run db:start
+DB_MODE=none
+if ! port_open "$DB_PORT"; then
+  DB_STARTED_BY_US=1
+  if command -v pg_ctl >/dev/null 2>&1 || ls -d /usr/lib/postgresql/*/bin >/dev/null 2>&1; then
+    DB_MODE=binaries; npm run db:start
+  else
+    DB_MODE=docker; docker compose up -d --wait postgres
+  fi
+fi
 sh -c "$MIGRATE_CMD"
 
 # ---- app start + health wait ------------------------------------------------------
@@ -145,7 +155,7 @@ cat > "$DESCRIPTOR" <<EOF
   "stopScript": ".ai/scripts/test-env-down.sh",
   "app": { "startCommand": "$START_CMD", "port": $PORT, "healthPath": "$HEALTH_PATH", "pid": $APP_PID },
   "services": [
-    { "type": "postgres", "host": "127.0.0.1", "port": $DB_PORT, "container": "", "startedByThisRun": $DB_STARTED_BY_US, "env": {} }
+    { "type": "postgres", "host": "127.0.0.1", "port": $DB_PORT, "container": "", "startedByThisRun": $DB_STARTED_BY_US, "mode": "$DB_MODE", "env": {} }
   ],
   "credentials": [],
   "browser": {
@@ -157,7 +167,7 @@ cat > "$DESCRIPTOR" <<EOF
     "notes": ""
   },
   "testRunner": { "name": "none", "config": "" },
-  "platform": "linux",
+  "platform": "$OS_NAME",
   "startedAt": "$(now)",
   "startedAtEpoch": $NOW_EPOCH,
   "notes": "next dev against local postgres (npm run db:start; migrations applied). Customer portal uses the in-memory fake order adapter (seeded orders); there is no login: admin pages are unauthenticated. Teardown: sh .ai/scripts/test-env-down.sh (stops the dev server; leaves postgres running unless this run started it)."
