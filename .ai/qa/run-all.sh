@@ -13,6 +13,11 @@
 # scenario that fails on a 429 / throttle is retried once after the same pause. PAUSE=<seconds> overrides it.
 # A UI login that is throttled only reports "login did not reach the inbox", and a page that has not hydrated
 # reports 'no field labelled "..."'; both are retried too, so a real UI regression needs to fail twice to count.
+#
+# Known limit: the order-lookup limiter also allows only 5 failed lookups per 10 minutes, which no pause or retry here
+# outlasts, and the limiters live in the app process (a restart resets them). Start a full run from a freshly started
+# app (sh .ai/scripts/test-env-down.sh && sh .ai/scripts/test-env-up.sh), not within 10 minutes of the previous run.
+# Restarting the app before every scenario was tried and made things worse: a cold `next dev` was not hydrated in time.
 set -u
 
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
