@@ -29,7 +29,7 @@ And API odmawia wyłączenia własnego konta (409 `self_disable`)
 | Krok | Akcja | Oczekiwany rezultat |
 |---|---|---|
 | 1 | Setup: zaproszenie i przyjęcie przez API, sprawdzenie sesji (`PATCH` nieistniejącego zgłoszenia daje 404) | Sesja agenta działa |
-| 2 | Strona „Agenci” | Wiersz tymczasowego agenta oraz oznaczenie „to Ty” przy własnym |
+| 2 | Strona „Agenci” | Wiersz tymczasowego agenta; po wyszukaniu własnego e-maila oznaczenie „to Ty” (lista jest stronicowana po 10, własny wiersz nie musi być na stronie 1) |
 | 3 | `PATCH` własnego konta (negatywny) | 409 `self_disable` |
 | 4 | „Wyłącz” w wierszu agenta, „Wyłącz agenta” | Status „Wyłączony” |
 | 5 | Żądanie wyłączonego agenta | 401 |

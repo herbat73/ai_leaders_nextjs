@@ -27,7 +27,11 @@ try {
   AgentLoginUi
   Ab open "$BaseUrl/admin/agents" | Out-Null
   WaitText $NewEmail
+  # The list is paginated (10 per page, newest first): the manager's own row is not on page 1, so find it through the search.
+  FillLabel 'Szukaj po imieniu, nazwisku lub e-mailu' $script:Creds['TEST_AGENT_EMAIL']
   WaitText 'to Ty'
+  FillLabel 'Szukaj po imieniu, nazwisku lub e-mailu' $NewEmail
+  WaitText $NewEmail
 
   Step 'negative: the API refuses to disable the own account (self_disable)'
   $list = (AgentApi 'GET' '/api/agents' $null).Json
