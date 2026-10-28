@@ -108,6 +108,7 @@ npm run lint
 npm run typecheck  # all workspaces
 npm test           # unit tests (Vitest, @easyrms/core)
 npm run test:db    # database tests (Vitest, @easyrms/db): migration and repository against the local Postgres
+npm run test:integration  # all agent-browser QA scenarios from .ai/qa/ (see "Integration tests")
 npm run storybook  # component catalog on http://localhost:6006
 npm run storybook:build  # static Storybook in packages/app/storybook-static (part of the validation gate)
 NODE_ENV=production npm run build
@@ -116,6 +117,10 @@ NODE_ENV=production npm run build
 ### Database tests
 
 `npm run test:db` runs Vitest in `@easyrms/db` against the local PostgreSQL from `npm run db:start` (or the database in `EASYRMS_DATABASE_URL`). Every test file creates a throwaway schema (selected through `search_path`) and drops it afterwards, so your data is untouched. It covers the migrations (status mapping, RMA backfill order, `down` refusal, the items table) and the repository (compare-and-set transitions, events, concurrent submits under the order lock). It is not part of `npm test` or the CI gate until CI has a Postgres service, so record its result in `.ai/runs/` for each PR that touches `packages/db`.
+
+### Integration tests
+
+`npm run test:integration` runs every agent-browser scenario in `.ai/qa/<AREA>/` (RET, CMP, AGT, LAB, SET, SUP) one after another via `.ai/qa/run-all.sh` and prints a summary; the exit code is 1 when any scenario failed. Pass areas to run a subset: `npm run test:integration -- RET CMP`. It needs the test environment (`.ai/qa/test-env.json`, `.ai/qa/test-env.env`, created by the `om-prepare-test-env` skill; start/stop with `sh .ai/scripts/test-env-up.sh` and `test-env-down.sh`) and the local database. Logs go to the gitignored `.ai/qa/artifacts_run-all/<ID>.log`. The script pauses between scenarios to stay under the app's rate limiters (`PAUSE=<seconds>` overrides the default 75 s) and retries a throttled scenario once, so a full run takes a while. Start it from a freshly started app, not within 10 minutes of the previous run. It is not part of the validation gate.
 
 ### Storybook
 
