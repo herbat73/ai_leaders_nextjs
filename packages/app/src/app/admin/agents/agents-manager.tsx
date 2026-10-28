@@ -23,12 +23,18 @@ import {
   ErrorMessage,
   Input,
   Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   type DataTableColumn,
 } from "@easyrms/ui/admin";
 
 import { agentsCopy as copy } from "./copy";
 
 const NAME_MAX = 100;
+const PAGE_SIZE = 10;
 const statusVariant = { invited: "warning", active: "success", disabled: "secondary" } as const;
 
 interface InviteResult {
@@ -240,7 +246,20 @@ function DisableDialog({ agent }: { agent: AgentRecord }): ReactElement {
 
 /** Client island of the agents screen: the table, the invite dialog (one-time link) and the disable confirmation. */
 export function AgentsManager({ agents, currentAgentId }: { agents: AgentRecord[]; currentAgentId: number }): ReactElement {
+  const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [page, setPage] = useState(1);
   const activeManagers = agents.filter((agent) => agent.status === "active" && agent.permissions.includes("MANAGE_RULES"));
+
+  const needle = query.trim().toLowerCase();
+  const filtered = agents.filter(
+    (agent) =>
+      (statusFilter === "all" || agent.status === statusFilter) &&
+      (!needle || agent.displayName.toLowerCase().includes(needle) || agent.email.toLowerCase().includes(needle)),
+  );
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, pageCount);
+  const visible = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   const columns: DataTableColumn<AgentRecord>[] = [
     {
@@ -290,10 +309,59 @@ export function AgentsManager({ agents, currentAgentId }: { agents: AgentRecord[
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap gap-2">
+          <Input
+            type="search"
+            aria-label={copy.filters.search}
+            placeholder={copy.filters.search}
+            className="w-full sm:w-72"
+            value={query}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              setPage(1);
+            }}
+          />
+          <Select
+            value={statusFilter}
+            onValueChange={(value) => {
+              setStatusFilter(value);
+              setPage(1);
+            }}
+          >
+            <SelectTrigger aria-label={copy.filters.status} className="w-full sm:w-44">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{copy.filters.allStatuses}</SelectItem>
+              {(Object.keys(copy.statusLabels) as (keyof typeof copy.statusLabels)[]).map((status) => (
+                <SelectItem key={status} value={status}>
+                  {copy.statusLabels[status]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         <InviteDialog />
       </div>
-      <DataTable columns={columns} rows={agents} getRowKey={(agent) => agent.id} caption={copy.caption} emptyMessage={copy.empty} />
+      <DataTable
+        columns={columns}
+        rows={visible}
+        getRowKey={(agent) => agent.id}
+        caption={copy.caption}
+        emptyMessage={agents.length > 0 ? copy.filters.noMatches : copy.empty}
+      />
+      {pageCount > 1 && (
+        <nav aria-label={copy.pagination.label} className="flex items-center justify-end gap-2">
+          <span className="text-sm text-muted-foreground">{copy.pagination.position(currentPage, pageCount)}</span>
+          <Button size="sm" variant="outline" disabled={currentPage <= 1} onClick={() => setPage(currentPage - 1)}>
+            {copy.pagination.previous}
+          </Button>
+          <Button size="sm" variant="outline" disabled={currentPage >= pageCount} onClick={() => setPage(currentPage + 1)}>
+            {copy.pagination.next}
+          </Button>
+        </nav>
+      )}
     </div>
   );
 }
