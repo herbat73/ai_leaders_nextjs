@@ -19,6 +19,18 @@ mkdir -p "$LOG_DIR"
 
 if [ $# -gt 0 ]; then AREAS="$*"; else AREAS=$(cd "$QA_DIR" && ls -d [A-Z][A-Z][A-Z] 2>/dev/null); fi
 
+# The dev server compiles each page on first hit and SET-001 restarts it, so a cold server makes the first scenarios miss
+# hydration ("no field labelled ...", "login did not reach the inbox"). Request the pages once before they run.
+warm() {
+  base=$(sed -n 's/^BASE_URL=//p' "$QA_DIR/test-env.env" 2>/dev/null | tr -d "\"'")
+  [ -n "$base" ] || base=$(sed -n 's/.*"baseUrl": *"\([^"]*\)".*/\1/p' "$QA_DIR/test-env.json" 2>/dev/null)
+  [ -n "$base" ] || return 0
+  for p in /admin/login /admin/returns /admin/lab /admin/suppliers /returns /returns/lookup /returns/new /returns/complaint/new; do
+    curl -s -o /dev/null -L --max-time 120 "$base$p" || true
+  done
+}
+warm
+
 pass=0; fail=0; failed=""
 for area in $AREAS; do
   for f in "$QA_DIR/$area"/"$area"-[0-9][0-9][0-9]-*.sh; do
@@ -34,6 +46,7 @@ for area in $AREAS; do
     fi
     case "$id" in
       AGT-002-*|RET-005-*) echo "      pause ${PAUSE}s (rate limiters)"; sleep "$PAUSE" ;;
+      SET-*) warm ;;
     esac
   done
 done
