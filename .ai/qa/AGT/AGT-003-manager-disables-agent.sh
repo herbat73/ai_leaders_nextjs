@@ -26,7 +26,11 @@ step "manager opens the agents page: the own row offers no disable action"
 agent_login_ui
 ab open "$BASE_URL/admin/agents" >/dev/null 2>&1 || fail "cannot open the agents page"
 wait_text "$NEW_EMAIL"
+# The list is paginated (10 per page, newest first): the manager's own row is not on page 1, so find it through the search.
+fill_label "Szukaj po imieniu, nazwisku lub e-mailu" "$TEST_AGENT_EMAIL"
 wait_text "to Ty"
+fill_label "Szukaj po imieniu, nazwisku lub e-mailu" "$NEW_EMAIL"
+wait_text "$NEW_EMAIL"
 
 step "negative: the API refuses to disable the own account (self_disable)"
 SELF_ID=$(agent_api "$BASE_URL/api/agents" | E="$TEST_AGENT_EMAIL" node -e 'const d=JSON.parse(require("fs").readFileSync(0));const a=d.data.items||d.data.agents||d.data;const r=a.find((x)=>x.email===process.env.E);if(r)console.log(r.id)')
