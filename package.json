@@ -13,6 +13,7 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "test:db": "npm run test:db -w @easyrms/db",
+    "test:integration": "sh .ai/qa/run-all.sh",
     "storybook": "npm run storybook -w @easyrms/app --",
     "storybook:build": "npm run storybook:build -w @easyrms/app",
     "db:start": "bash scripts/db.sh start",
