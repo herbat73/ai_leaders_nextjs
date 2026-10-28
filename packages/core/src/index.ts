@@ -25,6 +25,7 @@ export * from "./services/returns/complaint-quote";
 export * from "./services/returns/complaint-sla";
 export * from "./services/returns/decision-note";
 export * from "./services/returns/eligibility";
+export * from "./services/returns/inbox-view";
 export * from "./services/returns/guest-session.service";
 export * from "./services/returns/quote";
 export * from "./services/returns/return-lookup.service";
