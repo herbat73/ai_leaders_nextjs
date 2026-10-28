@@ -93,7 +93,12 @@ function ReturnJson($line) { @{ items = @(@{ lineRef = $line; quantity = 1; reas
 # Logs in once per script run: the login route is throttled (10 attempts a minute per IP).
 function AgentLoginApi {
   if ($script:AgentApiLogged) { return }
-  $r = Api 'POST' '/api/agents/login' (@{ email = $script:Creds['TEST_AGENT_EMAIL']; password = $script:Creds['TEST_AGENT_PASSWORD'] } | ConvertTo-Json) $script:AgentWeb
+  # On a warm server scripts finish in seconds and use up the 10 logins a minute; wait out the window and retry.
+  for ($n = 0; $n -le 2; $n++) {
+    $r = Api 'POST' '/api/agents/login' (@{ email = $script:Creds['TEST_AGENT_EMAIL']; password = $script:Creds['TEST_AGENT_PASSWORD'] } | ConvertTo-Json) $script:AgentWeb
+    if ($r.Status -ne 429 -or $n -eq 2) { break }
+    Write-Host 'agent API login throttled (429), waiting 65s'; Start-Sleep -Seconds 65
+  }
   if ($r.Status -ne 200) { throw "FAIL: agent API login answered $($r.Status) (throttled? wait a minute)" }
   $script:AgentApiLogged = $true
 }

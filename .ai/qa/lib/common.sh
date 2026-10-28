@@ -77,8 +77,15 @@ complaint_create() {
 AGENT_API_LOGGED=0
 agent_login_api() {
   [ "$AGENT_API_LOGGED" = 1 ] && return 0
-  code=$(printf '{"email":"%s","password":"%s"}' "$TEST_AGENT_EMAIL" "$TEST_AGENT_PASSWORD" |
-    api -o /dev/null -w '%{http_code}' -c "$COOKIES" -X POST "$BASE_URL/api/agents/login" --data-binary @-)
+  n=0
+  while :; do
+    code=$(printf '{"email":"%s","password":"%s"}' "$TEST_AGENT_EMAIL" "$TEST_AGENT_PASSWORD" |
+      api -o /dev/null -w '%{http_code}' -c "$COOKIES" -X POST "$BASE_URL/api/agents/login" --data-binary @-)
+    # On a warm server scripts finish in seconds and use up the 10 logins a minute; wait out the window and retry, also in
+    # cleanup, where a failed login would leave the unit held and break every later scenario on the same line.
+    if [ "$code" = 429 ] && [ "$n" -lt 2 ]; then n=$((n + 1)); echo "agent API login throttled (429), waiting 65s" >&2; sleep 65; continue; fi
+    break
+  done
   [ "$code" = 200 ] || { echo "FAIL: agent API login answered $code (throttled? wait a minute)" >&2; exit 1; }
   AGENT_API_LOGGED=1
 }
