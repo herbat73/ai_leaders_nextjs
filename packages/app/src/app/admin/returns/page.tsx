@@ -3,6 +3,7 @@ import {
   formatEventTime,
   REQUEST_KINDS,
   RETURN_STATUSES,
+  viewInbox,
   returnListQuerySchema,
   type RequestKind,
   type ReturnListItem,
@@ -14,6 +15,8 @@ import { requireAgentPage } from "@/server/agent-auth";
 import { createRequestScope } from "@/server/container";
 import { AdminShell } from "../_shell/admin-shell";
 import { returnsCopy } from "./copy";
+import { InboxFilters } from "./inbox-filters";
+import { inboxHref } from "./inbox-href";
 import { statusBadgeVariant } from "./status-badge";
 
 export const dynamic = "force-dynamic";
@@ -69,6 +72,10 @@ export default async function AdminReturnsPage({
   const parsed = requested.status === undefined && requested.kind === undefined ? undefined : returnListQuerySchema.safeParse(requested);
   const filter = parsed?.success ? parsed.data.status : undefined;
   const kindFilter: RequestKind | undefined = parsed?.success ? parsed.data.kind : undefined;
+  const text = (value: string | string[] | undefined): string | undefined => (typeof value === "string" && value ? value : undefined);
+  const q = text(query.q);
+  const from = text(query.from);
+  const to = text(query.to);
   const filterIsInvalid = parsed !== undefined && !parsed.success;
 
   const scope = await createRequestScope();
@@ -78,13 +85,9 @@ export default async function AdminReturnsPage({
   });
   // Escalated complaints go first (Q07); the repository's newest-first order is kept within each group.
   const returns = [...listed.filter((item) => item.escalated), ...listed.filter((item) => !item.escalated)];
-  const href = (status?: StoredReturnStatus, kind?: RequestKind): string => {
-    const params = new URLSearchParams();
-    if (status) params.set("status", status);
-    if (kind) params.set("kind", kind);
-    const text = params.toString();
-    return text ? `/admin/returns?${text}` : "/admin/returns";
-  };
+  const view = viewInbox(returns, { search: q, from, to, page: Number(text(query.page)) });
+  const state = { status: filter, kind: kindFilter, q, from, to };
+  const narrowed = Boolean(filter || kindFilter || q || from || to);
 
   return (
     <AdminShell agent={agent}>
@@ -92,37 +95,24 @@ export default async function AdminReturnsPage({
         <Card>
           <CardHeader>
             <CardTitle>{copy.title}</CardTitle>
-            <CardDescription>{copy.description(returns.length)}</CardDescription>
+            <CardDescription>{copy.description(view.total)}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <nav aria-label={copy.kindFilterLabel} className="flex flex-wrap gap-2">
               <Button asChild size="sm" variant={kindFilter ? "outline" : "default"}>
-                <Link href={href(filter)} aria-current={kindFilter ? undefined : "page"}>
+                <Link href={inboxHref({ ...state, kind: undefined, page: undefined })} aria-current={kindFilter ? undefined : "page"}>
                   {copy.allKinds}
                 </Link>
               </Button>
               {REQUEST_KINDS.map((kind) => (
                 <Button key={kind} asChild size="sm" variant={kindFilter === kind ? "default" : "outline"}>
-                  <Link href={href(filter, kind)} aria-current={kindFilter === kind ? "page" : undefined}>
+                  <Link href={inboxHref({ ...state, kind, page: undefined })} aria-current={kindFilter === kind ? "page" : undefined}>
                     {copy.kinds[kind]}
                   </Link>
                 </Button>
               ))}
             </nav>
-            <nav aria-label={copy.filterLabel} className="flex flex-wrap gap-2">
-              <Button asChild size="sm" variant={filter ? "outline" : "default"}>
-                <Link href={href(undefined, kindFilter)} aria-current={filter ? undefined : "page"}>
-                  {copy.allStatuses}
-                </Link>
-              </Button>
-              {FILTERS.map((status) => (
-                <Button key={status} asChild size="sm" variant={filter === status ? "default" : "outline"}>
-                  <Link href={href(status, kindFilter)} aria-current={filter === status ? "page" : undefined}>
-                    {returnsCopy.statusLabels[status]}
-                  </Link>
-                </Button>
-              ))}
-            </nav>
+            <InboxFilters current={state} statuses={FILTERS} />
             {filterIsInvalid && (
               <p role="status" className="text-sm text-muted-foreground">
                 {copy.invalidFilter}
@@ -130,10 +120,21 @@ export default async function AdminReturnsPage({
             )}
             <DataTable
               columns={columns}
-              rows={returns}
+              rows={view.rows}
               getRowKey={(item) => item.id}
-              emptyMessage={filter || kindFilter ? copy.emptyFiltered : copy.empty}
+              emptyMessage={narrowed ? copy.emptyFiltered : copy.empty}
             />
+            {view.pageCount > 1 && (
+              <nav aria-label={copy.pagination.label} className="flex items-center justify-end gap-2">
+                <span className="text-sm text-muted-foreground">{copy.pagination.position(view.page, view.pageCount)}</span>
+                <Button asChild={view.page > 1} size="sm" variant="outline" disabled={view.page <= 1}>
+                  {view.page > 1 ? <Link href={inboxHref({ ...state, page: view.page - 1 })}>{copy.pagination.previous}</Link> : copy.pagination.previous}
+                </Button>
+                <Button asChild={view.page < view.pageCount} size="sm" variant="outline" disabled={view.page >= view.pageCount}>
+                  {view.page < view.pageCount ? <Link href={inboxHref({ ...state, page: view.page + 1 })}>{copy.pagination.next}</Link> : copy.pagination.next}
+                </Button>
+              </nav>
+            )}
           </CardContent>
         </Card>
       </main>
