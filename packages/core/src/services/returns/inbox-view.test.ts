@@ -28,4 +28,17 @@ describe("viewInbox", () => {
     expect(viewInbox(data, { to: "2026-10-24" }).total).toBe(1);
     expect(viewInbox(data, { from: "nonsense" }).total).toBe(3);
   });
+
+  it("filters by status, alone and combined with search and dates, and leaves rows alone when absent", () => {
+    const data = [
+      { ...make(1, "2026-10-20T10:00:00Z"), status: "submitted" as const },
+      { ...make(2, "2026-10-21T10:00:00Z"), status: "resolved" as const },
+      { ...make(12, "2026-10-22T10:00:00Z"), status: "resolved" as const },
+    ];
+    expect(viewInbox(data, { status: "resolved" }).rows.map((r) => r.rma)).toEqual(["RMA-2026-00002", "RMA-2026-00012"]);
+    expect(viewInbox(data, { status: "resolved", search: "12" }).total).toBe(1);
+    expect(viewInbox(data, { status: "resolved", from: "2026-10-22" }).total).toBe(1);
+    expect(viewInbox(data, { status: "cancelled" }).total).toBe(0);
+    expect(viewInbox(data, {}).total).toBe(3);
+  });
 });
