@@ -23,6 +23,12 @@ export function InboxFilters({ current, statuses }: { current: InboxParams; stat
     event.preventDefault();
     go({ status: current.status, q: q.trim(), from, to });
   };
+  const clear = (): void => {
+    setQ("");
+    setFrom("");
+    setTo("");
+    go({ status: current.status });
+  };
 
   return (
     <form onSubmit={submit} className="flex flex-wrap items-end gap-2">
@@ -61,7 +67,7 @@ export function InboxFilters({ current, statuses }: { current: InboxParams; stat
         {copy.filters.apply}
       </Button>
       {(current.q || current.from || current.to) && (
-        <Button type="button" size="sm" variant="outline" onClick={() => go({ status: current.status })}>
+        <Button type="button" size="sm" variant="outline" onClick={clear}>
           {copy.filters.clear}
         </Button>
       )}
