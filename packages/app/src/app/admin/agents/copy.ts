@@ -8,6 +8,18 @@ export const agentsCopy = {
   empty: "Brak agentów.",
   columns: { name: "Imię i nazwisko", email: "E-mail", status: "Status", permissions: "Uprawnienia", actions: "Akcje" },
   statusLabels: { invited: "Zaproszony", active: "Aktywny", disabled: "Wyłączony" } satisfies Record<AgentStatus, string>,
+  filters: {
+    search: "Szukaj po imieniu, nazwisku lub e-mailu",
+    status: "Filtruj po statusie",
+    allStatuses: "Wszystkie statusy",
+    noMatches: "Brak agentów pasujących do filtrów.",
+  },
+  pagination: {
+    label: "Paginacja agentów",
+    position: (page: number, total: number) => `Strona ${page} z ${total}`,
+    previous: "Poprzednia",
+    next: "Następna",
+  },
   manager: "Zarządza agentami i regułami",
   noPermissions: "Obsługa zwrotów",
   you: "to Ty",
