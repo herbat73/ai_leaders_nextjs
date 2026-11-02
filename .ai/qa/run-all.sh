@@ -8,8 +8,8 @@
 # Logs go to the gitignored .ai/qa/artifacts_run-all/<ID>.log. Exit code is 1 when any scenario failed.
 #
 # The limiters (login, lookup, quote, accept) store their windows in the Postgres table `rate_limit_windows`, so they survive
-# an app restart. The runner empties that table (TRUNCATE on the local test database, QA-only) before the run, after
-# AGT-002 and RET-005 (which exhaust limits on purpose) and before retrying a scenario that failed on a 429 / throttle or an
+# an app restart. The runner empties that table (TRUNCATE on the local test database, QA-only) before every scenario
+# (AGT-002 and RET-005 exhaust limits on purpose, and scenarios finish in seconds) and before retrying a scenario that failed on a 429 / throttle or an
 # unhydrated page ("login did not reach the inbox", 'no field labelled "..."'). A real UI regression needs to fail twice.
 # Restarting the app before every scenario was tried and made things worse: a cold `next dev` was not hydrated in time.
 set -u
@@ -52,9 +52,10 @@ for area in $AREAS; do
     # SET-001 restarts the dev server and truncates its log; keep the log of everything that ran before it.
     case "$id" in SET-*) cp "$QA_DIR/test-env-app.log" "$LOG_DIR/app-before-$id.log" 2>/dev/null || true ;; esac
     start=$(date +%s)
+    reset_throttle
     sh "$f" > "$LOG_DIR/$id.log" 2>&1; rc=$?
     if [ "$rc" -ne 0 ] && grep -q -E '429|throttl|login did not reach the inbox|no field labelled' "$LOG_DIR/$id.log"; then
-      echo "      $id failed on a rate limiter or an unhydrated page; retrying once after resetting the throttle"; reset_throttle
+      echo "      $id failed on a rate limiter or an unhydrated page; retrying once after resetting the throttle"; cp "$LOG_DIR/$id.log" "$LOG_DIR/$id.first.log"; reset_throttle
       sh "$f" > "$LOG_DIR/$id.log" 2>&1; rc=$?
     fi
     secs=$(( $(date +%s) - start ))
@@ -63,10 +64,7 @@ for area in $AREAS; do
     else
       fail=$((fail + 1)); failed="$failed $id"; echo "FAIL  $id (${secs}s, rc=$rc): $(grep -m1 '^FAIL' "$LOG_DIR/$id.log")"
     fi
-    case "$id" in
-      AGT-002-*|RET-005-*) reset_throttle ;;
-      SET-*) warm ;;
-    esac
+    case "$id" in SET-*) warm ;; esac
   done
 done
 
