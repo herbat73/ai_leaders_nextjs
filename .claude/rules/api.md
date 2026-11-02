@@ -13,6 +13,9 @@ See AGENTS.md for the shared conventions (do not duplicate them here).
 - Validate input with the shared Zod schemas from `packages/core/src/validators/<concept>/`.
 - Every agent-only route passes `authenticate: requireAgent` to `apiHandler`/`makeCrudRoute`; `proxy.ts` is only the
   optimistic first line.
+- Every agent route also states who may call it: `permission: "MANAGE_RULES"` or an explicit `permission: ANY_AGENT` next to
+  `authenticate` (checked before the body is parsed; never `requirePermission` in the handler body). A new agent route
+  goes into `ROUTE_PERMISSIONS` in `packages/core/src/http/agent-routes.coverage.test.ts`, or `npm test` fails.
 - Mutations and client-initiated reads reach routes through `apiCall` (`packages/ui/src/admin/api/api-call.ts`, the only
   sanctioned `fetch('/api/*')` site). Do not add Server Actions.
 - After changing `packages/core/src/http`, restart `next dev`: route bundles keep the stale `apiHandler`, so a new

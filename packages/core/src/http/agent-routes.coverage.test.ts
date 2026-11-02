@@ -83,3 +83,55 @@ describe("agent route protection covers every page and route in the app", () => 
     for (const entry of PUBLIC_ROUTES) expect(entries).toContain(entry);
   });
 });
+
+/**
+ * The permission each protected API route file declares, one entry per exported handler (sorted). Adding an agent route
+ * or changing who may call one means editing this table, which makes the decision visible in review. `MANAGE_RULES` is
+ * manager-only; `any-agent` is every signed-in agent (the service enforces any finer rule, e.g. the refund limit on
+ * `PATCH /api/returns/[id]`). Routes without an agent session (the public list above) are not in the table.
+ */
+const ROUTE_PERMISSIONS: Record<string, string[]> = {
+  "agents/route.ts": ["MANAGE_RULES", "MANAGE_RULES"],
+  "agents/[id]/route.ts": ["MANAGE_RULES"],
+  "agents/logout/route.ts": ["any-agent"],
+  "discovery/case-sample/route.ts": ["any-agent"],
+  "returns/route.ts": ["any-agent"],
+  "returns/[id]/route.ts": ["any-agent"],
+  "suppliers/route.ts": ["MANAGE_RULES", "any-agent"],
+  "suppliers/[id]/route.ts": ["MANAGE_RULES"],
+  "supplier-claims/route.ts": ["any-agent", "any-agent"],
+  "supplier-claims/[id]/route.ts": ["any-agent"],
+  "supplier-claims/[id]/send/route.ts": ["any-agent"],
+};
+
+describe("every agent API route declares its permission", () => {
+  const API_DIR = join(APP_DIR, "api");
+  const files = walk(API_DIR).filter((file) => file.endsWith("route.ts"));
+  const agentFiles = files.filter((file) => readFileSync(file, "utf8").includes("authenticate:"));
+  const keyOf = (file: string): string => relative(API_DIR, file).split(sep).join("/");
+  const declared = (file: string): string[] =>
+    [...readFileSync(file, "utf8").matchAll(/\bpermission:\s*(?:"(MANAGE_RULES)"|(ANY_AGENT))/g)].map((m) => m[1] ?? "any-agent").sort();
+  const handlers = (file: string): number => (readFileSync(file, "utf8").match(/\bauthenticate:/g) ?? []).length;
+
+  it("finds the agent routes", () => {
+    expect(agentFiles.length).toBeGreaterThan(8);
+  });
+
+  it.each(agentFiles.map(keyOf).sort())("%s declares a permission for each of its handlers", (key) => {
+    const file = join(API_DIR, key);
+    expect(declared(file), "a handler with `authenticate` but no `permission:` (use ANY_AGENT only on purpose)").toHaveLength(handlers(file));
+  });
+
+  it.each(agentFiles.map(keyOf).sort())("%s matches the permission table", (key) => {
+    expect(ROUTE_PERMISSIONS[key], `add ${key} to ROUTE_PERMISSIONS`).toBeDefined();
+    expect(declared(join(API_DIR, key))).toEqual([...(ROUTE_PERMISSIONS[key] ?? [])].sort());
+  });
+
+  it("has no table entry for a route that no longer exists", () => {
+    expect(Object.keys(ROUTE_PERMISSIONS).sort()).toEqual(agentFiles.map(keyOf).sort());
+  });
+
+  it("keeps the permission check out of handler bodies", () => {
+    for (const file of agentFiles) expect(readFileSync(file, "utf8"), keyOf(file)).not.toMatch(/requirePermission\(/);
+  });
+});

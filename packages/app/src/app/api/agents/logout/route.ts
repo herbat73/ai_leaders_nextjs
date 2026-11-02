@@ -1,4 +1,4 @@
-import { apiHandler, okResponse } from "@easyrms/core";
+import { ANY_AGENT, apiHandler, okResponse } from "@easyrms/core";
 
 import { serializeClearedAgentSessionCookie } from "@/server/agent-session";
 import { requireAgent } from "@/server/agent-auth";
@@ -15,4 +15,4 @@ export const dynamic = "force-dynamic";
 export const POST = apiHandler(async (_request, _context, agent) => {
   await (await resolveAgentService()).logout(agent.id);
   return okResponse({}, { headers: { "cache-control": "no-store", "set-cookie": serializeClearedAgentSessionCookie() } });
-}, { ...httpOptions, authenticate: requireAgent });
+}, { ...httpOptions, authenticate: requireAgent, permission: ANY_AGENT });

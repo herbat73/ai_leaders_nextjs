@@ -1,4 +1,5 @@
 import {
+  ANY_AGENT,
   apiHandler,
   okResponse,
   parseJsonBody,
@@ -26,7 +27,7 @@ export const GET = apiHandler(async (request) => {
     ...(kind === null ? {} : { kind }),
   });
   return (await resolveReturnService()).list(filter);
-}, { ...httpOptions, authenticate: requireAgent });
+}, { ...httpOptions, authenticate: requireAgent, permission: ANY_AGENT });
 
 /**
  * Customer submission. Session required (401); the order comes from the cookie, never from the body. 201 for a new

@@ -3,7 +3,7 @@ import { z, type ZodType } from "zod";
 import { apiHandler } from "./api-handler";
 import { ValidationError } from "../errors";
 import { parseJsonBody, validateWith } from "./parse";
-import type { ApiHandlerOptions } from "./api-handler";
+import type { ApiHandlerOptions, RoutePermission } from "./api-handler";
 import type { ApiLogger, RouteContext } from "./types";
 
 type Handler = (request: Request, context: RouteContext) => Promise<Response>;
@@ -29,6 +29,8 @@ export interface CrudRouteConfig<
   allowedOrigins?: ApiHandlerOptions["allowedOrigins"];
   /** Forwarded to `apiHandler`: runs after CSRF and before the body is parsed; its result is the last handler argument. */
   authenticate?: (request: Request) => Promise<TPrincipal>;
+  /** Forwarded to `apiHandler`: the permission every configured operation of this route requires (or `ANY_AGENT`). */
+  permission?: RoutePermission;
   /** Parses the `[id]` route param for item operations. Defaults to a positive integer. */
   idSchema?: ZodType<TId>;
   list?: (service: TService, principal: TPrincipal) => Promise<unknown>;
@@ -74,6 +76,7 @@ export function makeCrudRoute<
     trustProxy: config.trustProxy,
     allowedOrigins: config.allowedOrigins,
     authenticate: config.authenticate,
+    permission: config.permission,
   };
   const idSchema = (config.idSchema ?? defaultIdSchema) as ZodType<TId>;
   const readId = async (context: RouteContext): Promise<TId> => {

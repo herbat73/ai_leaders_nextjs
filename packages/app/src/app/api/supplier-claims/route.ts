@@ -1,4 +1,4 @@
-import { apiHandler, okResponse, parseJsonBody, parseWith, supplierClaimCreateSchema, supplierClaimListQuerySchema } from "@easyrms/core";
+import { ANY_AGENT, apiHandler, okResponse, parseJsonBody, parseWith, supplierClaimCreateSchema, supplierClaimListQuerySchema } from "@easyrms/core";
 
 import { requireAgent } from "@/server/agent-auth";
 import { resolveSupplierClaimService } from "@/server/container";
@@ -13,7 +13,7 @@ export const GET = apiHandler(async (request) => {
   const status = new URL(request.url).searchParams.get("status");
   const filter = parseWith(supplierClaimListQuerySchema, status === null ? {} : { status });
   return okResponse({ claims: await (await resolveSupplierClaimService()).list(filter) }, { headers: NO_STORE });
-}, { ...httpOptions, authenticate: requireAgent });
+}, { ...httpOptions, authenticate: requireAgent, permission: ANY_AGENT });
 
 /**
  * Creates the claim for a complaint with a confirmed defect and tries to send it in the same call: 201 with
@@ -24,4 +24,4 @@ export const POST = apiHandler(async (request, _context, agent) => {
   const input = await parseJsonBody(request, supplierClaimCreateSchema, { maxBytes: 4096 });
   const result = await (await resolveSupplierClaimService()).create(input, agent);
   return okResponse(result, { status: 201, headers: NO_STORE });
-}, { ...httpOptions, authenticate: requireAgent });
+}, { ...httpOptions, authenticate: requireAgent, permission: ANY_AGENT });

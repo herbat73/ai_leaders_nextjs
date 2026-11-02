@@ -1,4 +1,4 @@
-import { makeCrudRoute, requirePermission, supplierUpdateSchema } from "@easyrms/core";
+import { makeCrudRoute, supplierUpdateSchema } from "@easyrms/core";
 
 import { requireAgent } from "@/server/agent-auth";
 import { resolveSupplierService } from "@/server/container";
@@ -8,12 +8,10 @@ import { httpOptions } from "@/server/http-options";
 export const { PATCH } = makeCrudRoute({
   ...httpOptions,
   authenticate: requireAgent,
+  permission: "MANAGE_RULES",
   resolve: resolveSupplierService,
   patch: {
     schema: supplierUpdateSchema,
-    handler: (service, id, input, agent) => {
-      requirePermission(agent, "MANAGE_RULES");
-      return service.update(id, input);
-    },
+    handler: (service, id, input) => service.update(id, input),
   },
 });
