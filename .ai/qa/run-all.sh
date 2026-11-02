@@ -7,23 +7,16 @@
 # Needs the test environment (.ai/qa/test-env.json, .ai/qa/test-env.env); each scenario starts it on demand.
 # Logs go to the gitignored .ai/qa/artifacts_run-all/<ID>.log. Exit code is 1 when any scenario failed.
 #
-# Pauses keep the run under the app's rate limiters (see .ai/lessons.md):
-#   AGT-002 uses 9 of the 10 agent logins a minute; RET-004/005 drain the order-lookup limiter.
-# Those fixed pauses are not enough on their own (five agent logins in a row still exceed 10 a minute), so a
-# scenario that fails on a 429 / throttle is retried once after the same pause. PAUSE=<seconds> overrides it.
-# A UI login that is throttled only reports "login did not reach the inbox", and a page that has not hydrated
-# reports 'no field labelled "..."'; both are retried too, so a real UI regression needs to fail twice to count.
-#
-# Known limit: the order-lookup limiter also allows only 5 failed lookups per 10 minutes, which no pause or retry here
-# outlasts, and the limiters live in the app process (a restart resets them). Start a full run from a freshly started
-# app (sh .ai/scripts/test-env-down.sh && sh .ai/scripts/test-env-up.sh), not within 10 minutes of the previous run.
+# The limiters (login, lookup, quote, accept) store their windows in the Postgres table `rate_limit_windows`, so they survive
+# an app restart. The runner empties that table (TRUNCATE on the local test database, QA-only) before every scenario
+# (AGT-002 and RET-005 exhaust limits on purpose, and scenarios finish in seconds) and before retrying a scenario that failed on a 429 / throttle or an
+# unhydrated page ("login did not reach the inbox", 'no field labelled "..."'). A real UI regression needs to fail twice.
 # Restarting the app before every scenario was tried and made things worse: a cold `next dev` was not hydrated in time.
 set -u
 
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 QA_DIR="$ROOT/.ai/qa"
 LOG_DIR="$QA_DIR/artifacts_run-all"
-PAUSE=${PAUSE:-75}
 mkdir -p "$LOG_DIR"
 
 if [ $# -gt 0 ]; then AREAS="$*"; else AREAS=$(cd "$QA_DIR" && ls -d [A-Z][A-Z][A-Z] 2>/dev/null); fi
@@ -38,7 +31,18 @@ warm() {
     curl -s -o /dev/null -L --max-time 120 "$base$p" || true
   done
 }
+# The limiters keep their windows in the `rate_limit_windows` table (shared Postgres store), so they survive an app restart
+# and a failed-lookup lockout from RET-005 would break every later scenario on PL-10001. QA-only escape hatch on the
+# disposable local test database (same exception as `db_release_rma`): empty the table instead of waiting out the windows.
+reset_throttle() {
+  if command -v psql >/dev/null 2>&1; then
+    psql "${DATABASE_URL:-postgres://easyrms:easyrms@127.0.0.1:5433/easyrms}" -qtAc "TRUNCATE rate_limit_windows" >/dev/null 2>&1
+  else
+    (cd "$ROOT" && docker compose exec -T postgres psql -U easyrms -d easyrms -qtAc "TRUNCATE rate_limit_windows" </dev/null >/dev/null 2>&1)
+  fi || echo "      warning: could not reset rate_limit_windows; scenarios may hit stale limits"
+}
 warm
+reset_throttle
 
 pass=0; fail=0; failed=""
 for area in $AREAS; do
@@ -48,9 +52,10 @@ for area in $AREAS; do
     # SET-001 restarts the dev server and truncates its log; keep the log of everything that ran before it.
     case "$id" in SET-*) cp "$QA_DIR/test-env-app.log" "$LOG_DIR/app-before-$id.log" 2>/dev/null || true ;; esac
     start=$(date +%s)
+    reset_throttle
     sh "$f" > "$LOG_DIR/$id.log" 2>&1; rc=$?
     if [ "$rc" -ne 0 ] && grep -q -E '429|throttl|login did not reach the inbox|no field labelled' "$LOG_DIR/$id.log"; then
-      echo "      $id failed on a rate limiter or an unhydrated page; retrying once after ${PAUSE}s"; sleep "$PAUSE"
+      echo "      $id failed on a rate limiter or an unhydrated page; retrying once after resetting the throttle"; cp "$LOG_DIR/$id.log" "$LOG_DIR/$id.first.log"; reset_throttle
       sh "$f" > "$LOG_DIR/$id.log" 2>&1; rc=$?
     fi
     secs=$(( $(date +%s) - start ))
@@ -59,10 +64,7 @@ for area in $AREAS; do
     else
       fail=$((fail + 1)); failed="$failed $id"; echo "FAIL  $id (${secs}s, rc=$rc): $(grep -m1 '^FAIL' "$LOG_DIR/$id.log")"
     fi
-    case "$id" in
-      AGT-002-*|RET-005-*) echo "      pause ${PAUSE}s (rate limiters)"; sleep "$PAUSE" ;;
-      SET-*) warm ;;
-    esac
+    case "$id" in SET-*) warm ;; esac
   done
 done
 
