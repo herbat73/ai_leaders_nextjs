@@ -40,7 +40,6 @@ describe("isAgentProtectedPath", () => {
     "/admin/invite/Zk-_9",
     "/api/agents/login",
     "/api/agents/invite/accept",
-    "/api/returns",
     "/api/returns/lookup",
     "/api/returns/quote",
     "/api/returns/session",
@@ -50,6 +49,15 @@ describe("isAgentProtectedPath", () => {
     "/api/agentsx",
   ])("leaves %s public", (path) => {
     expect(isAgentProtectedPath(path)).toBe(false);
+  });
+
+  it("treats /api/returns per method: only the customer POST is public", () => {
+    expect(isAgentProtectedPath("/api/returns", "POST")).toBe(false);
+    expect(isAgentProtectedPath("/api/returns", "post")).toBe(false);
+    for (const method of ["GET", "HEAD", "OPTIONS", "PUT", "PATCH", "DELETE"]) {
+      expect(isAgentProtectedPath("/api/returns", method)).toBe(true);
+    }
+    expect(isAgentProtectedPath("/api/returns")).toBe(true);
   });
 
   it("is case-sensitive like the router", () => {

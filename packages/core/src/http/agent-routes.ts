@@ -1,13 +1,17 @@
+/** Methods of `/api/returns` reachable without an agent (the customer submission); anything else is protected. */
+const PUBLIC_RETURNS_METHODS: ReadonlySet<string> = new Set(["POST"]);
+
 /**
  * Which request paths need an agent session. Used by `proxy.ts` as the optimistic first line of defense; the routes and
  * pages still run their own authoritative check against the database. Kept here, pure and tested, because a mistake in
  * these lists is a fail-open hole.
  *
  * Protected: every `/admin/**` page except the login page and the invite page (one token segment), `/api/agents/**`
- * except login and invite acceptance, `/api/discovery/**`, `/api/suppliers/**`, `/api/supplier-claims/**`, and `/api/returns/<digits>` (the agent decision route). The
- * customer routes (`/api/returns`, `lookup`, `quote`, `session`) stay public.
+ * except login and invite acceptance, `/api/discovery/**`, `/api/suppliers/**`, `/api/supplier-claims/**`, and `/api/returns/<digits>` (the agent decision route). `/api/returns`
+ * is per method: `POST` (customer submission) is public, every other method (the list, `GET`) needs an agent. The other
+ * customer routes (`lookup`, `quote`, `session`) stay public.
  */
-export function isAgentProtectedPath(pathname: string): boolean {
+export function isAgentProtectedPath(pathname: string, method = "GET"): boolean {
   if (pathname === "/admin" || pathname.startsWith("/admin/")) {
     if (pathname === "/admin/login") return false;
     if (/^\/admin\/invite\/[^/]+$/.test(pathname)) return false;
@@ -19,6 +23,7 @@ export function isAgentProtectedPath(pathname: string): boolean {
   if (pathname === "/api/discovery" || pathname.startsWith("/api/discovery/")) return true;
   if (pathname === "/api/suppliers" || pathname.startsWith("/api/suppliers/")) return true;
   if (pathname === "/api/supplier-claims" || pathname.startsWith("/api/supplier-claims/")) return true;
+  if (pathname === "/api/returns") return !PUBLIC_RETURNS_METHODS.has(method.toUpperCase());
   return /^\/api\/returns\/\d+$/.test(pathname);
 }
 

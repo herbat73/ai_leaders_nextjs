@@ -36,7 +36,7 @@ And API odmawia wyłączenia własnego konta (409 `self_disable`)
 
 ## Przypadki brzegowe i uwagi
 
-- `GET /api/returns` nie wymaga agenta, więc sesję sprawdza `PATCH` (kolejność: uwierzytelnienie 401, potem istnienie 404).
+- Sesję sprawdza `PATCH` na nieznanym id (jak dawniej, gdy lista była publiczna; teraz `GET /api/returns` też wymaga agenta) (kolejność: uwierzytelnienie 401, potem istnienie 404).
 - Wyłączenie ostatniego managera (`last_manager`) wymaga drugiego managera i nie jest tu sprawdzane.
 
 ## Sprzątanie

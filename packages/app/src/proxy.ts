@@ -13,7 +13,7 @@ import { AGENT_SESSION_COOKIE, getAgentSessionService } from "@/server/agent-ses
  */
 export async function proxy(request: NextRequest): Promise<NextResponse> {
   const { pathname, search } = request.nextUrl;
-  if (!isAgentProtectedPath(pathname)) return NextResponse.next();
+  if (!isAgentProtectedPath(pathname, request.method)) return NextResponse.next();
 
   try {
     const token = request.cookies.get(AGENT_SESSION_COOKIE)?.value;
@@ -37,5 +37,5 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 
 export const config = {
   // Constants only (Next analyses them at build time). The exact public/protected split lives in `isAgentProtectedPath`.
-  matcher: ["/admin/:path*", "/api/agents/:path*", "/api/discovery/:path*", "/api/returns/:id"],
+  matcher: ["/admin/:path*", "/api/agents/:path*", "/api/discovery/:path*", "/api/returns", "/api/returns/:id"],
 };
