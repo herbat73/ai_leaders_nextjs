@@ -93,7 +93,7 @@ All bodies are validated with Zod schemas in `core/src/validators/agents/` share
 | Route | Auth | Behavior |
 |---|---|---|
 | `POST /api/agents/login` | public | `{ email, password }` → sets the cookie, returns `{ displayName }`. Every failure (unknown e-mail, wrong password, disabled, not yet invited-and-accepted) returns the same 401 `invalid_credentials`. Throttled: 10 attempts/min per IP and 5 failures per 10 min per (e-mail, IP), then 429, same shape as the customer lookup (brief R17). A missing agent still runs a dummy hash verification so response time does not reveal existence. |
-| `POST /api/agents/logout` | agent | clears the cookie; idempotent |
+| `POST /api/agents/logout` | agent | clears the cookie and ends all the agent's sessions (epoch + 1, since #82); a repeat with the old cookie is 401 |
 | `GET /api/agents` | agent with `MANAGE_RULES` | list: id, e-mail, display name, status, permissions |
 | `POST /api/agents` | agent with `MANAGE_RULES` | `{ email, displayName, permissions }` → creates (or re-invites a `disabled` or still-`invited` agent: new token replaces the stored hash, `session_epoch` +1, `permissions` replaced) and returns `{ agent, inviteToken }` once. An `active` e-mail answers 409. Sends `agent_invite` through `MailPort`. |
 | `PATCH /api/agents/[id]` | agent with `MANAGE_RULES` | `{ status: "disabled" }`: sets disabled, `session_epoch` +1. 409 `last_manager` if it would leave no active agent with `MANAGE_RULES`; 409 `self_disable` for the caller's own id. |
