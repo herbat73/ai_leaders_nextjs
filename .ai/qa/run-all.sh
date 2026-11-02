@@ -7,11 +7,10 @@
 # Needs the test environment (.ai/qa/test-env.json, .ai/qa/test-env.env); each scenario starts it on demand.
 # Logs go to the gitignored .ai/qa/artifacts_run-all/<ID>.log. Exit code is 1 when any scenario failed.
 #
-# The limiters (login, lookup, quote, accept) store their windows in the Postgres table `rate_limit_windows`, so they survive
-# an app restart. The runner empties that table (TRUNCATE on the local test database, QA-only) before every scenario
-# (AGT-002 and RET-005 exhaust limits on purpose, and scenarios finish in seconds) and before retrying a scenario that failed on a 429 / throttle or an
-# unhydrated page ("login did not reach the inbox", 'no field labelled "..."'). A real UI regression needs to fail twice.
-# Restarting the app before every scenario was tried and made things worse: a cold `next dev` was not hydrated in time.
+# Every scenario starts on a fresh database: qa_init (lib/common.sh) drops `easyrms_qa` and clones it from the migrated
+# template `easyrms_qa_template` (lib/qa-db.sh), so no rows, held units, agents or rate-limit windows leak between scenarios.
+# A scenario that failed on a 429 / throttle or an unhydrated page ("login did not reach the inbox", 'no field labelled "..."')
+# is retried once, again on a fresh database; a real UI regression needs to fail twice.
 set -u
 
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
@@ -31,18 +30,10 @@ warm() {
     curl -s -o /dev/null -L --max-time 120 "$base$p" || true
   done
 }
-# The limiters keep their windows in the `rate_limit_windows` table (shared Postgres store), so they survive an app restart
-# and a failed-lookup lockout from RET-005 would break every later scenario on PL-10001. QA-only escape hatch on the
-# disposable local test database (same exception as `db_release_rma`): empty the table instead of waiting out the windows.
-reset_throttle() {
-  if command -v psql >/dev/null 2>&1; then
-    psql "${DATABASE_URL:-postgres://easyrms:easyrms@127.0.0.1:5433/easyrms}" -qtAc "TRUNCATE rate_limit_windows" >/dev/null 2>&1
-  else
-    (cd "$ROOT" && docker compose exec -T postgres psql -U easyrms -d easyrms -qtAc "TRUNCATE rate_limit_windows" </dev/null >/dev/null 2>&1)
-  fi || echo "      warning: could not reset rate_limit_windows; scenarios may hit stale limits"
-}
+# Bring the environment up first: when the running app is not the one on the QA database, test-env-up.sh restarts it, and
+# warming the old server would leave the new one cold (the first scenarios then fail on hydration).
+sh "$ROOT/.ai/scripts/test-env-up.sh" >/dev/null 2>&1 || { echo "test environment did not start" >&2; exit 2; }
 warm
-reset_throttle
 
 pass=0; fail=0; failed=""
 for area in $AREAS; do
@@ -52,10 +43,9 @@ for area in $AREAS; do
     # SET-001 restarts the dev server and truncates its log; keep the log of everything that ran before it.
     case "$id" in SET-*) cp "$QA_DIR/test-env-app.log" "$LOG_DIR/app-before-$id.log" 2>/dev/null || true ;; esac
     start=$(date +%s)
-    reset_throttle
     sh "$f" > "$LOG_DIR/$id.log" 2>&1; rc=$?
     if [ "$rc" -ne 0 ] && grep -q -E '429|throttl|login did not reach the inbox|no field labelled' "$LOG_DIR/$id.log"; then
-      echo "      $id failed on a rate limiter or an unhydrated page; retrying once after resetting the throttle"; cp "$LOG_DIR/$id.log" "$LOG_DIR/$id.first.log"; reset_throttle
+      echo "      $id failed on a rate limiter or an unhydrated page; retrying once on a fresh database"; cp "$LOG_DIR/$id.log" "$LOG_DIR/$id.first.log"
       sh "$f" > "$LOG_DIR/$id.log" 2>&1; rc=$?
     fi
     secs=$(( $(date +%s) - start ))

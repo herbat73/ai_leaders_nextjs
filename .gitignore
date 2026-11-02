@@ -59,3 +59,6 @@ storybook-static/
 .ai/qa/test-env*
 .ai/qa/artifacts_*
 .claude/settings.local.json
+
+# MikroORM snapshot written when the QA template database is migrated (.ai/qa/lib/qa-db.sh)
+packages/db/src/migrations/.snapshot-easyrms_qa_template.json

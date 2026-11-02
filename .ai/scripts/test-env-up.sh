@@ -16,6 +16,7 @@ LOCK_DIR="$QA_DIR/test-env.lock"
 CACHE_FILE="$QA_DIR/test-env-build-cache.json"
 LOG_FILE="$QA_DIR/test-env-app.log"
 PID_FILE="$QA_DIR/test-env-app.pid"
+. "$ROOT/.ai/qa/lib/qa-db.sh"
 PREFERRED_PORT=3000
 HEALTH_PATH=/api/health
 DB_PORT=5433                                  # scripts/db.sh default (EASYRMS_DB_PORT)
@@ -69,6 +70,7 @@ if [ "$FORCE" = 0 ] && [ -f "$DESCRIPTOR" ] && [ "$(json_field status)" = runnin
   if [ -n "$STARTED" ] && [ $(( $(epoch) - STARTED )) -le "$TTL" ]; then fresh=1; fi
   # a source file newer than the descriptor invalidates reuse
   if [ "$fresh" = 1 ] && [ -n "$(find packages -path '*/node_modules' -prune -o -path '*/.next' -prune -o -path '*/storybook-static' -prune -o -type f -newer "$DESCRIPTOR" -print -quit 2>/dev/null)" ]; then fresh=0; fi
+  [ "$(json_field database)" = "$QA_DB_NAME" ] || fresh=0   # an app on another database would make the fresh-DB reset meaningless
   if { [ "$APP_PID" = 0 ] || pid_alive "$APP_PID"; } && [ "$fresh" = 1 ] && probe "$BASE/" && probe "$BASE$HEALTH_PATH"; then
     echo "TEST_ENV_STATUS=running"
     echo "TEST_ENV_BASE_URL=$BASE"
@@ -120,6 +122,7 @@ free_port() {
 OWNED=1
 if probe "http://localhost:$PREFERRED_PORT$HEALTH_PATH"; then
   # A healthy dev server this script did not start (a developer's own): attach, never stop it.
+  echo "warning: attaching to a server that was not started with EASYRMS_DATABASE_URL=$QA_DB_URL; the fresh-database reset will not affect it" >&2
   OWNED=0; PORT=$PREFERRED_PORT; BASE="http://localhost:$PORT"; APP_PID=0
   START_CMD="(attached to existing server on port $PORT)"
   echo "attaching to existing healthy server at $BASE"
@@ -128,6 +131,8 @@ else
   BASE="http://127.0.0.1:$PORT"
   START_CMD="npm run dev -w @easyrms/app -- -H 127.0.0.1 -p $PORT"
   : > "$LOG_FILE"
+  qa_db_reset || { echo "could not create the QA database" >&2; exit 1; }
+  export EASYRMS_DATABASE_URL="$QA_DB_URL"
   nohup sh -c "exec $START_CMD" >> "$LOG_FILE" 2>&1 &
   APP_PID=$!
   echo "$APP_PID" > "$PID_FILE"
@@ -153,6 +158,7 @@ cat > "$DESCRIPTOR" <<EOF
   "startedByThisRepo": $([ "$OWNED" = 1 ] && echo true || echo false),
   "startScript": ".ai/scripts/test-env-up.sh",
   "stopScript": ".ai/scripts/test-env-down.sh",
+  "database": "$QA_DB_NAME",
   "app": { "startCommand": "$START_CMD", "port": $PORT, "healthPath": "$HEALTH_PATH", "pid": $APP_PID },
   "services": [
     { "type": "postgres", "host": "127.0.0.1", "port": $DB_PORT, "container": "", "startedByThisRun": $DB_STARTED_BY_US, "mode": "$DB_MODE", "env": {} }
