@@ -8,6 +8,8 @@ import {
   AgentRuleError,
   AgentService,
   AGENT_INVITE_TTL_MS,
+  parseManagerInviteTtl,
+  type AgentInviteConfig,
   hashInviteToken,
   InvalidCredentialsError,
   InviteInvalidError,
@@ -25,11 +27,11 @@ import type {
 
 const T0 = new Date("2026-10-24T10:00:00Z");
 const SECRET = "s".repeat(40);
+const MANAGER_TTL_MS = 8 * 3600_000;
 
 interface StoredAgent extends AgentRecord {
   passwordHash: string | null;
   inviteTokenHash: string | null;
-  inviteExpiresAt: Date | null;
 }
 
 const strip = (row: StoredAgent): AgentRecord => ({
@@ -39,6 +41,8 @@ const strip = (row: StoredAgent): AgentRecord => ({
   permissions: row.permissions,
   status: row.status,
   sessionEpoch: row.sessionEpoch,
+  inviteExpiresAt: row.inviteExpiresAt,
+  acceptedAt: row.acceptedAt,
 });
 
 /** In-memory stand-in for the `db` port with the same invite, epoch and last-manager semantics. */
@@ -71,6 +75,7 @@ function makeRepository(clock: () => Date) {
         passwordHash: null,
         inviteTokenHash: input.inviteTokenHash,
         inviteExpiresAt: input.inviteExpiresAt,
+        acceptedAt: null,
       };
       rows.push(row);
       return strip(row);
@@ -86,6 +91,7 @@ function makeRepository(clock: () => Date) {
         sessionEpoch: row.sessionEpoch + 1,
         inviteTokenHash: input.inviteTokenHash,
         inviteExpiresAt: input.inviteExpiresAt,
+        acceptedAt: null,
       });
       return strip(row);
     },
@@ -104,6 +110,7 @@ function makeRepository(clock: () => Date) {
         sessionEpoch: row.sessionEpoch + 1,
         inviteTokenHash: null,
         inviteExpiresAt: null,
+        acceptedAt: now,
       });
       return strip(row);
     },
@@ -133,7 +140,7 @@ function makeHasher() {
   return hasher;
 }
 
-function setup(options: { mail?: MailPort; hasher?: PasswordHasher } = {}) {
+function setup(options: { mail?: MailPort; hasher?: PasswordHasher; inviteConfig?: AgentInviteConfig } = {}) {
   let now = T0;
   const clock = () => now;
   const { repository, rows } = makeRepository(clock);
@@ -151,6 +158,7 @@ function setup(options: { mail?: MailPort; hasher?: PasswordHasher } = {}) {
     mailPort,
     logger,
     clock,
+    inviteConfig: options.inviteConfig ?? { managerInviteTtlMs: MANAGER_TTL_MS },
   }, { inviteTokenGenerator: () => `token-${++tokenCounter}` });
   return {
     service,
@@ -279,7 +287,7 @@ describe("login", () => {
 });
 
 describe("invite and accept", () => {
-  it("stores only the token hash, expires in 72 hours and sends the link by mail", async () => {
+  it("stores only the token hash, expires in 8 hours for a manager and sends the link by mail", async () => {
     const s = setup();
 
     const { agent, inviteToken } = await s.service.invite({
@@ -293,7 +301,7 @@ describe("invite and accept", () => {
     const stored = s.rows[0];
     expect(stored.inviteTokenHash).toBe(hashInviteToken(inviteToken));
     expect(stored.inviteTokenHash).not.toContain(inviteToken);
-    expect(stored.inviteExpiresAt?.getTime()).toBe(T0.getTime() + AGENT_INVITE_TTL_MS);
+    expect(stored.inviteExpiresAt?.getTime()).toBe(T0.getTime() + MANAGER_TTL_MS);
     expect(s.sent).toEqual([
       {
         template: "agent_invite",
@@ -301,10 +309,44 @@ describe("invite and accept", () => {
         data: {
           displayName: "Nowy",
           inviteUrl: `https://rms.example/admin/invite/${inviteToken}`,
-          expiresAt: new Date(T0.getTime() + AGENT_INVITE_TTL_MS).toISOString(),
+          expiresAt: new Date(T0.getTime() + MANAGER_TTL_MS).toISOString(),
         },
       },
     ]);
+  });
+
+  it("gives a plain agent 72 hours and never a manager invite longer than that, whatever the config", async () => {
+    const s = setup({ inviteConfig: { managerInviteTtlMs: 200 * 3600_000 } });
+
+    await s.service.invite({ email: "plain@example.com", displayName: "P", permissions: [] });
+    await s.service.invite({ email: "boss@example.com", displayName: "B", permissions: ["MANAGE_RULES"] });
+
+    expect(s.rows[0].inviteExpiresAt?.getTime()).toBe(T0.getTime() + AGENT_INVITE_TTL_MS);
+    expect(s.rows[1].inviteExpiresAt?.getTime()).toBe(T0.getTime() + AGENT_INVITE_TTL_MS);
+  });
+
+  it("a manager invite is dead after its short validity while a plain one still works", async () => {
+    const s = setup();
+    const boss = await s.service.invite({ email: "boss@example.com", displayName: "B", permissions: ["MANAGE_RULES"] });
+    const plain = await s.service.invite({ email: "plain@example.com", displayName: "P", permissions: [] });
+    s.advance(MANAGER_TTL_MS);
+
+    await expect(s.service.acceptInvite({ ip: "9.9.9.9", token: boss.inviteToken, password: "a long enough password" })).rejects.toBeInstanceOf(InviteInvalidError);
+    await expect(s.service.acceptInvite({ ip: "9.9.9.9", token: plain.inviteToken, password: "a long enough password" })).resolves.toBeDefined();
+  });
+
+  it("records when the invite was accepted and clears it on a re-invite", async () => {
+    const s = setup();
+    const { inviteToken } = await s.service.invite({ email: "a@example.com", displayName: "A", permissions: [] });
+    s.advance(60_000);
+    await s.service.acceptInvite({ ip: "9.9.9.9", token: inviteToken, password: "a long enough password" });
+    expect(s.rows[0].acceptedAt).toEqual(new Date(T0.getTime() + 60_000));
+    expect(s.rows[0].inviteExpiresAt).toBeNull();
+
+    await s.service.disable(999, s.rows[0].id);
+    await s.service.invite({ email: "a@example.com", displayName: "A", permissions: [] });
+    expect(s.rows[0]).toMatchObject({ status: "invited", acceptedAt: null });
+    expect(s.rows[0].inviteExpiresAt).not.toBeNull();
   });
 
   it("accepting sets the password, activates the agent and starts a session", async () => {
@@ -487,5 +529,18 @@ describe("disable", () => {
 
     expect(disabled).toMatchObject({ id: other.id, status: "disabled", sessionEpoch: 2 });
     expect((await s.service.list()).map((agent) => agent.status)).toEqual(["active", "disabled"]);
+  });
+});
+
+describe("parseManagerInviteTtl", () => {
+  it("defaults to 8 hours and accepts hours between 0.25 and 72 (comma or dot)", () => {
+    expect(parseManagerInviteTtl(undefined).managerInviteTtlMs).toBe(8 * 3600_000);
+    expect(parseManagerInviteTtl("  ").managerInviteTtlMs).toBe(8 * 3600_000);
+    expect(parseManagerInviteTtl("1,5").managerInviteTtlMs).toBe(5400_000);
+    expect(parseManagerInviteTtl("72").managerInviteTtlMs).toBe(AGENT_INVITE_TTL_MS);
+  });
+
+  it("rejects anything else as a configuration error", () => {
+    for (const bad of ["0", "0.1", "73", "abc", "-4", "Infinity"]) expect(() => parseManagerInviteTtl(bad)).toThrow(/EASYRMS_MANAGER_INVITE_TTL_HOURS/);
   });
 });

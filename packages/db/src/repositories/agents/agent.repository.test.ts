@@ -53,10 +53,12 @@ describe("createInvited and reads", () => {
     expect(await repository().findCredentialsByEmail("nobody@example.com")).toBeNull();
   });
 
+  // Only dates (when the invite expires or was accepted) were added to the record; never the token or its hash.
+  const RECORD_KEYS = ["acceptedAt", "displayName", "email", "id", "inviteExpiresAt", "permissions", "sessionEpoch", "status"];
   it("never exposes credentials or tokens on the record types", async () => {
     const created = await repository().createInvited(invite());
-    expect(Object.keys(created).sort()).toEqual(["displayName", "email", "id", "permissions", "sessionEpoch", "status"]);
-    expect(Object.keys((await repository().list())[0]).sort()).toEqual(["displayName", "email", "id", "permissions", "sessionEpoch", "status"]);
+    expect(Object.keys(created).sort()).toEqual(RECORD_KEYS);
+    expect(Object.keys((await repository().list())[0]).sort()).toEqual(RECORD_KEYS);
   });
 
   it("answers 409 for a duplicate e-mail, including concurrent first invites", async () => {
@@ -120,6 +122,23 @@ describe("consumeInvite", () => {
     expect(await repository().consumeInvite(hashOf(999_999_999), "x", new Date())).toBeNull();
     expect(await repository().consumeInvite(expired.inviteTokenHash, "x", new Date())).toBeNull();
     expect(await repository().consumeInvite(used.inviteTokenHash, "x", new Date())).toBeNull();
+  });
+
+  it("stamps acceptedAt with the accept time, drops the expiry, and a re-invite clears the stamp again", async () => {
+    const input = invite();
+    const created = await repository().createInvited(input);
+    expect(created).toMatchObject({ acceptedAt: null, inviteExpiresAt: input.inviteExpiresAt });
+    const at = new Date("2026-11-02T10:00:00.000Z");
+
+    const accepted = await repository().consumeInvite(input.inviteTokenHash, "scrypt$16$8$1$c2FsdA==$aGFzaA==", at);
+
+    expect(accepted).toMatchObject({ status: "active", acceptedAt: at, inviteExpiresAt: null });
+    expect(await repository().findById(created.id)).toMatchObject({ acceptedAt: at, inviteExpiresAt: null });
+    await activeAgent(["MANAGE_RULES"]);
+    await repository().disable(created.id);
+    const again = await repository().reinvite(created.id, { displayName: "X", permissions: [], inviteTokenHash: hashOf(888_000), inviteExpiresAt: future() });
+    expect(again).toMatchObject({ status: "invited", acceptedAt: null });
+    expect(again?.inviteExpiresAt).not.toBeNull();
   });
 
   it("treats the expiry instant as expired", async () => {

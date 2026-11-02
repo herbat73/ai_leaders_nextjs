@@ -16,6 +16,7 @@ import {
   AgentSessionService,
   createLogMailPort,
   limitHashConcurrency,
+  parseManagerInviteTtl,
   registerCore,
   ScryptPasswordHasher,
   type AgentService,
@@ -57,6 +58,8 @@ async function main(): Promise<number> {
       logger: asValue(logger),
       mailPort: asValue(createLogMailPort({ logger })),
       passwordHasher: asValue(limitHashConcurrency(new ScryptPasswordHasher())),
+      // This script always invites a manager, so the shorter manager validity applies.
+      inviteConfig: asValue(parseManagerInviteTtl(process.env.EASYRMS_MANAGER_INVITE_TTL_HOURS)),
       // Never used: inviting issues no session. A null secret makes any accidental use fail closed.
       agentSessionService: asValue(new AgentSessionService({ secret: null, ttlSeconds: 0, clock: () => new Date() })),
     });
@@ -66,7 +69,7 @@ async function main(): Promise<number> {
     const agentService = container.createScope().resolve<AgentService>("agentService");
     const { agent, inviteToken } = await agentService.invite({ ...parsed.data, inviteLinkBase: `${baseUrl}/admin/invite` });
 
-    console.log(`Agent #${agent.id} (${agent.status}) can set a password with this link (valid 72 hours, single use):`);
+    console.log(`Agent #${agent.id} (${agent.status}) can set a password with this link (single use, expires ${agent.inviteExpiresAt?.toISOString() ?? "soon"}):`);
     console.log(`${baseUrl}/admin/invite/${inviteToken}`);
     return 0;
   } finally {

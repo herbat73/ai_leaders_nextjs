@@ -14,6 +14,10 @@ export interface AgentRecord {
   status: AgentStatus;
   /** Incremented on logout, disable, re-invite and invite acceptance; a session token with another epoch is rejected. */
   sessionEpoch: number;
+  /** While `invited`: when the invite link stops working; `null` otherwise. */
+  inviteExpiresAt: Date | null;
+  /** When the invite was accepted (the password was set); `null` until then, and again after a re-invite. */
+  acceptedAt: Date | null;
 }
 
 /** Only `findCredentialsByEmail` returns this; the hash never leaves the repository and the login path. */
@@ -58,12 +62,12 @@ export interface AgentRepository {
   createInvited(input: NewInvitedAgent): Promise<AgentRecord>;
   /**
    * Replaces the open invite of a `disabled` or `invited` agent: new token, permissions and display name, password
-   * cleared, status `invited`, `sessionEpoch` + 1. `null` when the agent does not exist or is `active`.
+   * cleared, status `invited`, `acceptedAt` cleared, `sessionEpoch` + 1. `null` when the agent does not exist or is `active`.
    */
   reinvite(id: number, input: ReinviteAgent): Promise<AgentRecord | null>;
   /**
    * One conditional update: matches only a live (unexpired, unused) token of an `invited` agent, sets the password,
-   * status `active`, `sessionEpoch` + 1 and clears the token. `null` when nothing matched (unknown, expired or used).
+   * status `active`, `acceptedAt` = `now`, `sessionEpoch` + 1 and clears the token. `null` when nothing matched (unknown, expired or used).
    */
   consumeInvite(tokenHash: string, passwordHash: string, now: Date): Promise<AgentRecord | null>;
   /**

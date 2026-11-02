@@ -6,7 +6,13 @@ export const agentsCopy = {
   description: (count: number) => `Konta agentów: ${count}. Zaproszenie ustawia hasło, wyłączenie kończy dostęp przy następnym żądaniu.`,
   caption: "Konta agentów",
   empty: "Brak agentów.",
-  columns: { name: "Imię i nazwisko", email: "E-mail", status: "Status", permissions: "Uprawnienia", actions: "Akcje" },
+  columns: { name: "Imię i nazwisko", email: "E-mail", status: "Status", permissions: "Uprawnienia", invite: "Zaproszenie", actions: "Akcje" },
+  inviteState: {
+    expires: (at: string) => `Wygasa: ${at}`,
+    accepted: (at: string) => `Przyjęte: ${at}`,
+    acceptedUnknown: "Przyjęte (brak czasu)",
+    none: "–",
+  },
   statusLabels: { invited: "Zaproszony", active: "Aktywny", disabled: "Wyłączony" } satisfies Record<AgentStatus, string>,
   filters: {
     search: "Szukaj po imieniu, nazwisku lub e-mailu",

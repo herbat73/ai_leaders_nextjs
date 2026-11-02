@@ -17,6 +17,8 @@ export const AgentSchema = defineEntity({
     // SHA-256 hex of the one-time invite token; the token itself is never stored.
     inviteTokenHash: p.string().length(64).columnType("char(64)").nullable().unique(),
     inviteExpiresAt: p.datetime().nullable(),
+    // Set when the invite is accepted, cleared by a re-invite; null while invited and for accounts that predate it.
+    acceptedAt: p.datetime().nullable(),
     createdAt: p.datetime().onCreate(() => new Date()),
     updatedAt: p
       .datetime()

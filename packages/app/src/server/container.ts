@@ -27,7 +27,7 @@ import { getOrm, registerDb } from "@easyrms/db";
 import { getAgentSessionService } from "./agent-session";
 import { createMailPort } from "./mail";
 import { getGuestSessionService } from "./guest-session";
-import { getApprovalConfig, getEligibilityConfig, getQuoteConfig } from "./return-config";
+import { getApprovalConfig, getEligibilityConfig, getInviteConfig, getQuoteConfig } from "./return-config";
 
 /** What can be resolved from a request scope. */
 export interface Cradle {
@@ -79,6 +79,7 @@ function getRootContainer(): Promise<AwilixContainer> {
       eligibilityConfig: asFunction(getEligibilityConfig).singleton(),
       quoteConfig: asFunction(getQuoteConfig).singleton(),
       approvalConfig: asFunction(getApprovalConfig).singleton(),
+      inviteConfig: asFunction(getInviteConfig).singleton(),
     });
     registerCore(container);
     registerDb(container, await getOrm());
