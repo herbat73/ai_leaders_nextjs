@@ -30,6 +30,9 @@ warm() {
     curl -s -o /dev/null -L --max-time 120 "$base$p" || true
   done
 }
+# Bring the environment up first: when the running app is not the one on the QA database, test-env-up.sh restarts it, and
+# warming the old server would leave the new one cold (the first scenarios then fail on hydration).
+sh "$ROOT/.ai/scripts/test-env-up.sh" >/dev/null 2>&1 || { echo "test environment did not start" >&2; exit 2; }
 warm
 
 pass=0; fail=0; failed=""
