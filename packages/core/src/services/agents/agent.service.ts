@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 
-import { AppError, ConflictError, NotFoundError, TooManyRequestsError } from "../../errors";
+import { AppError, ConfigurationError, ConflictError, NotFoundError, TooManyRequestsError } from "../../errors";
 import type { ApiLogger } from "../../http/types";
 import type { RateLimiterPort, RateRule } from "../../security/rate-limiter";
 import { normalizeAgentEmail, type AgentInviteInput } from "../../validators/agents/agent.schema";
@@ -9,7 +9,29 @@ import type { AgentSessionService } from "./agent-session.service";
 import type { PasswordHasher } from "./password-hasher";
 import type { AgentContext, AgentCredentials, AgentRecord, AgentRepository } from "./types";
 
+/** Validity of an invite for a plain agent. */
 export const AGENT_INVITE_TTL_MS = 72 * 3600_000;
+
+/** Default validity of an invite that grants `MANAGE_RULES`: a leaked manager link is worth far more (threat T-08). */
+export const DEFAULT_MANAGER_INVITE_TTL_HOURS = 8;
+
+export interface AgentInviteConfig {
+  /** Validity of an invite that grants `MANAGE_RULES`, in ms; never longer than {@link AGENT_INVITE_TTL_MS}. */
+  managerInviteTtlMs: number;
+}
+
+/**
+ * Parses `EASYRMS_MANAGER_INVITE_TTL_HOURS` (core never reads env): unset or blank is 8 hours; otherwise a number of
+ * hours from 0.25 (15 minutes) to 72 (the plain-agent validity). Anything else is a configuration error.
+ */
+export function parseManagerInviteTtl(raw: string | null | undefined): AgentInviteConfig {
+  if (raw === undefined || raw === null || raw.trim() === "") return { managerInviteTtlMs: DEFAULT_MANAGER_INVITE_TTL_HOURS * 3600_000 };
+  const hours = Number(raw.trim().replace(",", "."));
+  if (!Number.isFinite(hours) || hours < 0.25 || hours > 72) {
+    throw new ConfigurationError("EASYRMS_MANAGER_INVITE_TTL_HOURS must be a number of hours between 0.25 and 72");
+  }
+  return { managerInviteTtlMs: Math.round(hours * 3600_000) };
+}
 
 export const AGENT_RATE_RULES = {
   /** Login attempts per client IP. */
@@ -82,6 +104,7 @@ export interface AgentServiceDeps {
   mailPort: MailPort;
   logger: ApiLogger;
   clock: () => Date;
+  inviteConfig: AgentInviteConfig;
 }
 
 export interface AgentServiceOptions {
@@ -111,6 +134,7 @@ export class AgentService {
   private readonly mailPort: MailPort;
   private readonly logger: ApiLogger;
   private readonly clock: () => Date;
+  private readonly inviteConfig: AgentInviteConfig;
   private readonly inviteTokenGenerator: () => string;
 
   constructor(deps: AgentServiceDeps, options: AgentServiceOptions = {}) {
@@ -121,6 +145,7 @@ export class AgentService {
     this.mailPort = deps.mailPort;
     this.logger = deps.logger;
     this.clock = deps.clock;
+    this.inviteConfig = deps.inviteConfig;
     this.inviteTokenGenerator = options.inviteTokenGenerator ?? newInviteToken;
   }
 
@@ -134,7 +159,7 @@ export class AgentService {
     const inviteToken = this.inviteTokenGenerator();
     const fields = {
       inviteTokenHash: hashInviteToken(inviteToken),
-      inviteExpiresAt: new Date(this.clock().getTime() + AGENT_INVITE_TTL_MS),
+      inviteExpiresAt: new Date(this.clock().getTime() + this.inviteTtlMs(input.permissions)),
       displayName: input.displayName,
       permissions: input.permissions,
     };
@@ -153,6 +178,11 @@ export class AgentService {
 
     await this.sendInviteMail(agent, inviteToken, input.inviteLinkBase, fields.inviteExpiresAt);
     return { agent, inviteToken };
+  }
+
+  /** An invite that grants `MANAGE_RULES` lives for the configured (shorter) manager validity, any other for 72 hours. */
+  private inviteTtlMs(permissions: readonly string[]): number {
+    return permissions.includes("MANAGE_RULES") ? Math.min(this.inviteConfig.managerInviteTtlMs, AGENT_INVITE_TTL_MS) : AGENT_INVITE_TTL_MS;
   }
 
   /**

@@ -35,6 +35,10 @@ import { agentsCopy as copy } from "./copy";
 
 const NAME_MAX = 100;
 const PAGE_SIZE = 10;
+/** Warsaw time, fixed locale and zone so the server render and the client hydration agree. */
+const formatWhen = (value: Date | string): string =>
+  new Date(value).toLocaleString("pl-PL", { timeZone: "Europe/Warsaw", dateStyle: "short", timeStyle: "short" });
+
 const statusVariant = { invited: "warning", active: "success", disabled: "secondary" } as const;
 
 interface InviteResult {
@@ -283,6 +287,15 @@ export function AgentsManager({ agents, currentAgentId }: { agents: AgentRecord[
       key: "permissions",
       header: copy.columns.permissions,
       cell: (agent) => (agent.permissions.includes("MANAGE_RULES") ? copy.manager : copy.noPermissions),
+    },
+    {
+      key: "invite",
+      header: copy.columns.invite,
+      cell: (agent) => {
+        if (agent.status === "invited" && agent.inviteExpiresAt) return copy.inviteState.expires(formatWhen(agent.inviteExpiresAt));
+        if (agent.status === "active") return agent.acceptedAt ? copy.inviteState.accepted(formatWhen(agent.acceptedAt)) : copy.inviteState.acceptedUnknown;
+        return copy.inviteState.none;
+      },
     },
     {
       key: "actions",

@@ -34,6 +34,8 @@ function toRecord(entity: AgentEntity): AgentRecord {
     permissions: toPermissions(entity.permissions),
     status: toStatus(entity.status),
     sessionEpoch: entity.sessionEpoch,
+    inviteExpiresAt: entity.inviteExpiresAt ?? null,
+    acceptedAt: entity.acceptedAt ?? null,
   };
 }
 
@@ -44,7 +46,14 @@ interface AgentRow {
   permissions: string[];
   status: string;
   session_epoch: number;
+  /** ISO-8601 UTC text (see `isoColumn`): raw `execute` rows carry `timestamptz` as driver text, not a `Date`. */
+  invite_expires_at: string | null;
+  accepted_at: string | null;
 }
+
+/** `returning` expression that hands a `timestamptz` back as ISO-8601 UTC text under its own column name. */
+const isoColumn = (column: string): string => `to_char("${column}" at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') as "${column}"`;
+const toDateOrNull = (value: string | null): Date | null => (value === null ? null : new Date(value));
 
 const rowToRecord = (row: AgentRow): AgentRecord => ({
   id: row.id,
@@ -53,6 +62,8 @@ const rowToRecord = (row: AgentRow): AgentRecord => ({
   permissions: toPermissions(row.permissions),
   status: toStatus(row.status),
   sessionEpoch: row.session_epoch,
+  inviteExpiresAt: toDateOrNull(row.invite_expires_at),
+  acceptedAt: toDateOrNull(row.accepted_at),
 });
 
 const joinOrOpen = (): { propagation: TransactionPropagation } => ({ propagation: TransactionPropagation.REQUIRED });
@@ -111,9 +122,9 @@ export class MikroOrmAgentRepository implements AgentRepository {
   async reinvite(id: number, input: ReinviteAgent): Promise<AgentRecord | null> {
     const rows = await this.em.execute<AgentRow[]>(
       `update "agents" set "display_name" = ?, "permissions" = ?::text[], "password_hash" = null, "status" = 'invited',
-         "session_epoch" = "session_epoch" + 1, "invite_token_hash" = ?, "invite_expires_at" = ?, "updated_at" = ?
+         "session_epoch" = "session_epoch" + 1, "invite_token_hash" = ?, "invite_expires_at" = ?, "accepted_at" = null, "updated_at" = ?
        where "id" = ? and "status" in ('invited', 'disabled')
-       returning "id", "email", "display_name", "permissions", "status", "session_epoch"`,
+       returning "id", "email", "display_name", "permissions", "status", "session_epoch", ${isoColumn("invite_expires_at")}, ${isoColumn("accepted_at")}`,
       [input.displayName, toPgArray(input.permissions), input.inviteTokenHash, input.inviteExpiresAt, new Date(), id],
     );
     return rows.length === 1 ? rowToRecord(rows[0]) : null;
@@ -123,10 +134,10 @@ export class MikroOrmAgentRepository implements AgentRepository {
     // One statement, so a second accept racing the first matches no row (the token was cleared by the winner).
     const rows = await this.em.execute<AgentRow[]>(
       `update "agents" set "password_hash" = ?, "status" = 'active', "session_epoch" = "session_epoch" + 1,
-         "invite_token_hash" = null, "invite_expires_at" = null, "updated_at" = ?
+         "invite_token_hash" = null, "invite_expires_at" = null, "accepted_at" = ?, "updated_at" = ?
        where "invite_token_hash" = ? and "invite_expires_at" > ? and "status" = 'invited'
-       returning "id", "email", "display_name", "permissions", "status", "session_epoch"`,
-      [passwordHash, now, tokenHash, now],
+       returning "id", "email", "display_name", "permissions", "status", "session_epoch", ${isoColumn("invite_expires_at")}, ${isoColumn("accepted_at")}`,
+      [passwordHash, now, now, tokenHash, now],
     );
     return rows.length === 1 ? rowToRecord(rows[0]) : null;
   }

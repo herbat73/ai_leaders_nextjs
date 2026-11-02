@@ -1,7 +1,9 @@
 import {
   clampReturnWindowDays,
+  parseManagerInviteTtl,
   parseRefundApprovalLimit,
   parseShippingFee,
+  type AgentInviteConfig,
   type ApprovalConfig,
   type EligibilityConfig,
   type QuoteConfig,
@@ -10,6 +12,7 @@ import {
 let eligibility: EligibilityConfig | undefined;
 let quote: QuoteConfig | undefined;
 let approval: ApprovalConfig | undefined;
+let invite: AgentInviteConfig | undefined;
 
 /** `EASYRMS_RETURN_WINDOW_DAYS`, clamped; memoized, read on first use and never at import. */
 export function getEligibilityConfig(): EligibilityConfig {
@@ -27,4 +30,10 @@ export function getQuoteConfig(): QuoteConfig {
 export function getApprovalConfig(): ApprovalConfig {
   approval ??= { refundApprovalLimit: parseRefundApprovalLimit(process.env.EASYRMS_REFUND_APPROVAL_LIMIT) };
   return approval;
+}
+
+/** `EASYRMS_MANAGER_INVITE_TTL_HOURS` (default 8); memoized, an invalid value is a configuration error on first use. */
+export function getInviteConfig(): AgentInviteConfig {
+  invite ??= parseManagerInviteTtl(process.env.EASYRMS_MANAGER_INVITE_TTL_HOURS);
+  return invite;
 }
