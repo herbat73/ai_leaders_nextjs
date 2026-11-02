@@ -16,7 +16,6 @@ import {
   AgentSessionService,
   createLogMailPort,
   limitHashConcurrency,
-  RateLimiter,
   registerCore,
   ScryptPasswordHasher,
   type AgentService,
@@ -60,7 +59,6 @@ async function main(): Promise<number> {
       passwordHasher: asValue(limitHashConcurrency(new ScryptPasswordHasher())),
       // Never used: inviting issues no session. A null secret makes any accidental use fail closed.
       agentSessionService: asValue(new AgentSessionService({ secret: null, ttlSeconds: 0, clock: () => new Date() })),
-      rateLimiter: asValue(new RateLimiter({ clock: () => new Date() })),
     });
     registerCore(container);
     registerDb(container, orm);

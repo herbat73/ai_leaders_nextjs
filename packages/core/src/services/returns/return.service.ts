@@ -9,7 +9,7 @@ import {
   ValidationError,
 } from "../../errors";
 import type { ApiLogger } from "../../http/types";
-import { CUSTOMER_RATE_RULES, rateKeys, type RateLimiter } from "../../security/rate-limiter";
+import { CUSTOMER_RATE_RULES, rateKeys, type RateLimiterPort } from "../../security/rate-limiter";
 import type { ComplaintSubmitBody } from "../../validators/returns/complaint-submit.schema";
 import type { ReturnSubmitBody } from "../../validators/returns/return-submit.schema";
 import { hasPermission } from "../agents/permissions";
@@ -98,7 +98,7 @@ export class ReturnService {
   private readonly mailPort: MailPort;
   private readonly logger: ApiLogger;
   private readonly orderLookup: OrderLookup;
-  private readonly rateLimiter: RateLimiter;
+  private readonly rateLimiter: RateLimiterPort;
   private readonly eligibilityConfig: EligibilityConfig;
   private readonly quoteConfig: QuoteConfig;
   private readonly approvalConfig: ApprovalConfig;
@@ -109,7 +109,7 @@ export class ReturnService {
     mailPort: MailPort;
     logger: ApiLogger;
     orderLookup: OrderLookup;
-    rateLimiter: RateLimiter;
+    rateLimiter: RateLimiterPort;
     eligibilityConfig: EligibilityConfig;
     quoteConfig: QuoteConfig;
     approvalConfig: ApprovalConfig;
@@ -222,18 +222,18 @@ export class ReturnService {
    */
   async submit(sessionOrderNumber: string, input: ReturnSubmitBody | ComplaintSubmitBody): Promise<ReturnSubmitResult> {
     const sessionKey = rateKeys.quote(sessionOrderNumber);
-    if (!this.rateLimiter.consume(sessionKey, CUSTOMER_RATE_RULES.session).allowed) throw new TooManyRequestsError();
+    if (!(await this.rateLimiter.consume(sessionKey, CUSTOMER_RATE_RULES.session)).allowed) throw new TooManyRequestsError();
 
     let lookedUp: OrderLookupResult;
     try {
       lookedUp = await this.orderLookup.getByNumber(sessionOrderNumber);
     } catch (error) {
-      this.rateLimiter.release(sessionKey);
+      await this.rateLimiter.release(sessionKey);
       throw error;
     }
     if (lookedUp.status === "unavailable") {
       // Reserved before the await; an unavailable platform does not spend session budget.
-      this.rateLimiter.release(sessionKey);
+      await this.rateLimiter.release(sessionKey);
       throw new ServiceUnavailableError(ORDER_UNAVAILABLE_MESSAGE);
     }
     if (lookedUp.status === "not_found") throw new NotFoundError("Order not found");

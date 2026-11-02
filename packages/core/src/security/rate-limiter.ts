@@ -11,6 +11,15 @@ export interface RateDecision {
   remaining: number;
 }
 
+/**
+ * What the services depend on. `consume` reserves one event, `release` refunds one. The in-memory `RateLimiter` is
+ * synchronous; a shared store (the Postgres adapter in `db`) answers asynchronously, so callers always `await`.
+ */
+export interface RateLimiterPort {
+  consume(key: string, rule: RateRule): RateDecision | Promise<RateDecision>;
+  release(key: string): void | Promise<void>;
+}
+
 interface Window {
   count: number;
   endsAt: number;
@@ -28,7 +37,7 @@ const DEFAULT_MAX_KEYS = 10_000;
  * Pure in-memory fixed-window limiter. A window starts at the first hit of a key and ends
  * `windowMs` later; at exactly the end instant the window has reset. Per process only.
  */
-export class RateLimiter {
+export class RateLimiter implements RateLimiterPort {
   private readonly clock: () => Date;
   private readonly maxKeys: number;
   private readonly windows = new Map<string, Window>();
