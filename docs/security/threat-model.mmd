@@ -1,0 +1,34 @@
+flowchart LR
+  subgraph internet [Untrusted: internet]
+    Cust[Customer / anonymous visitor]
+    Agent[Agent / manager]
+    Attacker[Attacker: no session, or customer of another order]
+  end
+  subgraph app [Trusted: Next.js app, one process]
+    Proxy(proxy.ts: signature check on agent paths)
+    Portal(Customer pages + public API)
+    Back(Admin pages + agent API)
+    Svc(Core services: state machine, rules, limiter in memory)
+  end
+  subgraph data [Trusted: data]
+    DB[(PostgreSQL: requests, items, events, agents, suppliers, claims)]
+  end
+  subgraph ext [Semi-trusted: external systems]
+    Orders[Order platform: fake adapter today]
+    SMTP[SMTP server: log transport by default]
+    Vendor[Vendor mailbox]
+  end
+  Attacker -->|"unauthenticated GET /api/returns (T-01)"| Portal
+  Attacker -->|"guessed order + e-mail (T-02), IDs of other orders (T-03)"| Portal
+  Attacker -->|"password guessing (T-04)"| Back
+  Cust -->|"order no + e-mail, guest cookie, return and complaint forms"| Portal
+  Agent -->|"agent cookie (T-05), decisions, invites, vendor claims (T-06)"| Proxy
+  Proxy --> Back
+  Portal --> Svc
+  Back --> Svc
+  Svc -->|"repositories: requests, PII, password hashes, invite hashes"| DB
+  Svc -->|"order lookup by number + e-mail"| Orders
+  Svc -->|"customer and invite mails, claim mails (T-09)"| SMTP
+  SMTP -->|"claim with order, product, defect text (T-09)"| Vendor
+  classDef boundary stroke-dasharray: 5 5
+  class internet,app,data,ext boundary
