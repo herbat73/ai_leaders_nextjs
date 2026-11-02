@@ -13,11 +13,14 @@ QA_DIR="$ROOT/.ai/qa"
 RMA=""
 RMAS=""
 COOKIES=$(mktemp)
+. "$QA_DIR/lib/qa-db.sh"
 
 qa_init() {
   ART_DIR="$QA_DIR/artifacts_$QA_ID"
   [ -f "$QA_DIR/test-env.env" ] || { echo "FAIL: $QA_DIR/test-env.env missing (needs TEST_AGENT_EMAIL / TEST_AGENT_PASSWORD)" >&2; exit 2; }
   set -a; . "$QA_DIR/test-env.env"; set +a
+  # Every scenario starts on a fresh copy of the pristine database (see lib/qa-db.sh).
+  qa_db_reset || { echo "FAIL: could not create a fresh test database" >&2; exit 2; }
   ENV_OUT=$(sh "$ROOT/.ai/scripts/test-env-up.sh" 2>&1) || { echo "$ENV_OUT" | tail -20 >&2; echo "FAIL: test environment did not start" >&2; exit 2; }
   BASE_URL=$(echo "$ENV_OUT" | sed -n 's/^TEST_ENV_BASE_URL=//p' | tail -1)
   AB=$(sed -n 's/.*"command": *"\([^"]*agent-browser[^"]*\)".*/\1/p' "$QA_DIR/test-env.json" | head -1)
@@ -128,9 +131,9 @@ complaint_to_received() {
 # QA-only escape hatch (see db_release_rma): run SQL on the disposable local test database.
 db_sql() {
   if command -v psql >/dev/null 2>&1; then
-    psql "${DATABASE_URL:-postgres://easyrms:easyrms@127.0.0.1:5433/easyrms}" -qtAc "$1"
+    psql "$QA_DB_URL" -qtAc "$1"
   else
-    (cd "$ROOT" && docker compose exec -T postgres psql -U easyrms -d easyrms -qtAc "$1" </dev/null)
+    (cd "$ROOT" && docker compose exec -T postgres psql -U easyrms -d "$QA_DB_NAME" -qtAc "$1" </dev/null)
   fi
 }
 # Creates a supplier through the API with a unique name; sets SUPPLIER_ID and SUPPLIER_NAME (cleanup deactivates it).

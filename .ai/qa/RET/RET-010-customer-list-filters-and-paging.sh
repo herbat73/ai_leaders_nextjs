@@ -3,15 +3,28 @@
 # Scenario: .ai/qa/RET/RET-010-customer-list-filters-and-paging.md
 # Priority: Medium. Type: UI with API setup. Role: guest customer (order PL-10001); an agent (QA account) is used only for cleanup.
 # Setup: a return is created through the API on seeded order PL-10001 (line L2) and stays `submitted`, so it is the newest
-# row; earlier runs leave the order with more than ten requests, which gives the list more than one page. Cleanup rejects it.
+# row. Every scenario starts on a fresh database, so setup first files and rejects ten requests on the same line to give the
+# list more than one page. Cleanup rejects the last one too.
 QA_ID=RET-010
 . "$(cd "$(dirname "$0")/../lib" && pwd)/common.sh"
 qa_init
 
 rows() { ab eval "document.querySelectorAll('section[aria-label=\"Zgłoszenia zwrotu i reklamacji\"] ul li').length" 2>&1 | tail -1; }
 
-step "setup: customer submits a return through the API"
+step "setup: ten earlier requests on PL-10001 L2, each submitted and rejected (a fresh database has no history)"
 guest_lookup PL-10001 anna.kowalska@example.pl
+agent_login_api
+n=0
+while [ "$n" -lt 10 ]; do
+  n=$((n + 1))
+  OLD=$(guest_submit "{\"items\":[{\"lineRef\":\"L2\",\"quantity\":1,\"reasonCode\":\"size\"}],\"resolution\":\"refund\",\"returnMethod\":\"store\",\"acknowledged\":true,\"idempotencyKey\":\"$(new_key)\"}")
+  OLD_RMA=$(printf '%s' "$OLD" | sed -n 's/.*"rma":"\(RMA-[0-9]*-[0-9]*\)".*/\1/p')
+  [ -n "$OLD_RMA" ] || fail "setup: history request $n not created: $OLD"
+  OLD_ID=$(return_id_for "$OLD_RMA")
+  [ "$(agent_api -o /dev/null -w '%{http_code}' -X PATCH "$BASE_URL/api/returns/$OLD_ID" --data-raw '{"status":"rejected","decisionNote":"RET-010 setup: history request, unit released."}')" = 200 ] || fail "setup: could not reject $OLD_RMA"
+done
+
+step "setup: customer submits the request under test through the API"
 CREATED=$(guest_submit "{\"items\":[{\"lineRef\":\"L2\",\"quantity\":1,\"reasonCode\":\"size\"}],\"resolution\":\"refund\",\"returnMethod\":\"store\",\"acknowledged\":true,\"idempotencyKey\":\"$(new_key)\"}")
 RMA=$(printf '%s' "$CREATED" | sed -n 's/.*"rma":"\(RMA-[0-9]*-[0-9]*\)".*/\1/p')
 [ -n "$RMA" ] || fail "setup: return not created (unit held by an open request?): $CREATED"
