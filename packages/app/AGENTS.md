@@ -14,8 +14,8 @@ The only package with Next.js routes and the only composition root (`src/server/
 Components; add `"use client"` only when needed. Keep route handlers thin.
 
 - **Admin pages:** every page calls `requireAgentPage(path)` and renders inside `AdminShell`. Every agent-only API
-  route passes `authenticate: requireAgent` to `apiHandler`/`makeCrudRoute` (`src/proxy.ts` is only the optimistic first
-  line). Both live in `src/server/agent-auth.ts`.
+  route passes `authenticate: requireAgent` and a `permission` (`"MANAGE_RULES"` or `ANY_AGENT`) to `apiHandler`/`makeCrudRoute`
+  (`src/proxy.ts` is only the optimistic first line). Both live in `src/server/agent-auth.ts`.
 - **Customer pages** use plain Tailwind and the order-scoped guest session (`src/server/guest-session.ts`).
 - **DI:** register new services explicitly in `src/server/container.ts`; request-bound state (the MikroORM
   `EntityManager` fork) is per-request scope.

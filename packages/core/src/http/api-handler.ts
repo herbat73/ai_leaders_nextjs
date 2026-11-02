@@ -1,6 +1,17 @@
 import { isAppError } from "../errors";
+import { requirePermission } from "../services/agents/permissions";
+import type { AgentContext, AgentPermission } from "../services/agents/types";
 import { assertSameOrigin, isMutatingMethod } from "./csrf";
 import type { ApiEnvelope, ApiLogger, RouteContext } from "./types";
+
+/**
+ * The explicit "any signed-in agent" decision for a route that needs no permission. It is a value, not an absence, so a
+ * route that forgot to decide stands out (and fails `agent-routes.coverage.test.ts`).
+ */
+export const ANY_AGENT = "any-agent";
+
+/** What `permission` accepts: a permission the agent must hold, or {@link ANY_AGENT}. */
+export type RoutePermission = AgentPermission | typeof ANY_AGENT;
 
 export interface ApiHandlerOptions<TPrincipal = undefined> {
   /** Status for a successful response. */
@@ -18,6 +29,13 @@ export interface ApiHandlerOptions<TPrincipal = undefined> {
    * reject. A route without it behaves exactly as before.
    */
   authenticate?: (request: Request) => Promise<TPrincipal>;
+  /**
+   * The route's permission decision, checked right after `authenticate` and before the handler (so before the body is
+   * parsed): the principal must hold this permission or the answer is 403 `forbidden`. `ANY_AGENT` means every signed-in
+   * agent may call the route; use it only when the service enforces any finer rule itself. Requires `authenticate`,
+   * and the principal must carry `permissions` (an `AgentContext`).
+   */
+  permission?: RoutePermission;
 }
 
 const consoleLogger: ApiLogger = {
@@ -67,13 +85,14 @@ export function okResponse<T>(data: T, init?: ResponseInit): Response {
 
 /**
  * Wraps a route function: mutating requests (POST/PUT/PATCH/DELETE) first pass the CSRF check (403 `csrf_rejected`),
- * then the optional `authenticate` hook runs (401 and friends are thrown by it), a returned `Response` is passed through unchanged, any other return value becomes `{ ok: true, data }`, a thrown `AppError` becomes
+ * then the optional `authenticate` hook runs (401 and friends are thrown by it) and the optional `permission` check (403), a returned `Response` is passed through unchanged, any other return value becomes `{ ok: true, data }`, a thrown `AppError` becomes
  * `{ ok: false, error }` with its status, and anything else is logged and returned as an opaque 500.
  */
 export function apiHandler<TContext extends RouteContext = RouteContext, TPrincipal = undefined>(
   handler: (request: Request, context: TContext, principal: TPrincipal) => Promise<unknown>,
-  { status = 200, logger = consoleLogger, trustProxy = false, allowedOrigins = [], authenticate }: ApiHandlerOptions<TPrincipal> = {},
+  { status = 200, logger = consoleLogger, trustProxy = false, allowedOrigins = [], authenticate, permission }: ApiHandlerOptions<TPrincipal> = {},
 ): (request: Request, context: TContext) => Promise<Response> {
+  if (permission !== undefined && !authenticate) throw new Error("apiHandler: `permission` needs `authenticate`");
   return async (request, context) => {
     try {
       if (isMutatingMethod(request.method)) {
@@ -83,6 +102,7 @@ export function apiHandler<TContext extends RouteContext = RouteContext, TPrinci
         });
       }
       const principal = (authenticate ? await authenticate(request) : undefined) as TPrincipal;
+      if (permission !== undefined && permission !== ANY_AGENT) requirePermission(principal as Pick<AgentContext, "permissions">, permission);
       const result = await handler(request, context, principal);
       if (result instanceof Response) return result;
       return envelope({ ok: true, data: result }, status);

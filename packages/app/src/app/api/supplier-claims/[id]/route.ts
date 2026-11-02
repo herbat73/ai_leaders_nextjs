@@ -1,4 +1,4 @@
-import { makeCrudRoute, supplierClaimAnswerSchema } from "@easyrms/core";
+import { ANY_AGENT, makeCrudRoute, supplierClaimAnswerSchema } from "@easyrms/core";
 
 import { requireAgent } from "@/server/agent-auth";
 import { resolveSupplierClaimService } from "@/server/container";
@@ -9,6 +9,7 @@ import { httpOptions } from "@/server/http-options";
 export const { PATCH } = makeCrudRoute({
   ...httpOptions,
   authenticate: requireAgent,
+  permission: ANY_AGENT,
   resolve: resolveSupplierClaimService,
   patch: {
     schema: supplierClaimAnswerSchema,

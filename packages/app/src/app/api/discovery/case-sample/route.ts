@@ -1,4 +1,4 @@
-import { apiHandler, caseSampleAnalyzeSchema, MAX_BODY_BYTES, parseJsonBody, TOO_LARGE_MESSAGE } from "@easyrms/core";
+import { ANY_AGENT, apiHandler, caseSampleAnalyzeSchema, MAX_BODY_BYTES, parseJsonBody, TOO_LARGE_MESSAGE } from "@easyrms/core";
 
 import { requireAgent } from "@/server/agent-auth";
 import { httpOptions } from "@/server/http-options";
@@ -13,4 +13,4 @@ export const POST = apiHandler(async (request) => {
     tooLargeMessage: TOO_LARGE_MESSAGE,
   });
   return resolveCaseSampleService().analyze(input);
-}, { ...httpOptions, authenticate: requireAgent });
+}, { ...httpOptions, authenticate: requireAgent, permission: ANY_AGENT });

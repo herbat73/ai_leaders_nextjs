@@ -1,4 +1,4 @@
-import { apiHandler, okResponse, ValidationError } from "@easyrms/core";
+import { ANY_AGENT, apiHandler, okResponse, ValidationError } from "@easyrms/core";
 
 import { requireAgent } from "@/server/agent-auth";
 import { resolveSupplierClaimService } from "@/server/container";
@@ -15,4 +15,4 @@ export const POST = apiHandler(async (_request, context, agent) => {
   if (!Number.isSafeInteger(id) || id < 1) throw new ValidationError("Invalid id", { id: "Must be a positive integer" });
   const result = await (await resolveSupplierClaimService()).send(id, agent);
   return okResponse(result, { headers: { "cache-control": "no-store" } });
-}, { ...httpOptions, authenticate: requireAgent });
+}, { ...httpOptions, authenticate: requireAgent, permission: ANY_AGENT });

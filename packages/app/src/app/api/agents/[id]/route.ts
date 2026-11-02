@@ -1,4 +1,4 @@
-import { agentUpdateSchema, makeCrudRoute, requirePermission } from "@easyrms/core";
+import { agentUpdateSchema, makeCrudRoute } from "@easyrms/core";
 
 import { requireAgent } from "@/server/agent-auth";
 import { resolveAgentService } from "@/server/container";
@@ -9,11 +9,11 @@ import { httpOptions } from "@/server/http-options";
 export const { PATCH } = makeCrudRoute({
   ...httpOptions,
   authenticate: requireAgent,
+  permission: "MANAGE_RULES",
   resolve: resolveAgentService,
   patch: {
     schema: agentUpdateSchema,
     handler: async (service, id, _input, agent) => {
-      requirePermission(agent, "MANAGE_RULES");
       return service.disable(agent.id, id);
     },
   },

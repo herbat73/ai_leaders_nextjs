@@ -20,6 +20,7 @@ Standards: `doc/engineering-standards.md`. Severity in parentheses.
 - [ ] No untrusted input reaches a query, shell command or file path unparameterized. (blocker)
 - [ ] Security decisions fail closed on unexpected errors. (blocker)
 - [ ] Auth enforced server-side on every non-public route; ownership checked per record (once auth exists). (blocker)
+- [ ] A new agent API route states who may call it: `permission: "MANAGE_RULES"` or an explicit `ANY_AGENT` on `apiHandler`/`makeCrudRoute` (no `requirePermission` in the handler body), and is added to `ROUTE_PERMISSIONS` in `agent-routes.coverage.test.ts`. A manager-only action gets a 403 case in the AGT-007 matrix. (blocker)
 - [ ] Check-then-act on shared state is protected by a transaction and/or unique constraint. (blocker)
 - [ ] Cookie flags preserved when auth-cookie code is touched; rate limiting on login/register/reset. (major)
 - [ ] A security bug fix ships a regression test that fails without the fix. (major)

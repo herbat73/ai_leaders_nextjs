@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { APP_ERROR_BRAND, ConflictError, ForbiddenError, isAppError, UnauthorizedError, ValidationError } from "../errors";
-import { apiHandler } from "./api-handler";
+import { ANY_AGENT, apiHandler } from "./api-handler";
 import type { ApiLogger } from "./types";
 
 const context = { params: Promise.resolve({}) };
@@ -280,5 +280,42 @@ describe("apiHandler", () => {
       expect(response.status).toBe(500);
       expect(logger.error).toHaveBeenCalledTimes(1);
     });
+  });
+});
+
+describe("apiHandler permission", () => {
+  const post = () => new Request("http://localhost/api/x", { method: "POST", headers: { "x-requested-with": "test" } });
+  const agent = (permissions: Array<"MANAGE_RULES">) => async () => ({ permissions });
+
+  it("answers 403 forbidden before the handler runs when the principal lacks the permission", async () => {
+    const handler = vi.fn(async () => ({}));
+    const response = await apiHandler(handler, { authenticate: agent([]), permission: "MANAGE_RULES" })(post(), { params: Promise.resolve({}) });
+
+    expect(response.status).toBe(403);
+    expect(await response.json()).toMatchObject({ ok: false, error: { code: "forbidden" } });
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it("runs the handler for a principal that holds it, and for ANY_AGENT without it", async () => {
+    const ok = apiHandler(async () => ({ done: true }), { authenticate: agent(["MANAGE_RULES"]), permission: "MANAGE_RULES" });
+    const any = apiHandler(async () => ({ done: true }), { authenticate: agent([]), permission: ANY_AGENT });
+
+    expect((await ok(post(), { params: Promise.resolve({}) })).status).toBe(200);
+    expect((await any(post(), { params: Promise.resolve({}) })).status).toBe(200);
+  });
+
+  it("lets a failed authentication (401) win over the permission check", async () => {
+    const response = await apiHandler(async () => ({}), {
+      authenticate: async () => {
+        throw new UnauthorizedError();
+      },
+      permission: "MANAGE_RULES",
+    })(post(), { params: Promise.resolve({}) });
+
+    expect(response.status).toBe(401);
+  });
+
+  it("refuses a permission without authenticate when the route is created", () => {
+    expect(() => apiHandler(async () => ({}), { permission: "MANAGE_RULES" })).toThrow(/needs `authenticate`/);
   });
 });

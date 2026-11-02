@@ -71,3 +71,23 @@ describe("makeCrudRoute authenticate", () => {
     expect(handler).toHaveBeenCalledWith("service", 5, { b: 3 }, undefined);
   });
 });
+
+describe("makeCrudRoute permission", () => {
+  const plain = async () => ({ permissions: [] as Array<"MANAGE_RULES"> });
+
+  it("answers 403 before the body is parsed or the service is resolved", async () => {
+    const resolve = vi.fn(async () => "service");
+    const handlers = makeCrudRoute({
+      resolve,
+      authenticate: plain,
+      permission: "MANAGE_RULES",
+      patch: { schema: z.object({ b: z.number() }), handler: async () => ({}) },
+    });
+
+    // An invalid body would be a 400 if parsing came first.
+    const response = await handlers.PATCH(json({ nope: true }), idContext);
+
+    expect(response.status).toBe(403);
+    expect(resolve).not.toHaveBeenCalled();
+  });
+});
