@@ -12,7 +12,7 @@ export interface AgentRecord {
   displayName: string;
   permissions: AgentPermission[];
   status: AgentStatus;
-  /** Incremented on disable, re-invite and invite acceptance; a session token with another epoch is rejected. */
+  /** Incremented on logout, disable, re-invite and invite acceptance; a session token with another epoch is rejected. */
   sessionEpoch: number;
 }
 
@@ -71,4 +71,9 @@ export interface AgentRepository {
    * so two managers disabling each other concurrently cannot both succeed. Already disabled is a no-op `disabled`.
    */
   disable(id: number): Promise<DisableOutcome>;
+  /**
+   * `sessionEpoch` + 1 in one atomic statement, so every token issued before is rejected on its next request. A no-op
+   * for an unknown id. Does not change status, password or invite.
+   */
+  bumpSessionEpoch(id: number): Promise<void>;
 }

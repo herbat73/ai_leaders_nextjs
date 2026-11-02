@@ -131,6 +131,11 @@ export class MikroOrmAgentRepository implements AgentRepository {
     return rows.length === 1 ? rowToRecord(rows[0]) : null;
   }
 
+  async bumpSessionEpoch(id: number): Promise<void> {
+    // One statement, so two concurrent logouts both count and neither reads a stale epoch.
+    await this.em.execute(`update "agents" set "session_epoch" = "session_epoch" + 1, "updated_at" = ? where "id" = ?`, [new Date(), id]);
+  }
+
   disable(id: number): Promise<DisableOutcome> {
     // Runs on the callback's EntityManager: `this.em` is a plain fork and would run outside the transaction.
     return this.em.transactional(async (tx): Promise<DisableOutcome> => {

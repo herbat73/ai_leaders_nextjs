@@ -115,6 +115,10 @@ function makeRepository(clock: () => Date) {
       if (row.status !== "disabled") Object.assign(row, { status: "disabled", sessionEpoch: row.sessionEpoch + 1, inviteTokenHash: null });
       return { result: "disabled", agent: strip(row) };
     },
+    bumpSessionEpoch: async (id): Promise<void> => {
+      const row = rows.find((candidate) => candidate.id === id);
+      if (row) row.sessionEpoch += 1;
+    },
   };
   void clock;
   return { repository, rows };
@@ -419,6 +423,46 @@ describe("authenticate", () => {
     const { sessionToken } = await login(s, email, password);
     s.advance(8 * 3600_000 + 1000);
     expect(await s.service.authenticate(sessionToken)).toBeNull();
+  });
+});
+
+describe("logout", () => {
+  it("revokes the token in use, so replaying a copied cookie is rejected (issue #82)", async () => {
+    const s = setup();
+    const { id, email, password } = await activeAgent(s);
+    const { sessionToken } = await login(s, email, password);
+    expect(await s.service.authenticate(sessionToken)).toMatchObject({ id });
+
+    await s.service.logout(id);
+
+    expect(await s.service.authenticate(sessionToken)).toBeNull();
+  });
+
+  it("signs the agent out on every device and lets a fresh login work again", async () => {
+    const s = setup();
+    const { id, email, password } = await activeAgent(s);
+    const laptop = await login(s, email, password);
+    const phone = await login(s, email, password);
+
+    await s.service.logout(id);
+
+    expect(await s.service.authenticate(laptop.sessionToken)).toBeNull();
+    expect(await s.service.authenticate(phone.sessionToken)).toBeNull();
+    const again = await login(s, email, password);
+    expect(await s.service.authenticate(again.sessionToken)).toMatchObject({ id });
+  });
+
+  it("leaves the sessions of other agents alone", async () => {
+    const s = setup();
+    const ala = await activeAgent(s, "ala@example.com");
+    const ola = await activeAgent(s, "ola@example.com");
+    const alaSession = await login(s, ala.email, ala.password);
+    const olaSession = await login(s, ola.email, ola.password);
+
+    await s.service.logout(ala.id);
+
+    expect(await s.service.authenticate(alaSession.sessionToken)).toBeNull();
+    expect(await s.service.authenticate(olaSession.sessionToken)).toMatchObject({ id: ola.id });
   });
 });
 

@@ -227,6 +227,14 @@ export class AgentService {
     return this.agentRepository.list();
   }
 
+  /**
+   * Ends every session of the agent, on all devices: the epoch moves on, so a copied cookie stops working at once, not
+   * after its eight hours. The caller has already authenticated, so the token being replayed later is simply rejected.
+   */
+  async logout(agentId: number): Promise<void> {
+    await this.agentRepository.bumpSessionEpoch(agentId);
+  }
+
   /** `actingAgentId` is the caller; disabling yourself and disabling the last manager are 409s with their own code. */
   async disable(actingAgentId: number, targetId: number): Promise<AgentRecord> {
     if (actingAgentId === targetId) throw new AgentRuleError("You cannot disable your own account", "self_disable");

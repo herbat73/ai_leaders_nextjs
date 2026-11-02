@@ -160,6 +160,28 @@ describe("reinvite", () => {
   });
 });
 
+describe("bumpSessionEpoch", () => {
+  it("moves the epoch on and touches nothing else, so the agent stays active", async () => {
+    const id = await activeAgent();
+    const before = await repository().findActiveById(id);
+
+    await repository().bumpSessionEpoch(id);
+
+    const after = await repository().findActiveById(id);
+    expect(after).toEqual({ ...before, sessionEpoch: (before?.sessionEpoch ?? 0) + 1 });
+  });
+
+  it("counts every one of eight parallel logouts and ignores an unknown id", async () => {
+    const id = await activeAgent();
+    const before = (await repository().findActiveById(id))?.sessionEpoch ?? 0;
+
+    await Promise.all(Array.from({ length: 8 }, () => repository().bumpSessionEpoch(id)));
+    await expect(repository().bumpSessionEpoch(987_654)).resolves.toBeUndefined();
+
+    expect((await repository().findActiveById(id))?.sessionEpoch).toBe(before + 8);
+  });
+});
+
 describe("disable", () => {
   it("disables, bumps the epoch, clears the invite and hides the agent from findActiveById", async () => {
     await activeAgent(["MANAGE_RULES"]);
