@@ -2,7 +2,7 @@ import { createHash, randomBytes } from "node:crypto";
 
 import { AppError, ConflictError, NotFoundError, TooManyRequestsError } from "../../errors";
 import type { ApiLogger } from "../../http/types";
-import type { RateLimiter, RateRule } from "../../security/rate-limiter";
+import type { RateLimiterPort, RateRule } from "../../security/rate-limiter";
 import { normalizeAgentEmail, type AgentInviteInput } from "../../validators/agents/agent.schema";
 import { maskEmail, type MailPort } from "../mail/mail.port";
 import type { AgentSessionService } from "./agent-session.service";
@@ -78,7 +78,7 @@ export interface AgentServiceDeps {
   /** Already wrapped with `limitHashConcurrency` by the composition root. */
   passwordHasher: PasswordHasher;
   agentSessionService: AgentSessionService;
-  rateLimiter: RateLimiter;
+  rateLimiter: RateLimiterPort;
   mailPort: MailPort;
   logger: ApiLogger;
   clock: () => Date;
@@ -107,7 +107,7 @@ export class AgentService {
   private readonly agentRepository: AgentRepository;
   private readonly passwordHasher: PasswordHasher;
   private readonly agentSessionService: AgentSessionService;
-  private readonly rateLimiter: RateLimiter;
+  private readonly rateLimiter: RateLimiterPort;
   private readonly mailPort: MailPort;
   private readonly logger: ApiLogger;
   private readonly clock: () => Date;
@@ -160,7 +160,7 @@ export class AgentService {
    * (429) so an anonymous client cannot keep every password-hash slot busy and starve logins.
    */
   async acceptInvite(input: { token: string; password: string; ip: string }): Promise<AgentSessionOutcome> {
-    if (!this.rateLimiter.consume(agentRateKeys.accept(input.ip), AGENT_RATE_RULES.accept).allowed) throw new TooManyRequestsError();
+    if (!(await this.rateLimiter.consume(agentRateKeys.accept(input.ip), AGENT_RATE_RULES.accept)).allowed) throw new TooManyRequestsError();
     // Hash first: the cost is the same whether or not the token matches, and the conditional update stays atomic.
     const passwordHash = await this.passwordHasher.hash(input.password);
     const agent = await this.agentRepository.consumeInvite(hashInviteToken(input.token), passwordHash, this.clock());
@@ -178,14 +178,14 @@ export class AgentService {
     const loginKey = agentRateKeys.login(input.ip);
     const failedKey = agentRateKeys.failedLogin(email, input.ip);
     const accountKey = agentRateKeys.accountFailures(email);
-    if (!this.rateLimiter.consume(loginKey, AGENT_RATE_RULES.login).allowed) throw new TooManyRequestsError();
-    if (!this.rateLimiter.consume(failedKey, AGENT_RATE_RULES.failedLogin).allowed) {
-      this.rateLimiter.release(loginKey);
+    if (!(await this.rateLimiter.consume(loginKey, AGENT_RATE_RULES.login)).allowed) throw new TooManyRequestsError();
+    if (!(await this.rateLimiter.consume(failedKey, AGENT_RATE_RULES.failedLogin)).allowed) {
+      await this.rateLimiter.release(loginKey);
       throw new TooManyRequestsError();
     }
-    if (!this.rateLimiter.consume(accountKey, AGENT_RATE_RULES.accountFailures).allowed) {
-      this.rateLimiter.release(loginKey);
-      this.rateLimiter.release(failedKey);
+    if (!(await this.rateLimiter.consume(accountKey, AGENT_RATE_RULES.accountFailures)).allowed) {
+      await this.rateLimiter.release(loginKey);
+      await this.rateLimiter.release(failedKey);
       throw new TooManyRequestsError();
     }
 
@@ -197,17 +197,17 @@ export class AgentService {
       verified = await this.passwordHasher.verify(input.password, stored);
     } catch (error) {
       // A busy hasher or a database failure says nothing about the credentials: no budget is spent.
-      this.rateLimiter.release(loginKey);
-      this.rateLimiter.release(failedKey);
-      this.rateLimiter.release(accountKey);
+      await this.rateLimiter.release(loginKey);
+      await this.rateLimiter.release(failedKey);
+      await this.rateLimiter.release(accountKey);
       throw error;
     }
 
     if (!credentials || !credentials.passwordHash || !verified || credentials.status !== "active") {
       throw new InvalidCredentialsError();
     }
-    this.rateLimiter.release(failedKey);
-    this.rateLimiter.release(accountKey);
+    await this.rateLimiter.release(failedKey);
+    await this.rateLimiter.release(accountKey);
     return this.startSession(credentials);
   }
 

@@ -7,3 +7,4 @@ export * from "./repositories/returns/return.repository";
 export * from "./repositories/agents/agent.repository";
 export * from "./repositories/suppliers/supplier.repository";
 export * from "./repositories/supplier-claims/supplier-claim.repository";
+export * from "./repositories/security/postgres-rate-limiter";

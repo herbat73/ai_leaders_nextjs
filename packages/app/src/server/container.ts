@@ -5,7 +5,6 @@ import {
   createFakeOrderLookup,
   limitHashConcurrency,
   ScryptPasswordHasher,
-  RateLimiter,
   registerCore,
   selectOrderSource,
   withLookupTimeout,
@@ -51,14 +50,6 @@ const logger: ApiLogger & MailLogger = {
   error: (message, context) => console.error(message, context),
 };
 
-const globalForLimiter = globalThis as unknown as { __easyrmsRateLimiter?: RateLimiter };
-
-/** One limiter per process, shared by every route bundle and HMR reload (like the container). */
-function getRateLimiter(): RateLimiter {
-  globalForLimiter.__easyrmsRateLimiter ??= new RateLimiter({ clock: () => new Date() });
-  return globalForLimiter.__easyrmsRateLimiter;
-}
-
 /**
  * The order adapter, chosen on first resolve and never at import, so `next build` needs no configuration and
  * production fails closed (opaque 500) on the first customer request.
@@ -85,7 +76,6 @@ function getRootContainer(): Promise<AwilixContainer> {
       agentSessionService: asFunction(getAgentSessionService).singleton(),
       // One hasher (and so one concurrency cap) per process.
       passwordHasher: asFunction(() => limitHashConcurrency(new ScryptPasswordHasher())).singleton(),
-      rateLimiter: asFunction(getRateLimiter).singleton(),
       eligibilityConfig: asFunction(getEligibilityConfig).singleton(),
       quoteConfig: asFunction(getQuoteConfig).singleton(),
       approvalConfig: asFunction(getApprovalConfig).singleton(),

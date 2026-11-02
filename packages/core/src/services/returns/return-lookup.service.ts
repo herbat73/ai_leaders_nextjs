@@ -1,6 +1,6 @@
 import { formatMoney } from "../../domain/money";
 import { NotFoundError, ServiceUnavailableError, TooManyRequestsError, ValidationError } from "../../errors";
-import { CUSTOMER_RATE_RULES, rateKeys, type RateLimiter } from "../../security/rate-limiter";
+import { CUSTOMER_RATE_RULES, rateKeys, type RateLimiterPort } from "../../security/rate-limiter";
 import type { OrderLookup, OrderLookupResult, ReturnOrder } from "../orders/order-lookup.port";
 import { calculateComplaintQuote } from "./complaint-quote";
 import { checkComplaintEligibility } from "./complaint-eligibility";
@@ -55,7 +55,7 @@ export type ReturnQuoteRequest = {
 export class ReturnLookupService {
   private readonly returnRepository: ReturnRepository;
   private readonly orderLookup: OrderLookup;
-  private readonly rateLimiter: RateLimiter;
+  private readonly rateLimiter: RateLimiterPort;
   private readonly guestSessionService: GuestSessionService;
   private readonly clock: () => Date;
   private readonly eligibilityConfig: EligibilityConfig;
@@ -64,7 +64,7 @@ export class ReturnLookupService {
   constructor(deps: {
     returnRepository: ReturnRepository;
     orderLookup: OrderLookup;
-    rateLimiter: RateLimiter;
+    rateLimiter: RateLimiterPort;
     guestSessionService: GuestSessionService;
     clock: () => Date;
     eligibilityConfig: EligibilityConfig;
@@ -87,9 +87,9 @@ export class ReturnLookupService {
     const lookupKey = rateKeys.lookup(input.ip);
     const failedKey = rateKeys.failedAttempt(input.orderNumber, input.ip);
     // Both slots are reserved before the port is awaited, so parallel lookups cannot all pass the check first.
-    if (!this.rateLimiter.consume(lookupKey, CUSTOMER_RATE_RULES.lookup).allowed) throw new TooManyRequestsError();
-    if (!this.rateLimiter.consume(failedKey, CUSTOMER_RATE_RULES.failedAttempt).allowed) {
-      this.rateLimiter.release(lookupKey);
+    if (!(await this.rateLimiter.consume(lookupKey, CUSTOMER_RATE_RULES.lookup)).allowed) throw new TooManyRequestsError();
+    if (!(await this.rateLimiter.consume(failedKey, CUSTOMER_RATE_RULES.failedAttempt)).allowed) {
+      await this.rateLimiter.release(lookupKey);
       throw new TooManyRequestsError();
     }
 
@@ -97,18 +97,18 @@ export class ReturnLookupService {
     try {
       result = await this.orderLookup.lookup(input.orderNumber, input.email);
     } catch (error) {
-      this.rateLimiter.release(lookupKey);
-      this.rateLimiter.release(failedKey);
+      await this.rateLimiter.release(lookupKey);
+      await this.rateLimiter.release(failedKey);
       throw error;
     }
     if (result.status === "unavailable") {
-      this.rateLimiter.release(lookupKey);
-      this.rateLimiter.release(failedKey);
+      await this.rateLimiter.release(lookupKey);
+      await this.rateLimiter.release(failedKey);
       throw new ServiceUnavailableError(ORDER_UNAVAILABLE_MESSAGE);
     }
     if (result.status === "not_found") throw new NotFoundError(LOOKUP_NOT_FOUND_MESSAGE);
     // A match is not a failed attempt: refund that reservation.
-    this.rateLimiter.release(failedKey);
+    await this.rateLimiter.release(failedKey);
 
     const order = result.order;
     const claimed = await this.returnRepository.claimedQuantities(order.orderNumber);
@@ -145,18 +145,18 @@ export class ReturnLookupService {
 
   async quote(input: ReturnQuoteRequest): Promise<ReturnQuoteView> {
     const sessionKey = rateKeys.quote(input.sessionOrderNumber);
-    if (!this.rateLimiter.consume(sessionKey, CUSTOMER_RATE_RULES.session).allowed) throw new TooManyRequestsError();
+    if (!(await this.rateLimiter.consume(sessionKey, CUSTOMER_RATE_RULES.session)).allowed) throw new TooManyRequestsError();
 
     let result: OrderLookupResult;
     try {
       result = await this.orderLookup.getByNumber(input.sessionOrderNumber);
     } catch (error) {
-      this.rateLimiter.release(sessionKey);
+      await this.rateLimiter.release(sessionKey);
       throw error;
     }
     if (result.status === "unavailable") {
       // Reserved before the await (parallel calls stay limited); an unavailable platform does not spend budget.
-      this.rateLimiter.release(sessionKey);
+      await this.rateLimiter.release(sessionKey);
       throw new ServiceUnavailableError(ORDER_UNAVAILABLE_MESSAGE);
     }
     if (result.status === "not_found") throw new NotFoundError("Order not found");
