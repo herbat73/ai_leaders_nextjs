@@ -8,12 +8,14 @@ import {
   submitRequestSchema,
 } from "@easyrms/core";
 
+import { requireAgent } from "@/server/agent-auth";
 import { createRequestScope, resolveReturnService } from "@/server/container";
 import { readSessionToken } from "@/server/guest-session";
 import { httpOptions } from "@/server/http-options";
 
 export const dynamic = "force-dynamic";
 
+// Agents only: the list carries customer e-mail, order number and defect text (T-01). The session is checked before the query is read.
 // `makeCrudRoute`'s list handler never receives the `Request`, so it cannot read `?status=`; workflow routes use `apiHandler`.
 export const GET = apiHandler(async (request) => {
   const params = new URL(request.url).searchParams;
@@ -24,7 +26,7 @@ export const GET = apiHandler(async (request) => {
     ...(kind === null ? {} : { kind }),
   });
   return (await resolveReturnService()).list(filter);
-}, httpOptions);
+}, { ...httpOptions, authenticate: requireAgent });
 
 /**
  * Customer submission. Session required (401); the order comes from the cookie, never from the body. 201 for a new
