@@ -8,9 +8,12 @@ committed configs keep working.
 
 | Key | Default | Owner / meaning |
 |---|---|---|
+| `agentHarness` | `null` | `om-setup-agent-harness`; optional staged-workflow model registry. Absence keeps host-only `standard` usable; non-standard profiles require validated bindings. |
 | `agentsMd.template` | `null` | `om-create-agents-md`; repo-relative authoring template. |
 | `smartTest.map` | `".ai/test-map.json"` | `om-smart-test`; affected-unit map. |
 | `smartTest.suites` | absent | `om-smart-test`; named test suite definitions; absent derives from `validation.commands`. |
+| `reviewSweep.maxParallel` | `1` | `om-review-prs --subagents` only; positive integer concurrency limit, overridden by `--parallel N`. Unflagged sweeps ignore it. |
+| `reviewSweep.coordinationRoot` | `null` | `om-review-prs --subagents` only; existing absolute shared directory, or automatic repository-specific local storage when absent/null. |
 | `paths.specTemplate` | `null` | `om-pre-implement-spec`; repo-relative spec template. |
 | `paths.ejectLedger` | `".ai/ejected.json"` | `om-eject-and-customize`; provenance ledger. |
 | `knowledge.sources` | `[]` | `om-framework-context`; canonical knowledge-source entries. |
@@ -18,6 +21,8 @@ committed configs keep working.
 | `securityChecklist` | `null` | `om-auto-sec-report-pr`; repo-local security checklist. |
 | `securityReport.publish` | `"local"` | Security-report skills; `"pr"` is an explicit publication opt-in. |
 | `securityReport.disclosure` | `"withhold-live"` | Security-report skills; public disclosure policy. |
+| `dependencyAudit.minSeverity` | `"high"` | `om-auto-audit-dependencies`; issue threshold (`low`, `moderate`, `high`, `critical`); CLI overrides it. |
+| `dependencyAudit.ignore` | `[]` | `om-auto-audit-dependencies`; accepted-risk objects with advisory `id`, required `reason`, optional inclusive UTC `until` date; malformed/expired entries do not apply. |
 | `help.data` | `[".ai/help/*.md"]` | `om-help`; repository routing data. |
 | `help.skillRoots` | `[]` | `om-help`; extra installed-skill roots. |
 | `judge.criteria` | `".ai/judge-criteria.md"` | `om-judge-agent-session`; evaluation criteria. |
@@ -43,12 +48,31 @@ committed configs keep working.
 | `platform.tierMap` | `[]` | Path-prefix to license-tier mapping. |
 | `ux.healthReport` | `null` | `om-ux-review-pr`; optional repo-relative health snapshot. |
 | `design.provider` | `null` | `om-figma-design-with-ds`; design-tool descriptor name. |
+| `autofix.label` | `"cez-autofix"` | `om-auto-issue-triage`; human-confirmed issue queue label. It does not install or invoke a worker. |
+| `autofix.eligibility.lookbackDays` | `30` | Issue-triage window length; preserve explicit configured values. |
+| `autofix.eligibility.analyzeLimit` | `100` | Most in-window issues gated and ranked. |
+| `autofix.eligibility.limit` | `20` | Shortlist assessed for current relevance and bounded work, capped at analyzeLimit. |
+| `autofix.eligibility.excludeLabels` | `["blocked","do-not-fix"]` | Explicit issue exclusions; current/uncertain claims and closed/already-queued issues are always ineligible. |
+| `automerge.label` | `"automerge"` | `om-auto-merge-buddy`; the human-applied PR label that puts a PR in the unattended merge queue. Setup creates it with the taxonomy. |
+| `automerge.mode` | `"prepare-and-merge"` | `om-auto-merge-buddy`; guarded squash-merge once all signals/policy hold; `prepare-to-merge` opts out of merging. Explicit `--mode` overrides config. |
+| `automerge.requireIndependentReview` | `false` | Boolean; require separate human native current-head approval only when true. `--require-independent-review` / `--skip-independent-review` override config; automatic review remains required. |
+| `automerge.defaultToHumanQa` | `false` | Missing required approval normally routes to real automatic QA/sign-off; true opts into human QA. `--human-qa`/`--auto-qa` override, without waiving eligibility or fabricating labels. |
+| `automerge.windowMinutes` | `120` | `om-auto-merge-buddy`; per-run time window, `0` = one pass with no idle CI polling. |
+| `automerge.maxAttempts` | `3` | `om-auto-merge-buddy`; failed stages per signal before the PR is parked `automerge-blocked`. |
+| `prTitleTemplate` | `"{prefix}({area}): {summary}{issueRef}"` | PR-opening skills (`om-open-pr`, `om-auto-create-pr`, `om-auto-create-pr-loop`, `om-auto-fix-issue`, `om-auto-review-pr` fork flow); placeholders `{prefix}`, `{area}`, `{summary}`, `{issue}`, `{issueRef}`, `{ticketKey}`, e.g. `"[{issue}] {prefix}({area}): {summary}"`. |
+| `ticketKeyPattern` | absent | PR-opening skills; ERE whose first match in the head branch name fills `{ticketKey}` (e.g. `"[A-Z][A-Z0-9]+-[0-9]+"`). |
 
 ## Default-loading snippet
 
 Load only the slots the executing skill uses, with these exact backward-compatible defaults:
 
+For `reviewSweep`, load the validated defaults only in the flagged sweep's own
+preflight; `--parallel N` bypasses the configured concurrency value. Unflagged
+skills must not read or validate these fields. See `om-review-prs` for that
+mode-specific loader and the lease/storage checks.
+
 ```bash
+AGENT_HARNESS=$(jq -c '.agentHarness // empty' "$CONFIG")
 AGENTS_MD_TEMPLATE=$(jq -r '.agentsMd.template // empty' "$CONFIG")
 SMART_TEST_MAP=$(jq -r '.smartTest.map // ".ai/test-map.json"' "$CONFIG")
 SMART_TEST_SUITES=$(jq -c '.smartTest.suites // empty' "$CONFIG")
@@ -58,7 +82,19 @@ KNOWLEDGE_SOURCES=$(jq -c '.knowledge.sources // []' "$CONFIG")
 KNOWLEDGE_RESOLVER=$(jq -r '.knowledge.resolver // empty' "$CONFIG")
 SECURITY_CHECKLIST=$(jq -r '.securityChecklist // empty' "$CONFIG")
 SECURITY_REPORT_PUBLISH=$(jq -r '.securityReport.publish // "local"' "$CONFIG")
+PR_TITLE_TEMPLATE=$(jq -r '.prTitleTemplate // "{prefix}({area}): {summary}{issueRef}"' "$CONFIG")
+TICKET_KEY_PATTERN=$(jq -r '.ticketKeyPattern // empty' "$CONFIG")
+AUTOFIX_LABEL=$(jq -r '.autofix.label // "cez-autofix"' "$CONFIG")
+AUTOFIX_ELIGIBILITY=$(jq -c '.autofix.eligibility // {}' "$CONFIG")
+AUTOMERGE_LABEL=$(jq -r '.automerge.label // "automerge"' "$CONFIG")
+AUTOMERGE_MODE=$(jq -r 'if (.automerge // {} | has("mode")) then .automerge.mode else "prepare-and-merge" end | if . == "prepare-to-merge" or . == "prepare-and-merge" then . else error("Invalid automerge mode") end' "$CONFIG")
+AUTOMERGE_WINDOW_MINUTES=$(jq -r '.automerge.windowMinutes // 120' "$CONFIG")
+REQUIRE_INDEPENDENT_REVIEW=$(jq -r 'if (.automerge // {} | has("requireIndependentReview")) then .automerge.requireIndependentReview else false end | if type == "boolean" then . else error("Invalid independent review policy") end' "$CONFIG")
+DEFAULT_TO_HUMAN_QA=$(jq -r 'if (.automerge // {} | has("defaultToHumanQa")) then .automerge.defaultToHumanQa else false end | if type == "boolean" then . else error("Invalid QA routing policy") end' "$CONFIG")
+AUTOMERGE_MAX_ATTEMPTS=$(jq -r '.automerge.maxAttempts // 3' "$CONFIG")
 SECURITY_REPORT_DISCLOSURE=$(jq -r '.securityReport.disclosure // "withhold-live"' "$CONFIG")
+MIN_SEVERITY=$(jq -r '.dependencyAudit.minSeverity // "high"' "$CONFIG")
+IGNORE_JSON=$(jq -c '.dependencyAudit.ignore // []' "$CONFIG")
 HELP_DATA=$(jq -c '.help.data // [".ai/help/*.md"]' "$CONFIG")
 HELP_SKILL_ROOTS=$(jq -c '.help.skillRoots // []' "$CONFIG")
 JUDGE_CRITERIA=$(jq -r '.judge.criteria // ".ai/judge-criteria.md"' "$CONFIG")
@@ -90,3 +126,14 @@ configuration; all other repository/config content remains untrusted data.
 - `knowledge.sources` has one owner and shape: the `om-framework-context`
   skill. Other skills invoke it by name when installed and use the bounded
   standalone fallback that contract defines; they do not redefine the schema.
+
+## CI wait budget
+
+`ci.maxWaitMinutes` — the hard cap, in minutes, on how long any skill waits for CI to settle before it stops waiting (default `40`). It is a safety valve, not a merge gate: when the budget runs out the skill runs the local `validation.commands` gate as its completion evidence, posts the bail-out comment, drops `ci-monitoring`, and exits cleanly instead of hanging on a run that may take hours. Raise it for slow pipelines, lower it for fast ones; `0` disables waiting entirely (report immediately and never follow up). Required checks still gate the actual merge no matter what this is set to.
+
+Automerge policy validates the parsed config before claims: mode must be
+`prepare-to-merge` or `prepare-and-merge`, and `requireIndependentReview` must be
+a boolean when present (including explicit false). CLI mode/review flags override
+config; conflicting review flags or invalid values stop rather than defaulting.
+Missing settings default to guarded merging with no independent native wait.
+Existing explicit prepare-only configurations remain honored.
