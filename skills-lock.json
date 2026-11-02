@@ -252,6 +252,12 @@
       "sourceType": "github",
       "skillPath": "skills/om-verify-in-repo/SKILL.md",
       "computedHash": "b68ff4bb3d8305df4d71adbf0a26fba5991258a775700cb7ae16024d1b6a9edf"
+    },
+    "threat-model": {
+      "source": "pat-lewczuk/skills",
+      "sourceType": "github",
+      "skillPath": "skills/threat-model/SKILL.md",
+      "computedHash": "d01f1ff536273963b9bf77ce6fb39e8e9a0dd7a5e63a1e63b965b66ef48dba4c"
     }
   }
 }
