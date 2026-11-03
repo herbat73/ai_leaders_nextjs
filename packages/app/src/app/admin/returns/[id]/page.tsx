@@ -3,8 +3,10 @@ import { notFound } from "next/navigation";
 import { approvalBlockedFor, formatDatePl, formatEventTime, formatMoney, type ReturnDetailView, type ReturnEvent } from "@easyrms/core";
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Timeline, type TimelineEvent } from "@easyrms/ui/admin";
 
+import type { AwilixContainer } from "awilix";
+
 import { requireAgentPage } from "@/server/agent-auth";
-import { createRequestScope } from "@/server/container";
+import { createRequestScope, type Cradle } from "@/server/container";
 import { getApprovalConfig } from "@/server/return-config";
 import { AdminShell } from "../../_shell/admin-shell";
 import { returnsCopy } from "../copy";
@@ -37,8 +39,7 @@ function isNotFound(error: unknown): boolean {
   return typeof error === "object" && error !== null && "code" in error && error.code === "not_found";
 }
 
-async function loadDetail(id: number): Promise<ReturnDetailView> {
-  const scope = await createRequestScope();
+async function loadDetail(scope: AwilixContainer<Cradle>, id: number): Promise<ReturnDetailView> {
   try {
     return await scope.cradle.returnService.getDetail(id);
   } catch (error) {
@@ -49,15 +50,21 @@ async function loadDetail(id: number): Promise<ReturnDetailView> {
 
 export default async function ReturnCardPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: rawId } = await params;
-  const agent = await requireAgentPage(`/admin/returns/${rawId}`);
   const id = Number(rawId);
-  if (!/^\d+$/.test(rawId) || !Number.isSafeInteger(id) || id < 1) notFound();
+  const validId = /^\d+$/.test(rawId) && Number.isSafeInteger(id) && id >= 1;
+  const scope = await createRequestScope();
 
-  const { request, decisionNote, items, events } = await loadDetail(id);
+  // The detail query does not depend on the agent, so it runs while the session is checked. The auth result is awaited
+  // first and wins: an unauthenticated visitor is redirected to login and never sees the detail or a 404 for a missing id.
+  const detailPromise = validId ? loadDetail(scope, id) : null;
+  detailPromise?.catch(() => undefined); // surfaced below, once the agent is confirmed
+  const agent = await requireAgentPage(`/admin/returns/${rawId}`);
+  if (!detailPromise) notFound();
+
+  const { request, decisionNote, items, events } = await detailPromise;
 
   // The vendor claim section: only for a complaint whose defect was confirmed.
   const claimable = request.kind === "complaint" && request.defectConfirmed === true;
-  const scope = await createRequestScope();
   const [existingClaim, suppliers] = claimable
     ? await Promise.all([scope.cradle.supplierClaimService.findForComplaint(id), scope.cradle.supplierService.list()])
     : [null, []];
