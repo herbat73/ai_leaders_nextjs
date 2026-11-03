@@ -10,11 +10,14 @@ import { returnStatusUpdateSchema } from "../../validators/returns/return-status
 import type { AgentPermission } from "../agents/types";
 import { isReturnStatus, ReturnService, toReturnStatus } from "./return.service";
 import type { MailMessage, MailPort } from "../mail/mail.port";
+import { COMPLAINT_ESCALATION_DAY } from "./complaint-sla";
+import { INBOX_PAGE_SIZE } from "./inbox-view";
 import { returnStateMachine } from "./transitions";
 import {
   RETURN_STATUSES,
   type ReturnDetail,
   type ReturnEvent,
+  type ReturnInboxQuery,
   type ReturnRepository,
   type ReturnRequest,
 } from "./types";
@@ -62,6 +65,7 @@ function makeRepository(initial: ReturnRequest[] = []): Fake {
     notes: new Map(),
     events: [],
     list: async (filter) => fake.rows.filter((row) => !filter?.status || row.status === filter.status),
+    listInbox: unsupported,
     findStatus: async (id) => fake.rows.find((row) => row.id === id)?.status ?? null,
     findRequest: async (id) => fake.rows.find((row) => row.id === id) ?? null,
     findDetail: async (id): Promise<ReturnDetail | null> => {
@@ -211,6 +215,41 @@ describe("ReturnService.list", () => {
 
     expect((await service.list({ status: "approved" })).map((item) => item.id)).toEqual([2]);
     expect(await service.list({ status: "resolved" })).toEqual([]);
+  });
+});
+
+describe("ReturnService.listInbox", () => {
+  it("passes the normalized query, the clock and the escalation constants, and builds list items for the page only", async () => {
+    const repository = makeRepository();
+    const seen: ReturnInboxQuery[] = [];
+    repository.listInbox = async (query) => {
+      seen.push(query);
+      return { rows: [makeRequest({ id: 7, status: "submitted" })], total: 31, page: 2, pageCount: 4 };
+    };
+    const now = new Date("2026-11-06T10:00:00Z");
+
+    const view = await makeService(repository, now).listInbox({ status: "submitted", kind: "complaint", search: "  RMA-2026-0001 ", from: "2026-11-01", to: "nonsense", page: 2.9 });
+
+    expect(seen).toEqual([
+      { status: "submitted", kind: "complaint", search: "rma-2026-0001", from: "2026-11-01", page: 2, pageSize: INBOX_PAGE_SIZE, now, escalationDays: COMPLAINT_ESCALATION_DAY },
+    ]);
+    expect(view).toMatchObject({ total: 31, page: 2, pageCount: 4 });
+    expect(view.rows).toHaveLength(1);
+    expect(view.rows[0]).toMatchObject({ id: 7, dueAt: expect.any(Date), overdue: expect.any(Boolean), allowedTransitions: expect.any(Array) });
+  });
+
+  it("sends no optional filter that was not given", async () => {
+    const repository = makeRepository();
+    let seen: ReturnInboxQuery | undefined;
+    repository.listInbox = async (query) => {
+      seen = query;
+      return { rows: [], total: 0, page: 1, pageCount: 1 };
+    };
+    await makeService(repository).listInbox({ page: Number.NaN, search: "   " });
+    expect(seen).toMatchObject({ page: 1 });
+    expect(seen).not.toHaveProperty("search");
+    expect(seen).not.toHaveProperty("status");
+    expect(seen).not.toHaveProperty("kind");
   });
 });
 

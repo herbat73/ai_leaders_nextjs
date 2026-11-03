@@ -3,7 +3,6 @@ import {
   formatEventTime,
   REQUEST_KINDS,
   RETURN_STATUSES,
-  viewInbox,
   returnListQuerySchema,
   type RequestKind,
   type ReturnListItem,
@@ -78,14 +77,16 @@ export default async function AdminReturnsPage({
   const to = text(query.to);
   const filterIsInvalid = parsed !== undefined && !parsed.success;
 
+  // Filtering, escalated-first order (Q07) and paging happen in the database; only this page's rows are read.
   const scope = await createRequestScope();
-  const listed = await scope.cradle.returnService.list({
+  const view = await scope.cradle.returnService.listInbox({
     ...(filter ? { status: filter } : {}),
     ...(kindFilter ? { kind: kindFilter } : {}),
+    search: q,
+    from,
+    to,
+    page: Number(text(query.page)),
   });
-  // Escalated complaints go first (Q07); the repository's newest-first order is kept within each group.
-  const returns = [...listed.filter((item) => item.escalated), ...listed.filter((item) => !item.escalated)];
-  const view = viewInbox(returns, { search: q, from, to, page: Number(text(query.page)) });
   const state = { status: filter, kind: kindFilter, q, from, to };
   const narrowed = Boolean(filter || kindFilter || q || from || to);
 

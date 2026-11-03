@@ -38,6 +38,7 @@ function makeRepo(): FakeRepo {
     inputs: [],
     lockKeys: [],
     list: async () => repo.rows,
+    listInbox: unsupported,
     findDetail: async () => null,
     findStatus: async (id) => repo.rows.find((row) => row.id === id)?.status ?? null,
     findRequest: async (id) => repo.rows.find((row) => row.id === id) ?? null,

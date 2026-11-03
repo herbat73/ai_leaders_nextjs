@@ -3,7 +3,9 @@ import type { EntityManager } from "@mikro-orm/postgresql";
 import {
   DECISION_STATUSES,
   formatRma,
+  inboxInstantRange,
   COMPLAINT_REASON_CODE,
+  COMPLAINT_KIND,
   COMPLAINT_RESOLUTIONS,
   REQUEST_KINDS,
   RETURN_KIND,
@@ -17,6 +19,8 @@ import {
   type NewReturnRequest,
   type ReturnDetail,
   type ReturnEvent,
+  type ReturnInboxPage,
+  type ReturnInboxQuery,
   type ReturnItem,
   type ReturnListFilter,
   type ReturnRepository,
@@ -127,9 +131,71 @@ export class MikroOrmReturnRepository implements ReturnRepository {
     const where = { ...statusWhere, ...(filter.kind === undefined ? {} : { kind: filter.kind }) };
     const rows = await this.em.find(ReturnRequestSchema, where, { orderBy: { createdAt: "desc", id: "desc" } });
     const requests = rows.map(toDomain);
+    this.logCorrupt(requests);
+    return requests;
+  }
+
+  private logCorrupt(requests: ReturnRequest[]): void {
     const corrupt = requests.filter((request) => request.status === "unknown").map((request) => request.id);
     if (corrupt.length > 0) this.logger.error("Return requests with an unknown status", { ids: corrupt });
-    return requests;
+  }
+
+  /**
+   * One inbox page: filter, count, escalated-first order and the cut to a page all happen in Postgres. Rules mirror
+   * `viewInbox` (search, Warsaw-day range) and `complaintEscalated` (escalation); `return.repository.test.ts` runs both
+   * on the same rows. The ids are selected with raw SQL (the ordering expression has no ORM form), then the entities are
+   * loaded and put back in that order so the rows go through the same `toDomain` as every other read.
+   */
+  async listInbox(query: ReturnInboxQuery): Promise<ReturnInboxPage> {
+    const conditions: string[] = [];
+    const params: unknown[] = [];
+    if (query.status === "unknown") {
+      conditions.push(`"status" not in (${RETURN_STATUSES.map(() => "?").join(", ")})`);
+      params.push(...RETURN_STATUSES);
+    } else if (query.status !== undefined) {
+      conditions.push(`"status" = ?`);
+      params.push(query.status);
+    }
+    if (query.kind !== undefined) {
+      conditions.push(`"kind" = ?`);
+      params.push(query.kind);
+    }
+    if (query.search) {
+      // `\`, `%` and `_` are escaped so the fragment is matched literally.
+      conditions.push(`"rma" ilike ? escape '\\'`);
+      params.push(`%${query.search.replace(/[\\%_]/g, "\\$&")}%`);
+    }
+    const { start, endExclusive } = inboxInstantRange(query);
+    if (start) {
+      conditions.push(`"created_at" >= ?`);
+      params.push(start);
+    }
+    if (endExclusive) {
+      conditions.push(`"created_at" < ?`);
+      params.push(endExclusive);
+    }
+    const where = conditions.length > 0 ? ` where ${conditions.join(" and ")}` : "";
+
+    const [{ total }] = await this.em.execute<{ total: number }[]>(`select count(*)::int as "total" from "return_requests"${where}`, params);
+    const pageCount = Math.max(1, Math.ceil(total / query.pageSize));
+    const page = Math.min(Math.max(1, query.page), pageCount);
+
+    // Twin of `complaintEscalated`: an unanswered complaint whose `createdAt` plus N Warsaw calendar days has passed.
+    const escalated = `("kind" = '${COMPLAINT_KIND}' and "status" = 'submitted' and (("created_at" at time zone 'Europe/Warsaw') + (?::int * interval '1 day')) at time zone 'Europe/Warsaw' <= ?::timestamptz)`;
+    const ids = (
+      await this.em.execute<{ id: number }[]>(
+        `select "id" from "return_requests"${where} order by ${escalated} desc, "created_at" desc, "id" desc limit ? offset ?`,
+        [...params, query.escalationDays, query.now, query.pageSize, (page - 1) * query.pageSize],
+      )
+    ).map((row) => row.id);
+
+    const byId = new Map((ids.length === 0 ? [] : await this.em.find(ReturnRequestSchema, { id: { $in: ids } })).map((row) => [row.id, row]));
+    const requests = ids.flatMap((id) => {
+      const row = byId.get(id);
+      return row ? [toDomain(row)] : [];
+    });
+    this.logCorrupt(requests);
+    return { rows: requests, total, page, pageCount };
   }
 
   async findDetail(id: number): Promise<ReturnDetail | null> {

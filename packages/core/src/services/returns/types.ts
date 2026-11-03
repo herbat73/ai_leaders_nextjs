@@ -162,6 +162,32 @@ export interface ReturnListFilter {
   kind?: RequestKind;
 }
 
+/**
+ * One page of the agent inbox, already normalized (`normalizeInboxOptions`). `now` and `escalationDays` are passed in so
+ * the repository holds no clock and no business constant: an unanswered complaint is escalated once
+ * `createdAt + escalationDays` Warsaw calendar days is not after `now` (the SQL twin of `complaintEscalated`).
+ */
+export interface ReturnInboxQuery extends ReturnListFilter {
+  /** Lower-cased RMA fragment. */
+  search?: string;
+  /** Inclusive `YYYY-MM-DD` bounds on the submission day in Europe/Warsaw. */
+  from?: string;
+  to?: string;
+  /** Requested 1-based page; the repository clamps it into range. */
+  page: number;
+  pageSize: number;
+  now: Date;
+  escalationDays: number;
+}
+
+export interface ReturnInboxPage {
+  rows: ReturnRequest[];
+  total: number;
+  /** The page actually returned (clamped). */
+  page: number;
+  pageCount: number;
+}
+
 export type TransitionOutcome =
   | { result: "moved"; request: ReturnRequest }
   | { result: "conflict"; currentStatus: StoredReturnStatus }
@@ -170,6 +196,8 @@ export type TransitionOutcome =
 /** Port implemented by `@easyrms/db`. */
 export interface ReturnRepository {
   list(filter?: ReturnListFilter): Promise<ReturnRequest[]>;
+  /** Escalated complaints first, then newest first; filtered, counted and cut to one page in the database. */
+  listInbox(query: ReturnInboxQuery): Promise<ReturnInboxPage>;
   findDetail(id: number): Promise<ReturnDetail | null>;
   /** Status only, so the service can validate a move without reading the decision note. */
   findStatus(id: number): Promise<StoredReturnStatus | null>;
