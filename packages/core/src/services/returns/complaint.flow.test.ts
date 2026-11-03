@@ -27,6 +27,7 @@ function makeRepo(seed: ReturnRequest[] = []): FakeRepo {
     inputs: [],
     transitions: [],
     list: async () => repo.rows,
+    listInbox: async () => ({ rows: repo.rows, total: repo.rows.length, page: 1, pageCount: 1 }),
     findDetail: async () => null,
     findStatus: async (id) => repo.rows.find((row) => row.id === id)?.status ?? null,
     findRequest: async (id) => repo.rows.find((row) => row.id === id) ?? null,

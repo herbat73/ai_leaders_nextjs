@@ -19,8 +19,9 @@ import type { OrderLookup, OrderLookupResult, ReturnOrder } from "../orders/orde
 import { requiresManagerApproval, type ApprovalConfig } from "./approval";
 import { calculateComplaintQuote } from "./complaint-quote";
 import { checkComplaintEligibility, warsawDateString } from "./complaint-eligibility";
-import { complaintAwaitsAnswer, complaintDaysLeft, complaintDueAt, complaintEscalated } from "./complaint-sla";
+import { COMPLAINT_ESCALATION_DAY, complaintAwaitsAnswer, complaintDaysLeft, complaintDueAt, complaintEscalated } from "./complaint-sla";
 import { checkDecisionNote } from "./decision-note";
+import { INBOX_PAGE_SIZE, normalizeInboxOptions, type InboxView, type InboxViewOptions } from "./inbox-view";
 import { checkEligibility, type EligibilityConfig, type IneligibleReason } from "./eligibility";
 import { calculateQuote, validateQuoteLines, type QuoteConfig } from "./quote";
 import { ORDER_UNAVAILABLE_MESSAGE } from "./return-lookup.service";
@@ -30,6 +31,7 @@ import {
   COMPLAINT_REASON_CODE,
   RETURN_KIND,
   RETURN_STATUSES,
+  type RequestKind,
   type ReturnDetailView,
   type ReturnListFilter,
   type ReturnListItem,
@@ -129,6 +131,24 @@ export class ReturnService {
     const now = this.clock();
     const rows = await this.returnRepository.list(filter);
     return rows.map((row) => this.toListItem(row, now));
+  }
+
+  /**
+   * One page of the agent inbox, filtered, ordered (escalated complaints first, then newest first) and cut in the
+   * database; list items are built for that page only. The result matches `viewInbox` over `list` plus the escalated
+   * reorder, which the repository tests assert.
+   */
+  async listInbox(options: InboxViewOptions & { kind?: RequestKind }): Promise<InboxView<ReturnListItem>> {
+    const { kind, ...rest } = options;
+    const now = this.clock();
+    const result = await this.returnRepository.listInbox({
+      ...normalizeInboxOptions(rest),
+      ...(kind ? { kind } : {}),
+      pageSize: INBOX_PAGE_SIZE,
+      now,
+      escalationDays: COMPLAINT_ESCALATION_DAY,
+    });
+    return { rows: result.rows.map((row) => this.toListItem(row, now)), total: result.total, page: result.page, pageCount: result.pageCount };
   }
 
   async getDetail(id: number): Promise<ReturnDetailView> {

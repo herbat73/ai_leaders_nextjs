@@ -40,6 +40,7 @@ function makeRepository(rows: ReturnRequest[] = [], claimed: Record<string, Reco
   };
   return {
     list: async () => rows,
+    listInbox: unsupported,
     findDetail: async () => null,
     findStatus: async () => null,
     findRequest: async () => null,
