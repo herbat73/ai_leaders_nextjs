@@ -55,6 +55,8 @@ const columns: DataTableColumn<ReturnListItem>[] = [
         {item.daysLeft != null && !item.overdue && <span className="text-muted-foreground">{copy.daysLeft(item.daysLeft)}</span>}
         {item.overdue && <Badge variant="destructive">{copy.overdue}</Badge>}
         {item.escalated && <Badge variant="destructive">{copy.escalated}</Badge>}
+        {item.recommendApprove && <Badge variant="outline">{copy.recommendApprove}</Badge>}
+        {item.assignManager && <Badge variant="outline">{copy.assignManager}</Badge>}
       </span>
     ),
   },

@@ -51,6 +51,8 @@ export const returnsCopy = {
     columns: { rma: "RMA", kind: "Rodzaj", order: "Zamówienie", customer: "Klient", status: "Status", due: "Termin odpowiedzi" },
     overdue: "Po terminie",
     escalated: "Eskalacja",
+    recommendApprove: "Zalecana akceptacja",
+    assignManager: "Kierownik",
     daysLeft: (days: number): string => (days === 1 ? "zostaje 1 dzień" : `zostaje ${days} dni`),
     kindFilterLabel: "Rodzaj zgłoszenia",
     allKinds: "Wszystkie rodzaje",
