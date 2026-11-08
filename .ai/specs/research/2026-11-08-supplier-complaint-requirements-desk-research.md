@@ -27,7 +27,7 @@ Dropshipping: a wholesaler has no statutory duty to take returns from the shop's
 
 ## What this means for EasyRMS
 
-- The claim e-mail sent by UC-12 (D13) today carries a subject and body snapshot. Against these forms it may be missing: serial number, invoice number and date, shop NIP, and photo attachments. This is a hypothesis to check, not a finding about any real supplier.
+- The claim e-mail built by `composeSupplierClaim` (`packages/core/src/services/supplier-claims/compose.ts`, UC-12, D13) already carries RMA, order number, claimed value, product name, SKU, quantity, unit price, serial number (when known), defect description, date the defect was noticed and the agent's reply address. Against these forms it does not carry: purchase invoice number and date, the shop's NIP, photo attachments, or the requested remedy. This is a hypothesis to check with real suppliers, not a finding about any of them.
 - The portal-vs-e-mail question (A05) is partly informed: public supplier channels are web forms or e-mail, so an e-mail first step (D13) matches what is seen. Whether suppliers would use a portal D-01 is untested.
 - Nothing here speaks to the second half of A05 (crediting at least 60% of value). No data was found.
 
