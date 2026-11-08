@@ -43,7 +43,7 @@ Caveats:
 ## 3. Voucher / exchange share of returns `[NOT MEASURABLE]`
 
 - The sample `outcome` is approved / partial / rejected / cancelled / open for all 16 returns (10 approved, 3 cancelled, 3 open), with no refund method, so how many were paid as voucher, exchange or money is unknown.
-- The shop has no voucher flow today as far as the brief says (R12 is a proposal), so the true value may be close to 0 for vouchers and only exchanges exist. Ask the owner.
+- Whether the shop offers vouchers or exchanges today is not stated anywhere we hold (R12, "Bon +10%", is a rule of the planned portal, not a description of current practice). The true value could be near 0; ask the owner.
 - What is needed: for the same period, split returns by remedy (refund / exchange / voucher) from the order system or the Allegro return records; denominator = returns, not orders.
 - `[BENCHMARK]` (apparel-heavy, vendor material): one returns study splits processing as refunds 46%, exchanges 29%, store credit 25% (shares may overlap); exchange-conversion of 12-18% in refund-led flows and 35-55% in exchange-first flows is labelled "directional". Working range 30-50% for exchanges plus store credit in apparel. The brief's target (at least 25% instead of a money refund) sits inside this range, but the range is for other categories and says nothing about this shop. A03 stays `untested`.
   - https://www.shipaid.com/blogs/ecommerce-tips/exchange-rate-vs-refund-rate-returns-metric-retained-revenue
@@ -52,7 +52,7 @@ Caveats:
 ## 4. Mobile share `[NOT MEASURABLE]`
 
 - No device data exists in the repo or the sample. Needed: share of sessions (or of contact-page sessions) by device class from the shop's analytics, last 3 months, same period as above. Allegro-side traffic is not the shop's own and should be reported separately.
-- `[BENCHMARK]` Polish e-commerce, Criteo figures (year not stated in the secondary article): mobile 15-17% of *transactions* (smartphones about 7.5%), best sellers 22%. This is share of purchases, not of traffic, and traffic share is normally much higher than purchase share. Gemius "E-commerce 2025" and the e-Izba "Kupuję wygodnie 2025" report have mobile chapters, but no figure was reachable. Not usable for the A02 decision as is.
+- `[BENCHMARK]` Polish e-commerce, Criteo figures (year not stated in the secondary article): mobile 15-17% of *transactions* (smartphones about 7.5%), best sellers 22%. This is share of purchases, not of traffic, so it does not answer A02 (which is about where customers report from). Gemius "E-commerce 2025" and the e-Izba "Kupuję wygodnie 2025" report have mobile chapters, but no figure was reachable. Not usable for the A02 decision as is.
   - https://www.benchmark.pl/criteo-raport-state-of-mobile-commerce-7263105816113729a
   - https://www.przelewy24.pl/en/news/ecommerce-2025-online-shopping-trends-polish-consumers
 
