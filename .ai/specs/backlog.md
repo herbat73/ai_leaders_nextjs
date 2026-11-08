@@ -19,6 +19,6 @@ Research variant filed 2026-10-22. On 2026-10-24 E03 and E04 were filed. E01 (cu
 | E03-T01 | [#30](https://github.com/herbat73/ai_leaders_nextjs/issues/30) | Write the spec for agent login and roles | #29 | — | no |
 | E04 | [#31](https://github.com/herbat73/ai_leaders_nextjs/issues/31) | Later (parked) | — | — | no |
 | E04-S01 | [#108](https://github.com/herbat73/ai_leaders_nextjs/issues/108) | Rules recommendations on the decision card + comparison events (R08–R10) | #31 | — | no |
-| E04-S02 | [#109](https://github.com/herbat73/ai_leaders_nextjs/issues/109) | Inbox signals for rules (R10a, R10c) | #31 | #108 | no |
+| E04-S02 | [#109](https://github.com/herbat73/ai_leaders_nextjs/issues/109) | Inbox signals for rules (R10c) | #31 | #108 | no |
 | E04-S03 | [#110](https://github.com/herbat73/ai_leaders_nextjs/issues/110) | Read-only rules page and simulation (optional) | #31 | — | no |
 | E05 | — | Complaints and vendor claims (shipped, PR #36, #37; recorded only, no issue, by owner choice) | — | — | no |
