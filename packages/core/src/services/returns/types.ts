@@ -97,6 +97,16 @@ export interface ReturnListItem extends ReturnRequest {
 
 export type ReturnEventActor = "customer" | "agent" | "system";
 
+/** What the rules engine recommended when an agent decided, and what the agent did (stored in `return_rule_comparisons`). */
+export interface RuleComparisonRecord {
+  recommended: "approve" | "none";
+  /** Ids of the rules behind the recommendation; empty when `recommended` is `none`. */
+  ruleIds: string[];
+  actualStatus: "approved" | "rejected";
+  /** `null` when nothing was recommended. */
+  followed: boolean | null;
+}
+
 export interface ReturnEvent {
   id: number;
   type: "submitted" | "status_changed";
@@ -235,5 +245,7 @@ export interface ReturnRepository {
     agentId: number,
     /** Complaints only: written with the move to `received` (the agent's finding); other moves leave it untouched. */
     defectConfirmed?: boolean,
+    /** Written in the same transaction as the move; present only when rules recommendations are on and `to` is a decision. */
+    comparison?: RuleComparisonRecord,
   ): Promise<TransitionOutcome>;
 }
