@@ -21,6 +21,10 @@ NOTE="Zwrot odrzucony: automatyczny test RET-002, brak podstaw do zwrotu."
 [ -f "$QA_DIR/test-env.env" ] || { echo "FAIL: $QA_DIR/test-env.env missing (see RET-001 header)" >&2; exit 2; }
 set -a; . "$QA_DIR/test-env.env"; set +a
 
+# Fresh copy of the pristine database, as qa_init does for the scripts that use the lib (no leftover rate-limit windows).
+. "$QA_DIR/lib/qa-db.sh"
+qa_db_reset || { echo "FAIL: could not create a fresh test database" >&2; exit 2; }
+
 ENV_OUT=$(sh "$ROOT/.ai/scripts/test-env-up.sh" 2>&1) || { echo "$ENV_OUT" | tail -20 >&2; echo "FAIL: test environment did not start" >&2; exit 2; }
 BASE_URL=$(echo "$ENV_OUT" | sed -n 's/^TEST_ENV_BASE_URL=//p' | tail -1)
 AB=$(sed -n 's/.*"command": *"\([^"]*agent-browser[^"]*\)".*/\1/p' "$QA_DIR/test-env.json" | head -1)

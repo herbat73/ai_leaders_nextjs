@@ -76,20 +76,14 @@ complaint_create() {
   echo "created $RMA"
 }
 
-# Logs in once per script run: the login route is throttled (10 attempts a minute per IP), and several scripts in a row hit it.
+# Logs in once per script run: the login route is throttled (10 attempts a minute per IP); keep a script under it.
 AGENT_API_LOGGED=0
 agent_login_api() {
   [ "$AGENT_API_LOGGED" = 1 ] && return 0
-  n=0
-  while :; do
-    code=$(printf '{"email":"%s","password":"%s"}' "$TEST_AGENT_EMAIL" "$TEST_AGENT_PASSWORD" |
-      api -o /dev/null -w '%{http_code}' -c "$COOKIES" -X POST "$BASE_URL/api/agents/login" --data-binary @-)
-    # On a warm server scripts finish in seconds and use up the 10 logins a minute; wait out the window and retry, also in
-    # cleanup, where a failed login would leave the unit held and break every later scenario on the same line.
-    if [ "$code" = 429 ] && [ "$n" -lt 2 ]; then n=$((n + 1)); echo "agent API login throttled (429), waiting 65s" >&2; sleep 65; continue; fi
-    break
-  done
-  [ "$code" = 200 ] || { echo "FAIL: agent API login answered $code (throttled? wait a minute)" >&2; exit 1; }
+  code=$(printf '{"email":"%s","password":"%s"}' "$TEST_AGENT_EMAIL" "$TEST_AGENT_PASSWORD" |
+    api -o /dev/null -w '%{http_code}' -c "$COOKIES" -X POST "$BASE_URL/api/agents/login" --data-binary @-)
+  # No retry on 429: every scenario starts on a fresh database, so a throttle here means the script made too many logins.
+  [ "$code" = 200 ] || { echo "FAIL: agent API login answered $code (429 = the script exceeded the login limit)" >&2; exit 1; }
   AGENT_API_LOGGED=1
 }
 agent_api() { api -b "$COOKIES" "$@"; }

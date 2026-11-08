@@ -9,8 +9,8 @@
 #
 # Every scenario starts on a fresh database: qa_init (lib/common.sh) drops `easyrms_qa` and clones it from the migrated
 # template `easyrms_qa_template` (lib/qa-db.sh), so no rows, held units, agents or rate-limit windows leak between scenarios.
-# A scenario that failed on a 429 / throttle or an unhydrated page ("login did not reach the inbox", 'no field labelled "..."')
-# is retried once, again on a fresh database; a real UI regression needs to fail twice.
+# A scenario that failed on an unhydrated page ("login did not reach the inbox", 'no field labelled "..."') is retried once,
+# again on a fresh database; a real UI regression needs to fail twice. A 429 is not retried: on a fresh database it is a bug.
 set -u
 
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
@@ -44,8 +44,8 @@ for area in $AREAS; do
     case "$id" in SET-*) cp "$QA_DIR/test-env-app.log" "$LOG_DIR/app-before-$id.log" 2>/dev/null || true ;; esac
     start=$(date +%s)
     sh "$f" > "$LOG_DIR/$id.log" 2>&1; rc=$?
-    if [ "$rc" -ne 0 ] && grep -q -E '429|throttl|login did not reach the inbox|no field labelled' "$LOG_DIR/$id.log"; then
-      echo "      $id failed on a rate limiter or an unhydrated page; retrying once on a fresh database"; cp "$LOG_DIR/$id.log" "$LOG_DIR/$id.first.log"
+    if [ "$rc" -ne 0 ] && grep -q -E 'login did not reach the inbox|no field labelled' "$LOG_DIR/$id.log"; then
+      echo "      $id failed on an unhydrated page; retrying once on a fresh database"; cp "$LOG_DIR/$id.log" "$LOG_DIR/$id.first.log"
       sh "$f" > "$LOG_DIR/$id.log" 2>&1; rc=$?
     fi
     secs=$(( $(date +%s) - start ))
