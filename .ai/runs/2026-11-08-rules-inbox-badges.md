@@ -21,6 +21,12 @@ Badges only for `submitted` requests (the only status that can be approved or re
 
 ### Phase 2: Inbox signals
 
-- [ ] 2.1 core: listInbox attaches recommendApprove and assignManager (flag-gated) with tests
-- [ ] 2.2 app: inbox badges with text, Polish copy
-- [ ] 2.3 docs: README note, platform-primitives, run log
+- [x] 2.1 core: listInbox attaches recommendApprove and assignManager (flag-gated) with tests — e0d5ba6
+- [x] 2.2 app: inbox badges with text, Polish copy — e0d5ba6
+- [x] 2.3 docs: README note, platform-primitives, run log — e0d5ba6
+
+## Outcome
+
+- Gate: typecheck, `npm test` (815 passed), lint (0 errors, 86 existing warnings), audit, docs:check, storybook:build, production build: green.
+- No db code touched, so `test:db` not needed. No new ui component, so no story.
+- Not exercised in a running app with the flag on (see PR QA).
