@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { createFakeOrderLookup } from "../../adapters/orders/fake-order-lookup";
 import { money } from "../../domain/money";
+import { BRIEF_RULES } from "../../rules";
 import { RateLimiter } from "../../security/rate-limiter";
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "../../errors";
 import type { ApiLogger } from "../../http/types";
@@ -12,6 +13,7 @@ import { isReturnStatus, ReturnService, toReturnStatus } from "./return.service"
 import type { MailMessage, MailPort } from "../mail/mail.port";
 import { COMPLAINT_ESCALATION_DAY } from "./complaint-sla";
 import { INBOX_PAGE_SIZE } from "./inbox-view";
+import type { RecommendationConfig } from "./recommendation-config";
 import { returnStateMachine } from "./transitions";
 import {
   RETURN_STATUSES,
@@ -20,6 +22,7 @@ import {
   type ReturnInboxQuery,
   type ReturnRepository,
   type ReturnRequest,
+  type RuleComparisonRecord,
 } from "./types";
 
 // Thursday 5 Nov 2026 10:00 Warsaw is UTC+1 all week, so due dates are easy to read.
@@ -49,6 +52,7 @@ interface Fake extends ReturnRepository {
   rows: ReturnRequest[];
   notes: Map<number, string | null>;
   events: ReturnEvent[];
+  comparisons: Array<RuleComparisonRecord & { id: number }>;
   /** Lets a test change the stored status after the service read it, as a second agent would. */
   beforeTransition?: () => void;
 }
@@ -64,6 +68,7 @@ function makeRepository(initial: ReturnRequest[] = []): Fake {
     rows: [...initial],
     notes: new Map(),
     events: [],
+    comparisons: [],
     list: async (filter) => fake.rows.filter((row) => !filter?.status || row.status === filter.status),
     listInbox: unsupported,
     findStatus: async (id) => fake.rows.find((row) => row.id === id)?.status ?? null,
@@ -78,8 +83,9 @@ function makeRepository(initial: ReturnRequest[] = []): Fake {
     findByIdempotencyKey: unsupported,
     claimedQuantities: unsupported,
     withOrderLock: unsupported,
-    transition: async (id, from, to, note, agentId) => {
+    transition: async (id, from, to, note, agentId, _defectConfirmed, comparison) => {
       fake.beforeTransition?.();
+      if (comparison) fake.comparisons.push({ id, ...comparison });
       const row = fake.rows.find((candidate) => candidate.id === id);
       if (!row) return { result: "not_found" };
       if (row.status !== from) return { result: "conflict", currentStatus: row.status };
@@ -114,6 +120,7 @@ function makeService(
   now = new Date("2026-11-06T10:00:00Z"),
   mailPort: MailPort = makeMailPort(),
   logger: ApiLogger = { error: vi.fn() },
+  recommendationConfig?: RecommendationConfig,
 ): ReturnService {
   return new ReturnService({
     returnRepository: repository,
@@ -125,6 +132,7 @@ function makeService(
     eligibilityConfig: { windowDays: 30 },
     quoteConfig: { shippingFee: money(1000) },
     approvalConfig: { refundApprovalLimit: money(200000) },
+    recommendationConfig,
   });
 }
 
@@ -617,3 +625,62 @@ describe("ReturnService.transition approval limit (R11)", () => {
   });
 });
 
+
+describe("ReturnService rules recommendations", () => {
+  const ON: RecommendationConfig = { enabled: true, rules: BRIEF_RULES };
+  const small = () => makeRequest({ resolution: "refund", resolutionAmount: money(10000) });
+  const serviceFor = (repository: Fake, config?: RecommendationConfig) =>
+    makeService(repository, undefined, undefined, undefined, config);
+
+  it("attaches no recommendation while the flag is off", async () => {
+    const detail = await serviceFor(makeRepository([small()])).getDetail(1);
+
+    expect(detail).not.toHaveProperty("recommendation");
+  });
+
+  it("attaches the recommendation to a pending request when the flag is on", async () => {
+    const detail = await serviceFor(makeRepository([small()]), ON).getDetail(1);
+
+    expect(detail.recommendation).toMatchObject({ recommended: "approve", ruleIds: ["R08"] });
+  });
+
+  it("attaches none once the request is no longer awaiting a decision", async () => {
+    const detail = await serviceFor(makeRepository([{ ...small(), status: "approved" }]), ON).getDetail(1);
+
+    expect(detail).not.toHaveProperty("recommendation");
+  });
+
+  it("stores a followed comparison when the agent approves a recommended request", async () => {
+    const repository = makeRepository([small()]);
+
+    await serviceFor(repository, ON).transition(1, "approved", undefined, AGENT);
+
+    expect(repository.comparisons).toEqual([{ id: 1, recommended: "approve", ruleIds: ["R08"], actualStatus: "approved", followed: true }]);
+  });
+
+  it("stores a not-followed comparison when the agent rejects a recommended request", async () => {
+    const repository = makeRepository([small()]);
+
+    await serviceFor(repository, ON).transition(1, "rejected", LONG_NOTE, AGENT);
+
+    expect(repository.comparisons).toMatchObject([{ followed: false, actualStatus: "rejected" }]);
+  });
+
+  it("stores followed as null when nothing was recommended", async () => {
+    const repository = makeRepository([makeRequest({ resolution: "exchange", resolutionAmount: null })]);
+
+    await serviceFor(repository, ON).transition(1, "approved", undefined, AGENT);
+
+    expect(repository.comparisons).toEqual([{ id: 1, recommended: "none", ruleIds: [], actualStatus: "approved", followed: null }]);
+  });
+
+  it("stores nothing for non-decision moves or while the flag is off", async () => {
+    const approved = makeRepository([{ ...small(), status: "approved" }]);
+    await serviceFor(approved, ON).transition(1, "in_transit", undefined, AGENT);
+    const off = makeRepository([small()]);
+    await serviceFor(off).transition(1, "approved", undefined, AGENT);
+
+    expect(approved.comparisons).toEqual([]);
+    expect(off.comparisons).toEqual([]);
+  });
+});

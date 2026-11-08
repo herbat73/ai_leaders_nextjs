@@ -61,7 +61,7 @@ export default async function ReturnCardPage({ params }: { params: Promise<{ id:
   const agent = await requireAgentPage(`/admin/returns/${rawId}`);
   if (!detailPromise) notFound();
 
-  const { request, decisionNote, items, events } = await detailPromise;
+  const { request, decisionNote, items, events, recommendation } = await detailPromise;
 
   // The vendor claim section: only for a complaint whose defect was confirmed.
   const claimable = request.kind === "complaint" && request.defectConfirmed === true;
@@ -197,6 +197,30 @@ export default async function ReturnCardPage({ params }: { params: Promise<{ id:
                   </li>
                 ))}
               </ul>
+            </CardContent>
+          </Card>
+        )}
+
+        {recommendation && (
+          <Card aria-labelledby="rules-recommendation-heading">
+            <CardHeader>
+              <CardTitle id="rules-recommendation-heading">{copy.recommendation.heading}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm">
+              <p className="font-medium">
+                {recommendation.recommended === "approve"
+                  ? recommendation.keepItem
+                    ? copy.recommendation.approveKeepItem
+                    : copy.recommendation.approve
+                  : copy.recommendation.none}
+              </p>
+              {recommendation.assignManager && <p>{copy.recommendation.manager}</p>}
+              {recommendation.rules.length > 0 && (
+                <p className="text-muted-foreground">
+                  {copy.recommendation.rules}: {recommendation.rules.map((rule) => `${rule.id} ${rule.name}`).join("; ")}
+                </p>
+              )}
+              <p className="text-muted-foreground">{copy.recommendation.advisory}</p>
             </CardContent>
           </Card>
         )}

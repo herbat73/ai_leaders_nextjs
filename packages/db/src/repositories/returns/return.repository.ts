@@ -19,6 +19,7 @@ import {
   type NewReturnRequest,
   type ReturnDetail,
   type ReturnEvent,
+  type RuleComparisonRecord,
   type ReturnInboxPage,
   type ReturnInboxQuery,
   type ReturnItem,
@@ -37,6 +38,7 @@ import {
   ReturnRequestSchema,
   type ReturnRequestEntity,
   type ReturnRequestEventEntity,
+  ReturnRuleComparisonSchema,
   type ReturnRequestItemEntity,
 } from "../../entities";
 import { fromDecimal, toDecimal } from "../../decimal";
@@ -327,6 +329,7 @@ export class MikroOrmReturnRepository implements ReturnRepository {
     note: string | null,
     agentId: number,
     defectConfirmed?: boolean,
+    comparison?: RuleComparisonRecord,
   ): Promise<TransitionOutcome> {
     // Runs on the callback's EntityManager: `this.em` is a plain fork and would run outside the transaction.
     return this.em.transactional(async (tx): Promise<TransitionOutcome> => {
@@ -357,6 +360,17 @@ export class MikroOrmReturnRepository implements ReturnRepository {
         actor: "agent",
         agent: tx.getReference(AgentSchema, agentId),
       });
+      // Same transaction as the move: a decision and its comparison commit together or not at all.
+      if (comparison) {
+        tx.create(ReturnRuleComparisonSchema, {
+          returnRequest: tx.getReference(ReturnRequestSchema, id),
+          agent: tx.getReference(AgentSchema, agentId),
+          recommended: comparison.recommended,
+          ruleIds: comparison.ruleIds.join(","),
+          actualStatus: comparison.actualStatus,
+          followed: comparison.followed,
+        });
+      }
       await tx.flush();
       const row = await tx.findOneOrFail(ReturnRequestSchema, { id }, { refresh: true });
       return { result: "moved", request: toDomain(row) };

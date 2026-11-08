@@ -2,7 +2,10 @@ import {
   clampReturnWindowDays,
   parseManagerInviteTtl,
   parseRefundApprovalLimit,
+  BRIEF_RULES,
+  parseRulesRecommendationsFlag,
   parseShippingFee,
+  type RecommendationConfig,
   type AgentInviteConfig,
   type ApprovalConfig,
   type EligibilityConfig,
@@ -13,6 +16,7 @@ let eligibility: EligibilityConfig | undefined;
 let quote: QuoteConfig | undefined;
 let approval: ApprovalConfig | undefined;
 let invite: AgentInviteConfig | undefined;
+let recommendation: RecommendationConfig | undefined;
 
 /** `EASYRMS_RETURN_WINDOW_DAYS`, clamped; memoized, read on first use and never at import. */
 export function getEligibilityConfig(): EligibilityConfig {
@@ -36,4 +40,10 @@ export function getApprovalConfig(): ApprovalConfig {
 export function getInviteConfig(): AgentInviteConfig {
   invite ??= parseManagerInviteTtl(process.env.EASYRMS_MANAGER_INVITE_TTL_HOURS);
   return invite;
+}
+
+/** `EASYRMS_RULES_RECOMMENDATIONS` (`on` / `off`, default off); memoized, an invalid value is a configuration error on first use. */
+export function getRecommendationConfig(): RecommendationConfig {
+  recommendation ??= { enabled: parseRulesRecommendationsFlag(process.env.EASYRMS_RULES_RECOMMENDATIONS), rules: BRIEF_RULES };
+  return recommendation;
 }

@@ -523,3 +523,81 @@ describe("complaints", () => {
     expect(received).toMatchObject({ result: "moved", request: { defectConfirmed: null } });
   });
 });
+
+describe("transition with a rules comparison", () => {
+  const comparisons = (id: number) =>
+    db.query<{ recommended: string; rule_ids: string; actual_status: string; followed: boolean | null; agent_id: number }>(
+      `select "recommended", "rule_ids", "actual_status", "followed", "agent_id" from "return_rule_comparisons" where "return_request_id" = ?`,
+      [id],
+    );
+
+  it("stores the comparison with the decision, and leaves the timeline free of it", async () => {
+    const id = await createRequest("CMP-1");
+
+    const outcome = await repository().transition(id, "submitted", "approved", null, agentId, undefined, {
+      recommended: "approve",
+      ruleIds: ["R08"],
+      actualStatus: "approved",
+      followed: true,
+    });
+
+    expect(outcome.result).toBe("moved");
+    expect(await comparisons(id)).toEqual([{ recommended: "approve", rule_ids: "R08", actual_status: "approved", followed: true, agent_id: agentId }]);
+    expect((await events(id)).map((event) => event.type)).toEqual(["submitted", "status_changed"]);
+  });
+
+  it("stores followed as null when nothing was recommended", async () => {
+    const id = await createRequest("CMP-2");
+
+    await repository().transition(id, "submitted", "rejected", NOTE, agentId, undefined, {
+      recommended: "none",
+      ruleIds: [],
+      actualStatus: "rejected",
+      followed: null,
+    });
+
+    expect(await comparisons(id)).toEqual([{ recommended: "none", rule_ids: "", actual_status: "rejected", followed: null, agent_id: agentId }]);
+  });
+
+  it("writes nothing when no comparison is passed", async () => {
+    const id = await createRequest("CMP-3");
+
+    await repository().transition(id, "submitted", "approved", null, agentId);
+
+    expect(await comparisons(id)).toEqual([]);
+  });
+
+  it("writes nothing for a lost compare-and-set", async () => {
+    const id = await createRequest("CMP-4");
+    await repository().transition(id, "submitted", "approved", null, agentId);
+
+    const outcome = await repository().transition(id, "submitted", "rejected", NOTE, agentId, undefined, {
+      recommended: "none",
+      ruleIds: [],
+      actualStatus: "rejected",
+      followed: null,
+    });
+
+    expect(outcome).toMatchObject({ result: "conflict" });
+    expect(await comparisons(id)).toEqual([]);
+  });
+
+  it("rolls the comparison back with the decision when the caller's transaction fails", async () => {
+    const id = await createRequest("CMP-5");
+    const em = db.fork();
+
+    await expect(
+      em.transactional(async (tx) => {
+        await new MikroOrmReturnRepository({ em: tx, logger: makeLogger() }).transition(id, "submitted", "approved", null, agentId, undefined, {
+          recommended: "approve",
+          ruleIds: ["R08"],
+          actualStatus: "approved",
+          followed: true,
+        });
+        throw new Error("abort");
+      }),
+    ).rejects.toThrow("abort");
+
+    expect(await comparisons(id)).toEqual([]);
+  });
+});
