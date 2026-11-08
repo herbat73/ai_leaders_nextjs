@@ -1,4 +1,5 @@
 import type { Money } from "../../domain/money";
+import type { Recommendation } from "./recommendation";
 
 export const RETURN_STATUSES = [
   "submitted",
@@ -135,6 +136,8 @@ export interface ReturnDetailView {
   decisionNote: string | null;
   items: ReturnItem[];
   events: ReturnEvent[];
+  /** Agent reads only, and only while the rules recommendations flag is on and the request awaits a decision. */
+  recommendation?: Recommendation;
 }
 
 export interface NewReturnItem {

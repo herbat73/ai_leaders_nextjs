@@ -33,6 +33,8 @@ export * from "./services/returns/return.service";
 export * from "./services/returns/rma";
 export * from "./services/returns/customer-error";
 export * from "./services/returns/tracker-events";
+export * from "./services/returns/recommendation";
+export * from "./services/returns/recommendation-config";
 export * from "./services/returns/tracker-stages";
 export * from "./services/returns/transitions";
 export * from "./services/returns/types";

@@ -17,6 +17,8 @@ import type { AgentContext } from "../agents/types";
 import { maskEmail, type MailPort, type MailTemplate } from "../mail/mail.port";
 import type { OrderLookup, OrderLookupResult, ReturnOrder } from "../orders/order-lookup.port";
 import { requiresManagerApproval, type ApprovalConfig } from "./approval";
+import { compareDecision, recommend } from "./recommendation";
+import { RECOMMENDATIONS_OFF, type RecommendationConfig } from "./recommendation-config";
 import { calculateComplaintQuote } from "./complaint-quote";
 import { checkComplaintEligibility, warsawDateString } from "./complaint-eligibility";
 import { COMPLAINT_ESCALATION_DAY, complaintAwaitsAnswer, complaintDaysLeft, complaintDueAt, complaintEscalated } from "./complaint-sla";
@@ -104,6 +106,7 @@ export class ReturnService {
   private readonly eligibilityConfig: EligibilityConfig;
   private readonly quoteConfig: QuoteConfig;
   private readonly approvalConfig: ApprovalConfig;
+  private readonly recommendationConfig: RecommendationConfig;
 
   constructor(deps: {
     returnRepository: ReturnRepository;
@@ -115,6 +118,8 @@ export class ReturnService {
     eligibilityConfig: EligibilityConfig;
     quoteConfig: QuoteConfig;
     approvalConfig: ApprovalConfig;
+    /** Optional so existing wiring stays off: recommendations are computed only when `enabled`. */
+    recommendationConfig?: RecommendationConfig;
   }) {
     this.returnRepository = deps.returnRepository;
     this.clock = deps.clock;
@@ -125,6 +130,7 @@ export class ReturnService {
     this.eligibilityConfig = deps.eligibilityConfig;
     this.quoteConfig = deps.quoteConfig;
     this.approvalConfig = deps.approvalConfig;
+    this.recommendationConfig = deps.recommendationConfig ?? RECOMMENDATIONS_OFF;
   }
 
   async list(filter?: ReturnListFilter): Promise<ReturnListItem[]> {
@@ -154,7 +160,12 @@ export class ReturnService {
   async getDetail(id: number): Promise<ReturnDetailView> {
     const detail = await this.returnRepository.findDetail(id);
     if (!detail) throw new NotFoundError(`Return ${id} not found`);
-    return { ...detail, request: this.toListItem(detail.request, this.clock()) };
+    const view: ReturnDetailView = { ...detail, request: this.toListItem(detail.request, this.clock()) };
+    // Agent read only (the customer's `getByRma` never attaches it), while the flag is on and a decision is pending.
+    if (this.recommendationConfig.enabled && detail.request.status === "submitted") {
+      view.recommendation = recommend(detail.request, this.recommendationConfig.rules);
+    }
+    return view;
   }
 
   /** The session order's requests, newest first. */
@@ -214,10 +225,16 @@ export class ReturnService {
       }
     }
 
+    // Stored with the decision in one transaction; only approve/reject are compared, and only while the flag is on.
+    const comparison = this.recommendationConfig.enabled
+      ? compareDecision(recommend(request, this.recommendationConfig.rules), status)
+      : null;
     const outcome =
-      defectConfirmed === undefined
-        ? await this.returnRepository.transition(id, from, status, check.note, agent.id)
-        : await this.returnRepository.transition(id, from, status, check.note, agent.id, defectConfirmed);
+      comparison !== null
+        ? await this.returnRepository.transition(id, from, status, check.note, agent.id, defectConfirmed, comparison)
+        : defectConfirmed === undefined
+          ? await this.returnRepository.transition(id, from, status, check.note, agent.id)
+          : await this.returnRepository.transition(id, from, status, check.note, agent.id, defectConfirmed);
     switch (outcome.result) {
       case "moved":
         await this.notifyStatusChanged(outcome.request);
