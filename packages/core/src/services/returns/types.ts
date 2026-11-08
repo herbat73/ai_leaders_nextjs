@@ -94,6 +94,13 @@ export interface ReturnListItem extends ReturnRequest {
   escalated?: boolean;
   /** Complaints only: calendar days to `dueAt` while unanswered (negative once passed); `null` once answered. */
   daysLeft?: number | null;
+  /**
+   * Inbox rows only, and only while the rules recommendations flag is on and the request awaits a decision (R08/R09):
+   * the rules recommend approval. Absent otherwise.
+   */
+  recommendApprove?: boolean;
+  /** Same conditions: R10c, the value reaches the manager threshold. A hint; the refund limit (R11) stays the gate. */
+  assignManager?: boolean;
 }
 
 export type ReturnEventActor = "customer" | "agent" | "system";

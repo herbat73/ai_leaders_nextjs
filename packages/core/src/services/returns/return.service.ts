@@ -154,7 +154,7 @@ export class ReturnService {
       now,
       escalationDays: COMPLAINT_ESCALATION_DAY,
     });
-    return { rows: result.rows.map((row) => this.toListItem(row, now)), total: result.total, page: result.page, pageCount: result.pageCount };
+    return { rows: result.rows.map((row) => this.withRulesHints(this.toListItem(row, now))), total: result.total, page: result.page, pageCount: result.pageCount };
   }
 
   async getDetail(id: number): Promise<ReturnDetailView> {
@@ -381,6 +381,13 @@ export class ReturnService {
       resolution: request.resolution ?? null,
       resolutionAmount: toAmountView(request.resolutionAmount),
     };
+  }
+
+  /** Inbox badges from the rules (flag on, request awaiting a decision); the item is returned untouched otherwise. */
+  private withRulesHints(item: ReturnListItem): ReturnListItem {
+    if (!this.recommendationConfig.enabled || item.status !== "submitted") return item;
+    const recommendation = recommend(item, this.recommendationConfig.rules);
+    return { ...item, recommendApprove: recommendation.recommended === "approve", assignManager: recommendation.assignManager };
   }
 
   private toListItem(request: ReturnRequest, now: Date): ReturnListItem {

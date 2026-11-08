@@ -684,3 +684,42 @@ describe("ReturnService rules recommendations", () => {
     expect(off.comparisons).toEqual([]);
   });
 });
+
+describe("ReturnService.listInbox rules hints", () => {
+  const ON: RecommendationConfig = { enabled: true, rules: BRIEF_RULES };
+  const row = (id: number, zl: number | null, overrides: Partial<ReturnRequest> = {}) =>
+    makeRequest({ id, resolution: "refund", resolutionAmount: zl === null ? null : money(zl * 100), ...overrides });
+  const inboxWith = async (rows: ReturnRequest[], config?: RecommendationConfig) => {
+    const repository = makeRepository();
+    repository.listInbox = async () => ({ rows, total: rows.length, page: 1, pageCount: 1 });
+    return (await makeService(repository, undefined, undefined, undefined, config).listInbox({})).rows;
+  };
+
+  it("adds no hint while the flag is off", async () => {
+    const [item] = await inboxWith([row(1, 50)]);
+
+    expect(item).not.toHaveProperty("recommendApprove");
+    expect(item).not.toHaveProperty("assignManager");
+  });
+
+  it("flags a small pending return for approval (R08) and a 2000 zł one for a manager (R10c)", async () => {
+    const [small, large, middle] = await inboxWith([row(1, 150), row(2, 2000), row(3, 800)], ON);
+
+    expect(small).toMatchObject({ recommendApprove: true, assignManager: false });
+    expect(large).toMatchObject({ recommendApprove: false, assignManager: true });
+    expect(middle).toMatchObject({ recommendApprove: false, assignManager: false });
+  });
+
+  it("flags a small pending complaint for approval (R09)", async () => {
+    const [item] = await inboxWith([row(1, 60, { kind: "complaint" })], ON);
+
+    expect(item).toMatchObject({ recommendApprove: true });
+  });
+
+  it("adds nothing to requests that are not awaiting a decision or have no amount", async () => {
+    const [decided, exchange] = await inboxWith([row(1, 50, { status: "approved" }), row(2, null, { resolution: "exchange" })], ON);
+
+    expect(decided).not.toHaveProperty("recommendApprove");
+    expect(exchange).toMatchObject({ recommendApprove: false, assignManager: false });
+  });
+});
