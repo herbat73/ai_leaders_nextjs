@@ -47,7 +47,8 @@ export class RulesService {
 
   /** Facts are built like `recommend()` builds them (kind + resolution amount, no categories); no amount, no facts. */
   async simulateRules(input: RulesSimulateInput): Promise<RulesSimulation> {
-    const requests = await this.returnRepository.list();
+    // One row more than the cap, cut in the database, tells "exactly the cap" from "more than the cap".
+    const requests = await this.returnRepository.list({}, { limit: MAX_SIMULATED_REQUESTS + 1 });
     const read = requests.slice(0, MAX_SIMULATED_REQUESTS);
     const facts: ClaimFacts[] = [];
     for (const request of read) {
