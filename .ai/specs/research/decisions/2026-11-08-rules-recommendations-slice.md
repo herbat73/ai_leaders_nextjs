@@ -1,7 +1,7 @@
 # Decision record: rules recommendations slice (D17)
 
 - Date: 2026-11-08
-- Confirmed by: Adam Adamczyk (product owner), in the spec session for `.ai/specs/2026-11-08-rules-engine-recommendations.md` (answers: build now, one spec in phases, recommend-only, recommended defaults for the rest)
+- Confirmed by: Adam Adamczyk (product owner), in the spec session for `.ai/specs/implemented/2026-11-08-rules-engine-recommendations.md` (answers: build now, one spec in phases, recommend-only, recommended defaults for the rest)
 - Origin: the owner asked for epic #31 (E04) to start with the rules engine R08-R10.
 
 ## Decisions

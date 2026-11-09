@@ -1,6 +1,6 @@
 # Execution plan: read-only rules page and threshold simulation (E04-S03, #110)
 
-Source doc: .ai/specs/2026-11-08-rules-engine-recommendations.md
+Source doc: .ai/specs/implemented/2026-11-08-rules-engine-recommendations.md
 Issue: #110 (Closes), epic #31 (Refs), spec PR #111 (Refs). Phase 3 only.
 
 ## Goal

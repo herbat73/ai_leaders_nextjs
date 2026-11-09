@@ -1,6 +1,6 @@
 # Execution plan: rules recommendations, Phase 1 (E04-S01, #108)
 
-Source doc: .ai/specs/2026-11-08-rules-engine-recommendations.md
+Source doc: .ai/specs/implemented/2026-11-08-rules-engine-recommendations.md
 Issue: #108 (Closes), epic #31 (Refs). Spec PR: #111 (merged).
 
 ## Goal

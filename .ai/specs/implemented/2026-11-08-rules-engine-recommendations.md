@@ -2,7 +2,7 @@
 
 (Renamed from `...-auto-acceptance`: nothing is accepted automatically, see Q3.)
 
-Status: DRAFT for owner review — not approved, no code. Epic: #31 (E04). Design authority: `.ai/specs/product-brief.md`.
+Status: IMPLEMENTED (Phase 1 #112, Phase 2 #113, Phase 3 #118, follow-up #120). Epic: #31 (E04). Design authority: `.ai/specs/product-brief.md`.
 Owner answers of 2026-11-08: Q1 override D15 for this slice; Q2 one spec in phases; Q3 recommendation only (agent
 confirms); Q4–Q9 recommended defaults accepted (see Resolved decisions).
 
@@ -145,4 +145,4 @@ Relies on: R08, R09, R10, R11 (unchanged), R15, D07, D16, Q12 (answered), N01–
 2. `app`: API routes (`apiHandler`, CSRF, `MANAGE_RULES`), per `.claude/rules/api.md`.
 3. `app`/`ui`: `/admin/rules` read-only list + threshold what-if; no persistence.
 
-On the last phase's merge: spec moved to `implemented/`.
+All phases merged; spec moved to `implemented/` (2026-11-09).

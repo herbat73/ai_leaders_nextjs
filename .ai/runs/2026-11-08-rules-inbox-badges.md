@@ -1,6 +1,6 @@
 # Execution plan: rules inbox badges, Phase 2 (E04-S02, #109)
 
-Source doc: .ai/specs/2026-11-08-rules-engine-recommendations.md
+Source doc: .ai/specs/implemented/2026-11-08-rules-engine-recommendations.md
 Issue: #109 (Closes), epic #31 (Refs). Phase 1: #108 / PR #112 (merged).
 
 ## Goal
