@@ -19,6 +19,7 @@ import {
   type PasswordHasher,
   type ReturnLookupService,
   type ReturnService,
+  type RulesService,
   type SupplierClaimService,
   type SupplierService,
 } from "@easyrms/core";
@@ -41,6 +42,7 @@ export interface Cradle {
   passwordHasher: PasswordHasher;
   returnLookupService: ReturnLookupService;
   returnService: ReturnService;
+  rulesService: RulesService;
   supplierService: SupplierService;
   supplierClaimService: SupplierClaimService;
 }
@@ -127,6 +129,11 @@ export function resolveAgentService(): Promise<AgentService> {
 /** Resolved from the core-only container, so it never builds the ORM. */
 export function resolveCaseSampleService(): CaseSampleService {
   return (getCoreContainer() as AwilixContainer<Cradle>).cradle.caseSampleService;
+}
+
+/** Resolver for the rules routes: one request scope per call (the what-if reads requests). */
+export function resolveRulesService(): Promise<RulesService> {
+  return createRequestScope().then((scope) => scope.cradle.rulesService);
 }
 
 /** Resolver for supplier routes: one request scope per call. */

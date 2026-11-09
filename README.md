@@ -72,6 +72,8 @@ Customer routes: `/` (order number and e-mail lookup), `/returns` (overview of t
 
 `/admin/discovery/case-sample` takes an anonymised CSV of ~50 recent mail/phone cases (template at `/case-sample-template.csv`), computes the follow-up share, message counts and time to resolution, dry-runs rules R08–R10 (with what-if thresholds for R08/R09) and produces the `[DATA]` research note to commit under `.ai/specs/research/`. Nothing is stored and it needs no database. API: `POST /api/discovery/case-sample`. Needs no new configuration.
 
+`/admin/rules` (`MANAGE_RULES` only; others get 403 on the API and a notice on the page) lists the active rules R08–R10 (read-only, Polish description) and a threshold what-if: type other R08/R09 amounts and see how many existing requests the rules would settle, next to the current thresholds. It evaluates the stored requests (kind and resolution amount, at most 5000; requests without an amount are skipped), writes nothing and needs no new configuration. API: `GET /api/rules`, `POST /api/rules/simulate` (body `{ "thresholds": { "R08": "200,00" } }`).
+
 ### Database
 
 PostgreSQL is accessed through MikroORM with a single shared connection pool. Schema changes are versioned migrations in `packages/db`.
