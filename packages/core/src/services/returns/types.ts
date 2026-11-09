@@ -182,6 +182,12 @@ export interface ReturnListFilter {
   kind?: RequestKind;
 }
 
+/** How much of the filtered list to read; kept apart from the filter so the inbox query does not inherit it. */
+export interface ReturnListOptions {
+  /** At most this many rows, newest first, cut in the database. Absent: every row (the public, unpaged contract). */
+  limit?: number;
+}
+
 /**
  * One page of the agent inbox, already normalized (`normalizeInboxOptions`). `now` and `escalationDays` are passed in so
  * the repository holds no clock and no business constant: an unanswered complaint is escalated once
@@ -215,7 +221,7 @@ export type TransitionOutcome =
 
 /** Port implemented by `@easyrms/db`. */
 export interface ReturnRepository {
-  list(filter?: ReturnListFilter): Promise<ReturnRequest[]>;
+  list(filter?: ReturnListFilter, options?: ReturnListOptions): Promise<ReturnRequest[]>;
   /** Escalated complaints first, then newest first; filtered, counted and cut to one page in the database. */
   listInbox(query: ReturnInboxQuery): Promise<ReturnInboxPage>;
   findDetail(id: number): Promise<ReturnDetail | null>;

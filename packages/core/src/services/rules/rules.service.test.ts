@@ -21,15 +21,18 @@ function request(id: number, kind: RequestKind, amountMinor: number | null): Ret
   };
 }
 
-function service(rows: ReturnRequest[]): { service: RulesService; calls: () => number } {
+function service(rows: ReturnRequest[]): { service: RulesService; calls: () => number; limits: () => (number | undefined)[] } {
   let calls = 0;
+  const limits: (number | undefined)[] = [];
+  // Like the repository: the cut happens in the source, so the service never sees more than it asked for.
   const source: RulesRequestSource = {
-    list: async () => {
+    list: async (_filter, options) => {
       calls += 1;
-      return rows;
+      limits.push(options?.limit);
+      return options?.limit === undefined ? rows : rows.slice(0, options.limit);
     },
   };
-  return { service: new RulesService({ returnRepository: source }), calls: () => calls };
+  return { service: new RulesService({ returnRepository: source }), calls: () => calls, limits: () => limits };
 }
 
 describe("RulesService.listRules", () => {
@@ -88,6 +91,20 @@ describe("RulesService.simulateRules", () => {
     const result = await service(many).service.simulateRules({ thresholds: {} });
     expect(result.total).toBe(MAX_SIMULATED_REQUESTS);
     expect(result.truncated).toBe(true);
+  });
+
+  it("asks the source for the cap plus one row, so the cut is made in the database (#119)", async () => {
+    const many = Array.from({ length: MAX_SIMULATED_REQUESTS + 3 }, (_, i) => request(i + 1, "return", 100));
+    const { service: rules, limits } = service(many);
+    await rules.simulateRules({ thresholds: {} });
+    expect(limits()).toEqual([MAX_SIMULATED_REQUESTS + 1]);
+  });
+
+  it("is not truncated at exactly the cap, truncated one row above it", async () => {
+    const exact = Array.from({ length: MAX_SIMULATED_REQUESTS }, (_, i) => request(i + 1, "return", 100));
+    expect((await service(exact).service.simulateRules({ thresholds: {} })).truncated).toBe(false);
+    const above = [...exact, request(MAX_SIMULATED_REQUESTS + 1, "return", 100)];
+    expect((await service(above).service.simulateRules({ thresholds: {} })).truncated).toBe(true);
   });
 });
 

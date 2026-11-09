@@ -24,6 +24,7 @@ import {
   type ReturnInboxQuery,
   type ReturnItem,
   type ReturnListFilter,
+  type ReturnListOptions,
   type ReturnRepository,
   type ReturnRequest,
   type ReturnStatus,
@@ -123,7 +124,7 @@ export class MikroOrmReturnRepository implements ReturnRepository {
     this.logger = logger;
   }
 
-  async list(filter: ReturnListFilter = {}): Promise<ReturnRequest[]> {
+  async list(filter: ReturnListFilter = {}, options: ReturnListOptions = {}): Promise<ReturnRequest[]> {
     const statusWhere =
       filter.status === undefined
         ? {}
@@ -131,7 +132,10 @@ export class MikroOrmReturnRepository implements ReturnRepository {
           ? { status: { $nin: [...RETURN_STATUSES] } }
           : { status: filter.status };
     const where = { ...statusWhere, ...(filter.kind === undefined ? {} : { kind: filter.kind }) };
-    const rows = await this.em.find(ReturnRequestSchema, where, { orderBy: { createdAt: "desc", id: "desc" } });
+    const rows = await this.em.find(ReturnRequestSchema, where, {
+      orderBy: { createdAt: "desc", id: "desc" },
+      ...(options.limit === undefined ? {} : { limit: options.limit }),
+    });
     const requests = rows.map(toDomain);
     this.logCorrupt(requests);
     return requests;

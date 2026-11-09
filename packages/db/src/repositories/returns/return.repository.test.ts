@@ -201,6 +201,24 @@ describe("reads", () => {
     expect(approved.some((request) => request.id === id)).toBe(true);
     expect(approved.some((request) => request.id === newer)).toBe(false);
   });
+
+  it("list with a limit cuts the newest rows in the database and keeps the filter (#119)", async () => {
+    const first = await createRequest("LIMIT-1");
+    const second = await createRequest("LIMIT-2");
+    const third = await createRequest("LIMIT-3");
+
+    const two = await repository().list({}, { limit: 2 });
+    expect(two).toHaveLength(2);
+    expect(two.map((request) => request.id)).toEqual([third, second]);
+    expect(two.map((request) => request.id)).not.toContain(first);
+
+    expect(await repository().list({}, { limit: 0 })).toHaveLength(0);
+    const filtered = await repository().list({ kind: "return" }, { limit: 1 });
+    expect(filtered).toHaveLength(1);
+    expect(filtered[0]?.kind).toBe("return");
+    // No limit: still every row (the public, unpaged contract).
+    expect((await repository().list()).length).toBeGreaterThanOrEqual(3);
+  });
 });
 
 describe("a corrupt status", () => {
