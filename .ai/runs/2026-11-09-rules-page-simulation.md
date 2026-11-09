@@ -23,6 +23,6 @@ Public API surface (additive). Simulation reads all requests via `ReturnReposito
 
 ### Phase 3: Rules page
 
-- [ ] 3.1 core: schemas and RulesService (listRules, simulateRules) with tests
-- [ ] 3.2 app: GET /api/rules and POST /api/rules/simulate, DI, route tests
+- [x] 3.1 core: schemas and RulesService (listRules, simulateRules) with tests
+- [x] 3.2 app: GET /api/rules and POST /api/rules/simulate, DI, route tests
 - [ ] 3.3 app/ui: /admin/rules page, what-if form, Polish copy, story, nav, docs

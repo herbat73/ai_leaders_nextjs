@@ -4,6 +4,7 @@ import { AgentService } from "./services/agents/agent.service";
 import { CaseSampleService } from "./services/discovery/case-sample.service";
 import { ReturnLookupService } from "./services/returns/return-lookup.service";
 import { ReturnService } from "./services/returns/return.service";
+import { RulesService } from "./services/rules/rules.service";
 import { SupplierClaimService } from "./services/supplier-claims/supplier-claim.service";
 import { SupplierService } from "./services/suppliers/supplier.service";
 
@@ -15,6 +16,7 @@ export function registerCore(container: AwilixContainer): void {
     agentService: asClass(AgentService).scoped(),
     returnService: asClass(ReturnService).scoped(),
     returnLookupService: asClass(ReturnLookupService).scoped(),
+    rulesService: asClass(RulesService).scoped(),
     supplierService: asClass(SupplierService).scoped(),
     supplierClaimService: asClass(SupplierClaimService).scoped(),
   });

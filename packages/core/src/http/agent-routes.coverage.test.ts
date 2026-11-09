@@ -97,6 +97,8 @@ const ROUTE_PERMISSIONS: Record<string, string[]> = {
   "discovery/case-sample/route.ts": ["any-agent"],
   "returns/route.ts": ["any-agent"],
   "returns/[id]/route.ts": ["any-agent"],
+  "rules/route.ts": ["MANAGE_RULES"],
+  "rules/simulate/route.ts": ["MANAGE_RULES"],
   "suppliers/route.ts": ["MANAGE_RULES", "any-agent"],
   "suppliers/[id]/route.ts": ["MANAGE_RULES"],
   "supplier-claims/route.ts": ["any-agent", "any-agent"],
