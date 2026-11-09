@@ -25,4 +25,10 @@ Public API surface (additive). Simulation reads all requests via `ReturnReposito
 
 - [x] 3.1 core: schemas and RulesService (listRules, simulateRules) with tests
 - [x] 3.2 app: GET /api/rules and POST /api/rules/simulate, DI, route tests
-- [ ] 3.3 app/ui: /admin/rules page, what-if form, Polish copy, story, nav, docs
+- [x] 3.3 app/ui: /admin/rules page, what-if form, Polish copy, story, nav, docs
+
+## Outcome
+
+- Phase 3 only (read-only `/admin/rules`, `GET /api/rules`, `POST /api/rules/simulate`). Spec stays in `.ai/specs/` (Phases 1/2 remain on their PRs).
+- Design choice: the what-if evaluates the stored requests (kind + resolution amount, same facts as `recommend()`), capped at 5000; nothing persisted. No new ui component (`RuleSummary` and its story are reused; the what-if form is colocated in `app`).
+- Also added `/api/rules/**` to the proxy's protected paths (`isAgentProtectedPath`) with tests.

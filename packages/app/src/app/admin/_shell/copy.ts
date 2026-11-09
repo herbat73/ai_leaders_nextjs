@@ -4,6 +4,7 @@ export const shellCopy = {
   returns: "Zwroty i reklamacje",
   claims: "Reklamacje do dostawców",
   suppliers: "Dostawcy",
+  rules: "Reguły",
   agents: "Agenci",
   signedInAs: (name: string) => `Zalogowano: ${name}`,
   logout: "Wyloguj",

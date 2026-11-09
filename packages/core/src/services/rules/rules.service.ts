@@ -1,7 +1,7 @@
 import type { ClaimFacts } from "../../domain/claim-facts";
 import { BRIEF_RULES } from "../../rules/brief-rules";
 import { describeRule } from "../../rules/describe";
-import { settles, type Rule } from "../../rules/rule.schema";
+import type { Rule } from "../../rules/rule.schema";
 import { simulate } from "../../rules/simulate";
 import { withThresholds } from "../../rules/with-thresholds";
 import type { RulesSimulateInput } from "../../validators/rules/rules-simulate.schema";
