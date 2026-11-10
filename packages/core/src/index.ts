@@ -48,6 +48,7 @@ export * from "./services/supplier-claims/transitions";
 export * from "./services/supplier-claims/types";
 export * from "./services/suppliers/supplier.service";
 export * from "./services/suppliers/supplier-view";
+export * from "./services/supplier-claims/claim-view";
 export * from "./services/suppliers/types";
 export * from "./state-machine";
 export * from "./tabular";

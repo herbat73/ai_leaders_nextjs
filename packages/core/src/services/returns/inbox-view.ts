@@ -24,7 +24,7 @@ export interface InboxView<T> {
   pageCount: number;
 }
 
-function warsawDay(date: Date): string {
+export function warsawDay(date: Date): string {
   const { year, month, day } = warsawParts(date);
   return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
