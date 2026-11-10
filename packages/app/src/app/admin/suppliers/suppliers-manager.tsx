@@ -143,7 +143,7 @@ function ToggleButton({ supplier }: { supplier: Supplier }): ReactElement {
 }
 
 /** Client island of the suppliers screen: the table, the add/edit dialog and the activate/deactivate toggle. */
-export function SuppliersManager({ suppliers, canManage }: { suppliers: Supplier[]; canManage: boolean }): ReactElement {
+export function SuppliersManager({ suppliers, canManage, narrowed = false }: { suppliers: Supplier[]; canManage: boolean; narrowed?: boolean }): ReactElement {
   const columns: DataTableColumn<Supplier>[] = [
     { key: "name", header: copy.columns.name, className: "font-medium", cell: (supplier) => supplier.name },
     { key: "email", header: copy.columns.email, cell: (supplier) => supplier.email },
@@ -182,7 +182,7 @@ export function SuppliersManager({ suppliers, canManage }: { suppliers: Supplier
       ) : (
         <p className="text-sm text-muted-foreground">{copy.readOnly}</p>
       )}
-      <DataTable columns={columns} rows={suppliers} getRowKey={(supplier) => supplier.id} caption={copy.caption} emptyMessage={copy.empty} />
+      <DataTable columns={columns} rows={suppliers} getRowKey={(supplier) => supplier.id} caption={copy.caption} emptyMessage={narrowed ? copy.emptyFiltered : copy.empty} />
     </div>
   );
 }

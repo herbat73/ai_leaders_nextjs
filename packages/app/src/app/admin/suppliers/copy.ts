@@ -1,9 +1,27 @@
 /** Polish copy for the suppliers screen (brief D07), one constant colocated with the page. */
 export const suppliersCopy = {
   title: "Dostawcy",
-  description: (count: number) => `Dostawcy, do których wysyłamy reklamacje: ${count}. Wytyczne to notatka dla agenta, system ich nie sprawdza.`,
+  description: (total: number, matching: number) =>
+    `Dostawcy, do których wysyłamy reklamacje: ${total}${matching === total ? "" : `, pasuje: ${matching}`}. Wytyczne to notatka dla agenta, system ich nie sprawdza.`,
   caption: "Dostawcy",
   empty: "Brak dostawców.",
+  emptyFiltered: "Brak dostawców dla wybranych filtrów.",
+  filters: {
+    status: "Status",
+    statusOptions: { all: "Wszyscy", active: "Aktywni", inactive: "Nieaktywni" },
+    name: "Nazwa",
+    namePlaceholder: "Część nazwy dostawcy",
+    email: "E-mail",
+    emailPlaceholder: "Część adresu e-mail",
+    apply: "Szukaj",
+    clear: "Wyczyść",
+  },
+  pagination: {
+    label: "Paginacja dostawców",
+    position: (page: number, total: number): string => `Strona ${page} z ${total}`,
+    previous: "Poprzednia",
+    next: "Następna",
+  },
   columns: { name: "Nazwa", email: "E-mail do reklamacji", guidelines: "Wytyczne", status: "Status", actions: "Akcje" },
   noGuidelines: "—",
   statusLabels: { active: "Aktywny", inactive: "Nieaktywny" },
