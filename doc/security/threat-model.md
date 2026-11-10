@@ -1,7 +1,7 @@
 # Threat model: EasyRMS
 
 **Scope:** whole system (`packages/app` is the only deployable unit)
-**Last updated:** 2026-11-02
+**Last updated:** 2026-11-10
 **Owner:** EasyRMS team (to be named)
 
 EasyRMS handles product returns and complaints: customers file them in a portal after proving an order with order number plus e-mail, agents decide them in a back office, and managers invite agents and send vendor claims. It stores customer e-mail addresses, order data and defect descriptions, and agent password hashes. The two things that matter most today: **`GET /api/returns` answers anyone on the internet with every customer's e-mail, order number and defect text (T-01)**, and **agent login has no second factor, no revocation on logout and an in-memory throttle (T-04, T-05)**. Production has no working customer flow yet (the order adapter is `fake`), so most customer-side threats are about the design, not a live deployment.
@@ -158,6 +158,73 @@ None. No LLM SDK, prompt, tool or MCP server in the repository; the lethal trife
 
 Gap worth saying out loud: no dynamic test was run for this model. T-01 is confirmed by reading the route and the path list (`GET` has no `authenticate`, the path is not protected), not by calling a running server.
 
+## 5. Feature model: file uploads (R07, D21)
+
+**Scope:** the transport damage and missing items slice with photo uploads (brief D21, R07, Q14, Q23). Reuses the profile, actors and boundaries above; only what uploads touch is added. **Added:** 2026-11-10. Nothing is built yet, so every "control today" below is the state of the repository, not of an implementation.
+
+**What changes:** customers (guest session) send files, agents view them in the inbox, and managers may attach them to a supplier claim mail. Today the app accepts only JSON bodies capped at 16 KB (`parseJsonBody`, `MAX_BODY_BYTES`), has no file store (the `Dockerfile` is a stub, `docker-compose.yml` has only the database volume), and the mail port has no attachment concept. The brief's concept mocked AV scanning.
+
+**AI components:** none added; Rule of Two not applicable.
+
+### Assets added
+
+- Customer photos: may show a home, a person, a delivery address or a label, and carry EXIF metadata (location, device).
+- File store credentials or path, and the content hashes that prove a photo was not changed after a decision.
+- Agent sessions: a file that runs script on the app origin acts as the agent.
+
+### New entry points
+
+| Entry point | Auth | Notes |
+| --- | --- | --- |
+| Upload route (customer) | guest cookie | multipart body; the only place a request body is not small JSON |
+| File download route | guest cookie (own order) or agent | the one place bytes leave the store |
+| Attach files to a claim | agent + `MANAGE_RULES` | files go to a third party by mail |
+| Retention or erasure job | internal | deletes files after the R16 period (undecided) |
+
+Diagram: `doc/security/threat-model-uploads.mmd` (not rendered; no `mmdc` available, render with `npx @mermaid-js/mermaid-cli -i doc/security/threat-model-uploads.mmd -o doc/security/threat-model-uploads.svg`).
+
+### Threats
+
+| ID | Threat | STRIDE | Where | L | I | Response | Control today | How we verify | OWASP / CWE |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| T-15 | A file served from the app origin runs script in an agent's session (HTML, SVG or a PDF opened inline; wrong content type; type sniffing), so a customer takes over an agent action | T, E | download route, inbox photo view | M | H | Mitigate: allow-list by detected content (not the client's type or extension), no SVG or HTML, serve with `X-Content-Type-Options: nosniff` and `Content-Disposition`, ideally from a separate origin or sandboxed with a strict CSP | None; no file handling and no global security headers (T-12) | Upload synthetic files whose real type differs from the name and declared type; assert rejection; check download response headers; DAST header scan | A05:2025, CWE-434, CWE-79 |
+| T-16 | A malware-carrying file reaches an agent's machine or a vendor's mailbox | T, I | upload route, claim mail | M | H | Mitigate: scan before a file becomes visible (quarantine state until clean), fail closed when the scanner is down, never attach an unscanned file to mail | None; the concept's AV is mocked and no scanner exists | Upload the standard EICAR test string as a synthetic file; assert it stays quarantined and the agent view and claim mail omit it; stop the scanner and assert uploads are refused | A06:2025, CWE-434, CWE-506 |
+| T-17 | A customer of order A (or an anonymous visitor) reads, replaces or deletes order B's photo through a guessed or reused file id or URL; or adds files to a request that is already closed | I, T, E | download route, upload route | M | H | Mitigate: serve only through a route that checks the guest session's order or the agent session; random unguessable ids; no public store URLs; allow uploads only to the session's own open request | Cookie-bound order scoping exists for requests (T-03); nothing for files | Integration test with two seeded orders (`PL-10001`, `PL-10005`) and two agents: A requests B's file id, a file id with no cookie, and an upload to B's RMA or a closed request; all return the same 404 or 401 | A01:2025, API1:2023, CWE-639 |
+| T-18 | Storage and CPU exhaustion: a guest session (cheap to obtain, T-02) uploads many or huge files; the body is read whole into memory; one client fills the store | D | upload route, store | H | M | Mitigate: stream with a cap before buffering, limits per file, per request, per order and in total, rate limit per client, delete orphaned uploads | JSON body cap and per-IP, per-order throttles exist (Postgres store, #87); no multipart path | Oversized, many-file and slow-body synthetic requests against a local app: each returns 413 or 429 and memory stays flat; confirm the quota per order | API4:2023, A06:2025, CWE-400, CWE-770 |
+| T-19 | A client-supplied file name is used in a storage path, a download header or a mail header (traversal, header injection, odd characters) | T, I | upload and download routes, claim mail | M | M | Mitigate: server-generated storage names; keep the original name only as a sanitized label; encode it in headers | None | Upload synthetic names with path separators, control characters and very long names; assert the stored path is the generated id and headers are intact | A05:2025, CWE-22, CWE-113 |
+| T-20 | Image parsing abuse (decompression or pixel flood) in a thumbnail or re-encode step exhausts memory; EXIF metadata (GPS, device) leaks the customer's location to agents and vendors | D, I | scanner and re-encoder | M | M | Mitigate: pixel and dimension limits before decoding, re-encode and strip metadata, run image work with a timeout | None | Upload a synthetic image with extreme dimensions and one with GPS EXIF: the first is rejected, the second is served without metadata | A06:2025, CWE-409, CWE-200 |
+| T-21 | Retention and erasure: photos kept forever (R16 undecided, deferred in the portal slice), no way to delete them for a customer's erasure request, and old files stay readable | I | store, retention job | H | M | Mitigate: owner and legal decide the period before launch; delete files with the request, test the erasure path; document what the vendor keeps | None: R16 is deferred; text is stored without limit (brief R16 note) | Test that anonymizing or deleting a request removes its files and metadata; review the retention setting in `Configuration.md` | A02:2025, CWE-359, CWE-212 |
+| T-22 | A supplier claim mail sends customer photos (faces, addresses, labels) to a third party, or attaches files the customer never meant for a vendor | I | claim composition and mail adapter | M | M | Mitigate: the agent picks files in the preview, allow-list of fields and file types, size limit, no customer e-mail, TLS-only SMTP | Claim mail excludes the customer e-mail and has a preview (T-09); no attachments | Unit test that the rendered claim has only selected, clean files and no customer e-mail; manual with a local SMTP sink and synthetic images | A02:2025, CWE-359 |
+| T-23 | A photo is replaced or removed after the agent's decision, and nothing shows who added or viewed it (the timeline has no payload column, see the 2026-11-08 lesson) | R, T | file metadata, timeline | L | M | Mitigate: store a content hash, make files immutable after submission, write an event for add, remove and download | None | Test that a file cannot be changed after submit and that each add appears on the timeline with the agent or guest identity | A08:2025, CWE-345, CWE-778 |
+| T-24 | The store is misconfigured or leaks: public bucket or directory, credentials in the repository or logs, files in the same volume as the app, no backup rules | I | file store, deployment | M | H | Mitigate: private store, server-mediated access, credentials only from environment (`Configuration.md`), fail closed when unset, document backups | None; no store exists and the deployment is undefined (T-14) | Config review: production env check for the store settings; request a stored file without a session and assert denial; scan logs for paths and credentials | A02:2025, CWE-798, CWE-732 |
+
+### Proposed answers to Q23 (for the owner, security and legal to confirm; these are recommendations, not decisions)
+
+- Types: JPEG, PNG and WebP images only at first; video (R10b, electronics) is a separate decision because it multiplies size, scanning and retention cost.
+- Limits: a per-file size, a file count per request and a total per order (the numbers are the owner's to set; T-18 needs all three).
+- Scanning: required, with quarantine and fail-closed behaviour (T-16); this adds a dependency or a service to run, so it needs the owner's approval.
+- Store: server-mediated, private, location decided with deployment (T-24); the brief does not say where the app will run.
+- Retention: legal to set the period for R16 and the vendor's copy (T-21, T-22).
+- Access: guest session for own order, agents for all, vendors only through the claim mail (T-17, T-22).
+
+### Test scope for this feature
+
+| Method | What to try | Threats |
+| --- | --- | --- |
+| Integration tests | Two seeded orders and two agents: cross-order file read, upload and delete; upload to a closed request; no-cookie download; quarantined file invisible to agents and claim mail | T-16, T-17, T-23 |
+| File-handling tests with synthetic files | Wrong type vs name, oversized and many-file bodies, odd file names, extreme image dimensions, image with GPS EXIF, the standard EICAR test string | T-15, T-16, T-18, T-19, T-20 |
+| DAST | Response headers on the download route (`nosniff`, `Content-Disposition`, CSP), unauthenticated crawl of file URLs | T-15, T-17 |
+| Review | Store settings and credentials, retention job, erasure path, claim mail allow-list | T-21, T-22, T-24 |
+
+**Out of scope and rules of engagement:** as in section 3. Synthetic files only, local environment only (`npm run db:start`, local app, local SMTP sink); never real customer photos. This section is a plan; no test has been run.
+
+### Gaps to say out loud
+
+- The feature has no spec yet, so threats are about the design the brief implies. Re-run this section when the upload spec exists.
+- Not assessed: the base model's T-01, T-04 to T-06 and T-08 have fix commits (#86, #87, #89, #91, #93) after 2026-11-02, but their rows above still describe that date and were not re-checked here.
+- Uploads add a dependency (scanner, image library) that needs the supply-chain check in T-14.
+
 ## Changelog
 
 - 2026-11-02 Initial model
+- 2026-11-10 Added section 5, feature model for file uploads (R07, D21, Q23): threats T-15 to T-24, diagram `threat-model-uploads.mmd`. Base rows T-01 to T-14 not re-assessed.
