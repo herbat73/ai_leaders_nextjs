@@ -1,0 +1,5 @@
+# Integration tests
+
+Back to the [README](./README.md); for the local database see [GettingStarted.md](./GettingStarted.md).
+
+`npm run test:integration` runs every agent-browser scenario in `.ai/qa/<AREA>/` (RET, CMP, AGT, LAB, SET, SUP) one after another via `.ai/qa/run-all.sh` and prints a summary; the exit code is 1 when any scenario failed. Pass areas to run a subset: `npm run test:integration -- RET CMP`. It needs the test environment (`.ai/qa/test-env.json`, `.ai/qa/test-env.env`, created by the `om-prepare-test-env` skill; start/stop with `sh .ai/scripts/test-env-up.sh` and `test-env-down.sh`) and the local database. Logs go to the gitignored `.ai/qa/artifacts_run-all/<ID>.log`. The script pauses between scenarios to stay under the app's rate limiters (`PAUSE=<seconds>` overrides the default 75 s) and retries a throttled scenario once, so a full run takes a while. Start it from a freshly started app, not within 10 minutes of the previous run. It is not part of the validation gate.

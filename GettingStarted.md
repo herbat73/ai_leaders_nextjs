@@ -32,10 +32,10 @@ npm run lint
 npm run typecheck  # all workspaces
 npm test           # unit tests (Vitest, @easyrms/core)
 npm run test:db    # database tests (Vitest, @easyrms/db): migration and repository against the local Postgres
-npm run test:integration  # all agent-browser QA scenarios from .ai/qa/ (see [Integration tests](./README.md#integration-tests))
+npm run test:integration  # all agent-browser QA scenarios from .ai/qa/ (see IntegrationTests.md)
 npm run storybook  # component catalog on http://localhost:6006
 npm run storybook:build  # static Storybook in packages/app/storybook-static (part of the validation gate)
 NODE_ENV=production npm run build
 ```
 
-Further reading in the README: [Database tests](./DatabaseTests.md), [Integration tests](./README.md#integration-tests), [Storybook](./Storybook.md), [Configuration](./Configuration.md).
+Further reading: [Database tests](./DatabaseTests.md), [Integration tests](./IntegrationTests.md), [Storybook](./Storybook.md), [Configuration](./Configuration.md).
