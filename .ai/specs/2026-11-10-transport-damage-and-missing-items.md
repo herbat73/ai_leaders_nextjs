@@ -3,7 +3,7 @@
 Status: Draft for owner review. Open Questions Q1–Q12 were answered on 2026-11-10 by the owner (Adam Adamczyk), who accepted every recommended answer (see Resolved decisions). Refs: brief D21, R03, R07, R16, Q14, Q23, A08; threat model section 5 (`doc/security/threat-model.md`, T-15 to T-24).
 
 ## 📝 TLDR
-A customer whose parcel arrived damaged, or with an item missing or wrong, cannot report it: the portal takes only returns and complaints, and 20 of 50 cases in the sample were of these two kinds. Proposed (future behavior): the customer reports transport damage (UC-04) or a missing/wrong item (UC-05) in the same wizard within 14 days of delivery (R03), attaches at least one photo, and an agent decides it with the photos on the decision card. Photos are the risky part, so they ship as their own phase, with a scanner, re-encoding and order-scoped access as the threat model requires.
+A customer whose parcel arrived damaged, or with an item missing or wrong, cannot report it: the portal takes only returns and complaints, and 20 of 50 cases in the sample were of these two kinds. Proposed (future behavior): the customer reports transport damage (UC-04) or a missing/wrong item (UC-05) in the same wizard within 14 days of delivery (R03), attaches at least one photo (required from Phase 3; Phase 1 ships without photos), and an agent decides it with the photos on the decision card. Photos are the risky part, so they ship as their own phase, with a scanner, re-encoding and order-scoped access as the threat model requires.
 
 ## 📝 Resolved decisions
 Confirmed by the owner in session on 2026-11-10 with the recommended answer for each.
@@ -11,7 +11,7 @@ Confirmed by the owner in session on 2026-11-10 with the recommended answer for 
 | Id | Decision |
 |---|---|
 | Q1 | One spec, three shippable phases; uploads are their own phase |
-| Q2 | At least 1 photo required (transport: product or packaging; missing: package contents). Phase 1 ships text-only; Phase 2 and 3 add and require photos |
+| Q2 | At least 1 photo required (transport: product or packaging; missing: package contents). Phase 1 ships text-only, an interim, owner-accepted deviation from Q14 and R07 until Phase 3 makes photos required |
 | Q3 | Images only: JPEG, PNG, WebP. No video, PDF or SVG |
 | Q4 | 5 MB per file, 6 files per request, 20 MB per order (the owner may change the numbers) |
 | Q5 | Malware scan required; refuse uploads when the scanner is down (an extra service, ClamAV in `docker-compose`) |
@@ -97,9 +97,9 @@ All copy Polish only (D07). Public pages Tailwind, admin pages shadcn/ui.
 - Supersedes nothing active. Owner: Adam Adamczyk; security for Phase 2; legal for retention.
 
 ## 📋 Phasing
-- **Phase 1 — the two kinds, text evidence.** Customers report transport damage or a missing item and agents decide them; no files. Shippable alone (as complaints were). Ends the "app rejects 40% of cases" gap for the text part.
-- **Phase 2 — evidence backend.** Ports, scanner and sanitizer adapters, table, routes, limits, throttle, configuration. No UI; testable by API and integration tests. Not user-visible.
-- **Phase 3 — photos in the product.** Wizard photo step with ≥ 1 photo required, agent card thumbnails, tracker thumbnails, QA scenarios, docs.
+- **Phase 1 — the two kinds, text evidence.** Customers report transport damage or a missing item and agents decide them; no files. Shippable alone (as complaints were). Ends the "app rejects 40% of cases" gap for the text part. Interim deviation from Q14 (at least 1 photo for transport): accepted by the owner under Q2 until Phase 3. No thumbnails on the agent card or tracker, and the wizard has no photo step, until Phase 3.
+- **Phase 2 — evidence backend.** Gate: security and legal confirm Q5 to Q8 and the owner approves the new dependencies before step 6 starts. Ports, scanner and sanitizer adapters, table, upload and download routes, limits, throttle, configuration, threat-model status update. No change to `POST /api/returns`; no UI; testable by API and integration tests; not user-visible.
+- **Phase 3 — photos in the product.** Submit accepts evidence (the public contract change), wizard photo step with ≥ 1 photo required, agent card thumbnails, tracker thumbnails, QA scenarios.
 
 ## 📋 Implementation Plan
 Each step leaves the app working and ships with tests; `npm run lint`, `typecheck` and `test` stay green.
@@ -109,16 +109,18 @@ Each step leaves the app working and ships with tests; `npm run lint`, `typechec
 2. `core`: eligibility with `EASYRMS_TRANSPORT_WINDOW_DAYS` (default 14, range 1–30, invalid value fails like other settings), shared quantity pool; quote reuse. Tests for window edges and the pool.
 3. `core`: submit and quote validators for both kinds (no `evidenceFileIds` yet), wizard step logic, service branch in `ReturnService.submit`. Tests: happy paths, future date, before delivery, duplicate line, refund over the limit.
 4. `db`: migration (`courier_note`), entity update, repository mapping, repository test with a database.
-5. `app`: routes accept the new kinds; wizard, entry cards, summary, tracker stage mapping and copy; inbox kind filter and decision card show the two kinds with the R10a badge. QA scenario modelled on `.ai/qa/RET/`.
+5a. `app`: `POST /api/returns`, `/quote` and `PATCH /api/returns/[id]` accept the new kinds; route and integration tests.
+5b. `app`: customer side: entry cards, wizard, summary, tracker stage mapping and Polish copy.
+5c. `app`: agent side: inbox kind filter and decision card with the R10a badge; QA scenario modelled on `.ai/qa/RET/`.
 
 **Phase 2**
 6. `core`: `EvidencePort`, `MalwareScannerPort`, `ImageSanitizerPort`, `EvidenceService` with limits and ordering (limit → decode → scan → sanitize → store). Unit tests with fakes: infected, scanner down (fails closed), oversize, quota, wrong type.
 7. `db`: evidence entity, migration, repository (staged insert under the order lock with quota, attach, delete-for-request, orphan purge). Repository tests including the two-tab quota race.
-8. `app`: ClamAV adapter and `sharp` sanitizer (dependency approval first), env wiring in the composition root, `docker-compose` ClamAV service, `Configuration.md` entries, `.env.example`. Contract tests with a stub clamd (clean, infected, timeout, closed socket).
-9. `app`: `POST /api/evidence` (stream-capped multipart, one file) and `GET /api/evidence/[id]` with the headers above; keep both out of `proxy.ts`. Integration tests: two seeded orders and two agents (cross-order read, upload to another order, no cookie), the headers on download, 413 and 429, 503 with the scanner stopped, an EICAR test file.
-10. `core` and `app`: `evidenceFileIds` accepted on submit (optional in this step), attached once, validated against the order; idempotency test.
+8. `app`: ClamAV adapter and `sharp` sanitizer (the Phase 2 gate must have passed), env wiring in the composition root, `docker-compose` ClamAV service, `Configuration.md` and `.env.example` entries. Contract tests with a stub clamd (clean, infected, timeout, closed socket).
+9. `app`: `POST /api/evidence` (stream-capped multipart, one file) and `GET /api/evidence/[id]` with the headers above; keep both out of `proxy.ts`. Integration tests: two seeded orders and two agents (cross-order read, upload to another order, no cookie), the headers on download, 413 and 429, 503 with the scanner stopped, an EICAR test file. Update the threat model statuses for the controls this phase delivers (T-15 to T-20, T-24).
 
 **Phase 3**
+10. `core` and `app`: `POST /api/returns` accepts `evidenceFileIds` for these kinds (optional in this step), attached once and validated against the order. Tests: idempotency, another order's id, an already attached id, and attach-then-purge of staged files older than the guest session.
 11. `core` and `app`: `evidenceFileIds` required (1 to 6) for these kinds; wizard photo step with progress, errors, removal and counters; accessibility check.
 12. `app`: decision-card thumbnails and tracker thumbnails through the download route; Storybook stories for the new components; `npm run storybook:build`.
-13. QA scenarios and evidence under `doc/previdences/pr-<n>/`; update the threat model statuses for T-15 to T-24, the brief (R07, Q23, A08) and `Configuration.md`; run the full gate.
+13. QA scenarios and evidence under `doc/previdences/pr-<n>/`; update the brief (R07, Q23, A08) and the threat-model rows T-21 to T-23 (the residual risks); run the full gate.
