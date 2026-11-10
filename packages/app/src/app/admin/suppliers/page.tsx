@@ -27,7 +27,7 @@ export default async function AdminSuppliersPage({
 
   const scope = await createRequestScope();
   const suppliers = await scope.cradle.supplierService.list();
-  // The directory is small, so it is narrowed and paged in memory (spec 2026-11-10-supplier-list-filters).
+  // The directory is small, so it is narrowed and paged in memory (spec 2026-11-10-supplier-list-filters (implemented)).
   const view = viewSuppliers(suppliers, { status, name, email, page: Number(text(query.page)) });
   const state = { status, name, email };
   const narrowed = Boolean(status || name || email);

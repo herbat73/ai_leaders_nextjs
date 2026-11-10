@@ -1,6 +1,6 @@
 # Run: supplier list filters (#123)
 
-Source doc: .ai/specs/2026-11-10-supplier-list-filters.md
+Source doc: .ai/specs/implemented/2026-11-10-supplier-list-filters.md
 
 ## Goal
 `/admin/suppliers` shows 10 suppliers per page with a status dropdown and separate name / e-mail searches (AND), state in the URL, filtering in memory.

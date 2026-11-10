@@ -1,7 +1,7 @@
 # Decision record: supplier list filters (D15 override for #123)
 
 - Date: 2026-11-10
-- Confirmed by: Adam Adamczyk (product owner), in the spec session for `.ai/specs/2026-11-10-supplier-list-filters.md` (Q1: "implement, as it is small improvement")
+- Confirmed by: Adam Adamczyk (product owner), in the spec session for `.ai/specs/implemented/2026-11-10-supplier-list-filters.md` (Q1: "implement, as it is small improvement")
 - Origin: issue #123, "Add filter for suppliers list".
 
 ## Decisions

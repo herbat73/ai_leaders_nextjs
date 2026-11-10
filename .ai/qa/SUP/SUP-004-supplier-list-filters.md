@@ -5,7 +5,7 @@
 - **Priorytet:** Medium
 - **Typ:** UI (strona agenta) z przygotowaniem danych przez API
 - **Rola:** agent (konto QA z `MANAGE_RULES`)
-- **Specyfikacja:** [2026-11-10-supplier-list-filters](../../specs/2026-11-10-supplier-list-filters.md)
+- **Specyfikacja:** [2026-11-10-supplier-list-filters](../../specs/implemented/2026-11-10-supplier-list-filters.md)
 
 ## Test implementation
 
