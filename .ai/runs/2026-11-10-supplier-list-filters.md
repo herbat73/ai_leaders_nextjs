@@ -21,7 +21,7 @@ Low. In-memory filtering must move to SQL if the list reaches the thousands. SUP
 ### Phase 1: Supplier list filters
 
 - [x] 1.1 core: viewSuppliers with unit tests — 774e8a6
-- [ ] 1.2 app: supplier-href helper and copy
-- [ ] 1.3 app: supplier filters island and page wiring
+- [x] 1.2 app: supplier-href helper and copy — 3bea157
+- [x] 1.3 app: supplier filters island and page wiring — 3bea157
 - [ ] 1.4 docs and QA: D15 decision record and SUP-004 scenario
 - [ ] 1.5 Full validation gate
