@@ -38,4 +38,4 @@ npm run storybook:build  # static Storybook in packages/app/storybook-static (pa
 NODE_ENV=production npm run build
 ```
 
-Further reading in the README: [Database tests](./README.md#database-tests), [Integration tests](./README.md#integration-tests), [Storybook](./README.md#storybook), [Configuration](./README.md#configuration).
+Further reading in the README: [Database tests](./README.md#database-tests), [Integration tests](./README.md#integration-tests), [Storybook](./README.md#storybook), [Configuration](./Configuration.md).

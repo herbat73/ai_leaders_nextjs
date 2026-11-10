@@ -21,7 +21,7 @@ Applied automatically by `om-code-review` / `om-auto-review-pr`. The full repo c
 - **UI**: admin pages use shadcn/ui; public pages use plain Tailwind. No second component library or CSS framework. `ui` has no business logic or data access.
 - **Next.js**: this version has breaking changes — new Next.js code must follow `node_modules/next/dist/docs/`, not memory. `"use client"` only when needed.
 - **TypeScript**: strict; `any` needs a justifying comment; explicit return types on exported functions.
-- **Config**: new env vars are documented in the README; no secrets committed.
+- **Config**: new env vars are documented in `Configuration.md`; no secrets committed.
 - **Dependencies**: added to the workspace that uses it, not the root. New internal packages are listed in `transpilePackages`. `npm run audit` must pass; allowlist entries need a reason and expiry.
 - **Process files**: `.ai/lessons.md` updated for non-obvious bug fixes; specs moved to `.ai/specs/implemented/` when fully built.
 

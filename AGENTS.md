@@ -2,7 +2,7 @@
 
 **EasyRMS** (Easy Return Management System) manages product returns and complaints: a customer portal (Tailwind) and an
 agent back office (shadcn/ui). npm-workspaces monorepo in `packages/{app,core,db,ui}`. Current features and
-configuration: `README.md`; shipped specs: `.ai/specs/implemented/`.
+configuration: `Configuration.md`, `README.md`; shipped specs: `.ai/specs/implemented/`.
 
 ## Hard rules
 
@@ -22,7 +22,7 @@ with them, stop and ask.
   Actions.**
 - **Concepts** (today: `returns`) are same-named folders across layers, created when their first file is added; there is
   no `modules/`.
-- **Config and secrets:** configuration comes from environment variables, documented in the README; never commit secrets.
+- **Config and secrets:** configuration comes from environment variables, documented in `Configuration.md`; never commit secrets.
 - **Dependencies** are added to the workspace that uses them (`npm install <pkg> -w @easyrms/<name>`), not the root.
 - **Next.js here is not the one you know:** read the relevant guide in `node_modules/next/dist/docs/` before writing
   Next.js code (details in `packages/app/AGENTS.md`).
@@ -72,7 +72,7 @@ Read only the row that matches the task; add more rows' files when the task span
 | Domain logic, validators, state machine | `packages/core/AGENTS.md` |
 | Run the 50-case sample | `doc/instrukcja-proba-50-spraw.md` |
 | Integration / E2E test (agent-browser scenario) | `.ai/skills/om-integration-tests/SKILL.md`, `doc/best-practices-testow-integracyjnych.md`, a scenario in `.ai/qa/RET/` as a model |
-| Setup, configuration, env vars, deployment | `GettingStarted.md` (setup), `README.md` (configuration) |
+| Setup, configuration, env vars, deployment | `GettingStarted.md` (setup), `Configuration.md` (env vars) |
 
 No dedicated doc exists yet for: the customer-portal (Tailwind) page patterns, and a CI pipeline (there is no
 `.github/`).

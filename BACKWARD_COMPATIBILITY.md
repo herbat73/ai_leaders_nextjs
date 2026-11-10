@@ -26,10 +26,10 @@ Surface: whatever each package exports from its `src/index.ts` (and `@easyrms/ui
 
 ## 4. Configuration and environment
 
-Surface: environment variables documented in the README, `openmercato.toml`, `audit-allowlist.json` format, and the npm scripts in the root `package.json` (`dev`, `build`, `lint`, `typecheck`, `audit`, `db:*`).
+Surface: environment variables documented in `Configuration.md`, `openmercato.toml`, `audit-allowlist.json` format, and the npm scripts in the root `package.json` (`dev`, `build`, `lint`, `typecheck`, `audit`, `db:*`).
 
 - **Breaking:** renaming/removing an env var or npm script, changing a default in a way that alters runtime behavior.
-- **Required path:** document the change in the README in the same PR; keep the old name working for one release when practical; never commit secrets.
+- **Required path:** document the change in `Configuration.md` in the same PR; keep the old name working for one release when practical; never commit secrets.
 
 ## 5. Process contract
 
