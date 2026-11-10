@@ -1,0 +1,35 @@
+flowchart LR
+  subgraph internet [Untrusted: internet]
+    Cust[Customer with guest session]
+    Agent[Agent / manager]
+    Attacker[Attacker: no session, guest of another order, or malicious file]
+  end
+  subgraph app [Trusted: Next.js app]
+    Up(Upload route: multipart, size and type checks)
+    Dl(File download route: session and order check)
+    Scan(Scanner and re-encoder: malware, metadata, pixel limit)
+    Svc(Core services: request, claim, retention job)
+  end
+  subgraph data [Trusted: data]
+    DB[(PostgreSQL: requests, file metadata, hashes)]
+    Store[(File store: location undecided, Q23)]
+  end
+  subgraph ext [Semi-trusted: external]
+    SMTP[SMTP server]
+    Vendor[Vendor mailbox]
+  end
+  Cust -->|"photos, file name, content type (T-15, T-18, T-19)"| Up
+  Attacker -->|"other order's file id (T-17), flood of uploads (T-18)"| Up
+  Attacker -->|"guessed file URL (T-17)"| Dl
+  Up --> Scan
+  Scan -->|"clean files only (T-16, T-20)"| Store
+  Up --> Svc
+  Svc -->|"metadata, content hash, event (T-23)"| DB
+  Agent -->|"view photo in inbox (T-15, T-17)"| Dl
+  Dl -->|"bytes with nosniff and download headers (T-15)"| Agent
+  Dl --> Store
+  Svc -->|"claim mail with chosen files (T-22)"| SMTP
+  SMTP --> Vendor
+  Svc -->|"retention and erasure (T-21)"| Store
+  classDef boundary stroke-dasharray: 5 5
+  class internet,app,data,ext boundary
