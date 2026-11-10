@@ -80,41 +80,7 @@ PostgreSQL is accessed through MikroORM with a single shared connection pool. Sc
 
 ## Getting started
 
-Requirements: Node.js 20.19+ (Next.js needs 20.9+, but the test runner's Vite needs 20.19+) and, for the local database, either PostgreSQL binaries (Linux, macOS or WSL) or Docker with the compose plugin (any OS, including native Windows).
-
-```bash
-npm run setup      # installs dependencies, starts local PostgreSQL, runs migrations
-npm run dev        # starts @easyrms/app
-```
-
-Open [http://localhost:3000](http://localhost:3000) in your browser.
-
-`npm run setup` is idempotent: re-running it skips every step that is already done (dependencies up to date, database reachable, no pending migrations) and prints which ones were skipped. It starts only the default local database: with `scripts/db.sh` when PostgreSQL binaries are found, otherwise with `docker compose up -d --wait postgres` (`docker-compose.yml`, same credentials and port 5433); if you set `EASYRMS_DATABASE_URL` to another PostgreSQL, start that yourself and setup only runs the migrations.
-
-### Manual setup
-
-The same steps by hand, if you prefer or if `npm run setup` fails:
-
-```bash
-npm install
-npm run db:start    # local PostgreSQL on localhost:5433 (needs PostgreSQL binaries; set PGBIN if not found)
-# or: docker compose up -d --wait postgres
-npm run db:migrate
-npm run dev
-```
-
-Other commands:
-
-```bash
-npm run lint
-npm run typecheck  # all workspaces
-npm test           # unit tests (Vitest, @easyrms/core)
-npm run test:db    # database tests (Vitest, @easyrms/db): migration and repository against the local Postgres
-npm run test:integration  # all agent-browser QA scenarios from .ai/qa/ (see "Integration tests")
-npm run storybook  # component catalog on http://localhost:6006
-npm run storybook:build  # static Storybook in packages/app/storybook-static (part of the validation gate)
-NODE_ENV=production npm run build
-```
+Requirements, one-command setup, manual setup and the everyday commands are in [GettingStarted.md](./GettingStarted.md). Short version: `npm run setup`, then `npm run dev`, then open [http://localhost:3000](http://localhost:3000). Tests, Storybook and configuration are described below.
 
 ### Database tests
 

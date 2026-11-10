@@ -72,7 +72,7 @@ Read only the row that matches the task; add more rows' files when the task span
 | Domain logic, validators, state machine | `packages/core/AGENTS.md` |
 | Run the 50-case sample | `doc/instrukcja-proba-50-spraw.md` |
 | Integration / E2E test (agent-browser scenario) | `.ai/skills/om-integration-tests/SKILL.md`, `doc/best-practices-testow-integracyjnych.md`, a scenario in `.ai/qa/RET/` as a model |
-| Setup, configuration, env vars, deployment | `README.md` |
+| Setup, configuration, env vars, deployment | `GettingStarted.md` (setup), `README.md` (configuration) |
 
 No dedicated doc exists yet for: the customer-portal (Tailwind) page patterns, and a CI pipeline (there is no
 `.github/`).
