@@ -84,7 +84,7 @@ Requirements, one-command setup, manual setup and the everyday commands are in [
 
 ### Database tests
 
-`npm run test:db` runs Vitest in `@easyrms/db` against the local PostgreSQL from `npm run db:start` (or the database in `EASYRMS_DATABASE_URL`). Every test file creates a throwaway schema (selected through `search_path`) and drops it afterwards, so your data is untouched. It covers the migrations (status mapping, RMA backfill order, `down` refusal, the items table) and the repository (compare-and-set transitions, events, concurrent submits under the order lock). It is not part of `npm test` or the CI gate until CI has a Postgres service, so record its result in `.ai/runs/` for each PR that touches `packages/db`.
+`npm run test:db` runs the migration and repository tests of `@easyrms/db` against the local PostgreSQL; details in [DatabaseTests.md](./DatabaseTests.md).
 
 ### Integration tests
 
