@@ -24,7 +24,7 @@ happens later, in an isolated environment, with synthetic data only.
 
 ### 0. Check for an existing model
 
-Look for `doc/security/threat-model.md` (or any `*threat-model*.md`). If one exists,
+Look for `docs/security/threat-model.md` (or any `*threat-model*.md`). If one exists,
 update it instead of starting over: keep its structure and threat IDs, mark threats
 that are now mitigated, add new ones, update the diagram, and add a dated line to the
 changelog. A rewritten model loses the history of what was accepted and why.
@@ -127,12 +127,12 @@ assumption is marked, and nothing in the document is an attack instruction.
 
 ### 6. Write the outputs
 
-- `doc/security/threat-model.md` from `assets/THREAT_MODEL_TEMPLATE.md`, with the
+- `docs/security/threat-model.md` from `assets/THREAT_MODEL_TEMPLATE.md`, with the
   Mermaid diagram inline (GitHub, GitLab and most editors render it).
-- `doc/security/threat-model.mmd` with the diagram source alone, so it can be
+- `docs/security/threat-model.mmd` with the diagram source alone, so it can be
   rendered or edited separately. If a Mermaid renderer is already available (`mmdc`,
   or `npx @mermaid-js/mermaid-cli` with node present), also render
-  `doc/security/threat-model.svg`; do not install browsers or heavy dependencies just
+  `docs/security/threat-model.svg`; do not install browsers or heavy dependencies just
   for this, say instead how to render it.
 
 Write in the language of the project's existing documentation; if the repository has
