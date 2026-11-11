@@ -36,8 +36,8 @@ And agent zatwierdza i kończy je bez etapu odesłania, a podgląd klienta pokaz
 | 4b | Plik SVG pod nazwą .png (negatywny), potem „Usuń”, potem poprawny JPEG | „To nie jest zdjęcie…”; „Dodane”, „1 z 6 zdjęć”; przyciski „Dodaj zdjęcia” i „Usuń zdjęcie ok.jpg” mają nazwy, pole pliku nie jest w kolejności tabulacji, `fieldset` z legendą |
 | 4c | „Dalej” | Krok rozwiązania bez „Dosłanie…” i bez pytania o sposób odesłania |
 | 5 | Wymiana, potwierdzenie, „Wyślij zgłoszenie uszkodzenia” | Strona zgłoszenia z RMA, trzy etapy, opis, adnotacja i miniatura „Otwórz zdjęcie: ok.jpg” |
-| 6 | Agent: karta ze zdjęciem, „Zatwierdź”, „Zakończ” | Miniatura na karcie; brak przycisku „Oznacz jako w drodze”; status „Zakończone” |
-| 7 | „Podgląd widoku klienta” | „Aktualny status: Zakończone” |
+| 6 | Agent: karta ze zdjęciem, „Zatwierdź”, „Zakończ” | Miniatura i „Historia zdjęć” („Klient dodał zdjęcie”, „Agent otworzył zdjęcie”) na karcie; brak przycisku „Oznacz jako w drodze”; status „Zakończone” |
+| 7 | „Podgląd widoku klienta” | „Aktualny status: Zakończone”, bez „Historia zdjęć” (negatywny) |
 
 ## Sprzątanie
 
