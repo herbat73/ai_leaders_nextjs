@@ -61,7 +61,7 @@ const eslintConfig = defineConfig([
     files: ["packages/ui/src/storybook/**/*.stories.{ts,tsx}"],
     rules: { "storybook/no-renderer-packages": "off" },
   },
-  globalIgnores(["**/storybook-static/**", ".next/**", "**/.next/**", "out/**", "build/**", "next-env.d.ts", "**/next-env.d.ts", "node_modules/**"]),
+  globalIgnores(["**/storybook-static/**", ".next/**", "**/.next/**", "out/**", "build/**", "next-env.d.ts", "**/next-env.d.ts", "node_modules/**", ".agents/skills/**/references/assets/**"]),
 ]);
 
 export default eslintConfig;
