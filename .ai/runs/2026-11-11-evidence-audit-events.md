@@ -29,7 +29,17 @@ Retention job, erasure, customer-visible history, recording guest reads, claim m
 
 ### Phase 1: Audit events
 
-- [ ] 1.1 db: evidence_audit_events entity and migration, audit written in stage, deleteStaged, attach and agent download, listAudit
-- [ ] 1.2 core and app: actor context through EvidenceService and the routes, fail-closed rules
-- [ ] 1.3 app: Historia zdjęć card for agents
-- [ ] 1.4 QA scenario EVD-003, evidence, threat model T-23, full gate
+- [x] 1.1 db: evidence_audit_events entity and migration, audit written in stage, deleteStaged, attach and agent download, listAudit — 76a614c
+- [x] 1.2 core and app: actor context through EvidenceService and the routes, fail-closed rules — 76a614c
+- [x] 1.3 app: Historia zdjęć card for agents — f9ea02c
+- [x] 1.4 QA scenario EVD-003, evidence, threat model T-23, full gate — c5a7136
+
+## Outcome
+
+Audit events implemented; #145 stays open for retention and erasure (T-21).
+
+- Gate: `typecheck`, `test` (core 1030, app 27), `lint` (0 errors), `docs:check`, `audit`, `storybook:build`, `NODE_ENV=production npm run build` green; `test:db` 190 passed (new: audit in the same transaction, fail closed for add and take-back, dedup window, attach ties rows to the request, rows outlive files, `down` refuses with rows, no foreign key on file or request).
+- Scenarios against the running app with the real ClamAV container, all passing: EVD-003 (new), RET-011 (now also asserts the card shows the history and the customer preview does not), RET-012, EVD-001, EVD-002.
+- Screenshots: `doc/previdences/pr-146/`.
+- Not recorded by design: a customer reading their own photo; the staged take-backs that never became part of a request are in the table but not shown on any card (no request to show them on).
+- Not done: retention and erasure (T-21), customer-visible history, a retention rule for the audit rows themselves (needs the same legal decision as the photos).
