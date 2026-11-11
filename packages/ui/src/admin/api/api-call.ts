@@ -9,6 +9,7 @@ export type ApiResult<T> = { ok: true; status: number; data: T } | { ok: false; 
 
 export interface ApiCallOptions {
   method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+  /** A plain value is sent as JSON; a `FormData` is sent as multipart (the browser sets the boundary). */
   body?: unknown;
 }
 
@@ -53,9 +54,9 @@ export async function apiCall<T>(url: string, { method = "GET", body }: ApiCallO
       method,
       headers: {
         [REQUESTED_WITH_HEADER]: "easyrms",
-        ...(body === undefined ? {} : { "content-type": "application/json" }),
+        ...(body === undefined || body instanceof FormData ? {} : { "content-type": "application/json" }),
       },
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body: body === undefined ? undefined : body instanceof FormData ? body : JSON.stringify(body),
     });
   } catch {
     return { ok: false, status: 0, error: { code: "network_error", message: "Network error. Please try again." } };

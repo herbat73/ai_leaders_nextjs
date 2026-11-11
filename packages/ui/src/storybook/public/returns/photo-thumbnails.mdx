@@ -1,0 +1,80 @@
+import { Canvas, Controls, Meta } from "@storybook/addon-docs/blocks";
+
+import { DoDont } from "../../docs/blocks";
+import * as PhotoThumbnailsStories from "./photo-thumbnails.stories";
+
+<Meta of={PhotoThumbnailsStories} />
+
+# PhotoThumbnails
+
+Rząd miniatur zdjęć zgłoszenia, każda to link do pełnego obrazu otwieranego w tej samej karcie. Tylko do odczytu, bez stanu i wysyłania.
+
+<Canvas of={PhotoThumbnailsStories.Default} />
+
+## Kiedy użyć
+
+- Na stronie śledzenia zgłoszenia klienta i na karcie decyzji agenta (podgląd widoku klienta pokazuje to samo), gdy zgłoszenie ma zdjęcia.
+- Gdy każdy obraz ma własny adres z kontrolą dostępu (trasa pobierania), a nie dane w stronie.
+
+## Kiedy nie użyć
+
+- Do dodawania i usuwania zdjęć — to `PhotoPicker`.
+- Dla zgłoszeń bez zdjęć (zwroty, reklamacje): nie pokazuj pustej listy ani nagłówka.
+
+## Jak złożyć
+
+Wejście: `label` (nazwa listy), `items` (`href`, `src`, `caption`, `linkLabel`). Wyjście: brak. `href` i `src` to zwykle ten sam adres `GET /api/evidence/[id]`; `caption` to oczyszczona nazwa pliku z `label` zapisanego na serwerze.
+
+```tsx
+<PhotoThumbnails
+  label={copy.photos.listLabel}
+  items={evidence.map((file) => ({
+    href: `/api/evidence/${file.id}`,
+    src: `/api/evidence/${file.id}`,
+    caption: file.label,
+    linkLabel: copy.photos.open(file.label),
+  }))}
+/>
+```
+
+## Tokeny
+
+Kafelek: `border-border`, `bg-card`, `rounded-md`, najechanie `bg-muted`; podpis `text-muted-foreground`; fokus `ring-ring`. Obraz `object-cover`, proporcje 4:3.
+
+## Stany
+
+| Stan | Wygląd i zachowanie | Jak wywołać |
+|---|---|---|
+| default | siatka 2 kolumn, od `sm` 3 kolumn | `items` z kilkoma pozycjami |
+| single | jeden kafelek | jedna pozycja |
+| long name | podpis obcięty wielokropkiem, pełna nazwa w nazwie linku | długie `caption` |
+| hover | tło `bg-muted` | wskaźnik myszy |
+| focus-visible | pierścień 2 px | Tab |
+
+<Canvas of={PhotoThumbnailsStories.SinglePhoto} />
+
+## Dostępność
+
+- To lista `ul` z nazwą `label`; każdy kafelek to link z nazwą `linkLabel` (z nazwą pliku), a obraz ma pusty `alt`, bo nazwę niesie link.
+- Obrazy ładują się leniwie (`loading="lazy"`), a rozmiar jest zadeklarowany, więc strona nie skacze.
+- Link otwiera obraz w tej samej karcie: powrót to przycisk „Wstecz” przeglądarki.
+- Deweloper dostarcza: `label`, `linkLabel` po polsku i adresy `href`/`src`.
+
+## Rób i nie rób
+
+<DoDont
+  rob={[
+    "Kieruj `href` i `src` na trasę pobierania, która sprawdza sesję zamówienia lub agenta.",
+    "Podawaj w `caption` oczyszczoną nazwę pliku z serwera.",
+    "Nie renderuj komponentu, gdy zgłoszenie nie ma zdjęć.",
+  ]}
+  nieRob={[
+    "Wstawiania adresów spoza własnej trasy pobierania.",
+    "Otwierania obrazu w nowej karcie bez potrzeby.",
+    "Dodawania przycisków usuwania — pliki po wysłaniu są niezmienne.",
+  ]}
+/>
+
+## API
+
+<Controls of={PhotoThumbnailsStories.Default} />
