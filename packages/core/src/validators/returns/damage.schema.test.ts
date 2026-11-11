@@ -86,3 +86,11 @@ describe("dispatch on kind", () => {
     expect(pathsOf(result as never)).toContain("defectDescription");
   });
 });
+
+describe("returnListQuerySchema with the new kinds", () => {
+  it.each(["transport", "missing"])("accepts ?kind=%s", async (kind) => {
+    const { returnListQuerySchema } = await import("./return-list-query.schema");
+    expect(returnListQuerySchema.safeParse({ kind }).success).toBe(true);
+    expect(returnListQuerySchema.safeParse({ kind: "other" }).success).toBe(false);
+  });
+});

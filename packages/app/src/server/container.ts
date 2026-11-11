@@ -28,7 +28,7 @@ import { getOrm, registerDb } from "@easyrms/db";
 import { getAgentSessionService } from "./agent-session";
 import { createMailPort } from "./mail";
 import { getGuestSessionService } from "./guest-session";
-import { getApprovalConfig, getEligibilityConfig, getInviteConfig, getQuoteConfig, getRecommendationConfig } from "./return-config";
+import { getApprovalConfig, getEligibilityConfig, getInviteConfig, getQuoteConfig, getRecommendationConfig, getTransportConfig } from "./return-config";
 
 /** What can be resolved from a request scope. */
 export interface Cradle {
@@ -80,6 +80,7 @@ function getRootContainer(): Promise<AwilixContainer> {
       passwordHasher: asFunction(() => limitHashConcurrency(new ScryptPasswordHasher())).singleton(),
       eligibilityConfig: asFunction(getEligibilityConfig).singleton(),
       quoteConfig: asFunction(getQuoteConfig).singleton(),
+      transportConfig: asFunction(getTransportConfig).singleton(),
       approvalConfig: asFunction(getApprovalConfig).singleton(),
       inviteConfig: asFunction(getInviteConfig).singleton(),
       recommendationConfig: asFunction(getRecommendationConfig).singleton(),

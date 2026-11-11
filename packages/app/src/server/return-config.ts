@@ -5,15 +5,18 @@ import {
   BRIEF_RULES,
   parseRulesRecommendationsFlag,
   parseShippingFee,
+  parseTransportWindowDays,
   type RecommendationConfig,
   type AgentInviteConfig,
   type ApprovalConfig,
   type EligibilityConfig,
   type QuoteConfig,
+  type TransportWindowConfig,
 } from "@easyrms/core";
 
 let eligibility: EligibilityConfig | undefined;
 let quote: QuoteConfig | undefined;
+let transport: TransportWindowConfig | undefined;
 let approval: ApprovalConfig | undefined;
 let invite: AgentInviteConfig | undefined;
 let recommendation: RecommendationConfig | undefined;
@@ -22,6 +25,12 @@ let recommendation: RecommendationConfig | undefined;
 export function getEligibilityConfig(): EligibilityConfig {
   eligibility ??= { windowDays: clampReturnWindowDays(process.env.EASYRMS_RETURN_WINDOW_DAYS) };
   return eligibility;
+}
+
+/** `EASYRMS_TRANSPORT_WINDOW_DAYS` (default 14, 1-30); memoized, an invalid value is a configuration error on first use. */
+export function getTransportConfig(): TransportWindowConfig {
+  transport ??= { windowDays: parseTransportWindowDays(process.env.EASYRMS_TRANSPORT_WINDOW_DAYS) };
+  return transport;
 }
 
 /** `EASYRMS_RETURN_SHIPPING_FEE`; memoized, an invalid value is a configuration error on first use. */

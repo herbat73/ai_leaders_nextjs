@@ -6,7 +6,7 @@ import { httpOptions } from "@/server/http-options";
 
 export const dynamic = "force-dynamic";
 
-/** Session required (401 `unauthorized`); the order comes from the cookie, never from the body. `kind: "complaint"` quotes a complaint. */
+/** Session required (401 `unauthorized`); the order comes from the cookie, never from the body. `kind: "complaint"`, `"transport"` or `"missing"` quotes that kind (the last two take no return method). */
 export const POST = apiHandler(async (request) => {
   const scope = await createRequestScope();
   const session = await requireGuestSession(
