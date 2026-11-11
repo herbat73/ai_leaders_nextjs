@@ -1,6 +1,6 @@
 # Execution plan: evidence retention and erasure (T-21)
 
-Source doc: .ai/specs/2026-11-11-evidence-retention-and-erasure.md (spec PR #147, design-only; Refs #145)
+Source doc: .ai/specs/implemented/2026-11-11-evidence-retention-and-erasure.md (spec PR #147, design-only; Refs #145)
 
 ## Goal
 After `EASYRMS_RETENTION_DAYS` (default 365) a closed request has its photos and audit rows deleted and its personal text anonymized in place; an operator can erase one request on demand.

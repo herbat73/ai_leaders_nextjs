@@ -5,7 +5,7 @@
 - **Priorytet:** High
 - **Typ:** UI + CLI (przygotowanie przez API i SQL)
 - **Rola:** dwóch klientów-gości (PL-10001, PL-10005) i agent (konto QA z `MANAGE_RULES`)
-- **Specyfikacja:** [2026-11-11-evidence-retention-and-erasure](../../specs/2026-11-11-evidence-retention-and-erasure.md); model zagrożeń `doc/security/threat-model.md` (T-21); procedura `doc/security/erasure-runbook.md`
+- **Specyfikacja:** [2026-11-11-evidence-retention-and-erasure](../../specs/implemented/2026-11-11-evidence-retention-and-erasure.md); model zagrożeń `doc/security/threat-model.md` (T-21); procedura `doc/security/erasure-runbook.md`
 
 ## Test implementation
 

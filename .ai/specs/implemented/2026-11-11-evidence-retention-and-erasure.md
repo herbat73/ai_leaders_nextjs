@@ -1,6 +1,6 @@
 # Evidence retention and erasure
 
-Status: Draft for owner review (written autonomously from issue #145, Part 1). Refs: issue #145; brief R16, Q23; threat model T-21 (`doc/security/threat-model.md`); D21 spec `.ai/specs/implemented/2026-11-10-transport-damage-and-missing-items.md`. Part 2 of #145 (audit events, T-23) shipped in #146.
+Status: Implemented 2026-11-11 in one PR (#148; the spec was first merged as #147 and is moved here as built). Built as specified except where "As built" below says otherwise. The open assumptions Q2, Q3 and Q8 were applied as written and are still to be confirmed by the owner and legal. Refs: issue #145 (closed by #148); brief R16, Q23; threat model T-21 (`doc/security/threat-model.md`); D21 spec `.ai/specs/implemented/2026-11-10-transport-damage-and-missing-items.md`. Part 2 of #145 (audit events, T-23) shipped in #146.
 
 ## 📝 TLDR
 Photos and customer text are kept without limit today, and nothing calls the erasure code that already exists (`EvidenceService.deleteForRequest`). Proposed (future behavior): a retention job that, one year after a request is closed, deletes its photos and audit rows and anonymizes the personal text of the request, plus a documented command for a single customer's erasure request. Legal confirmed the period on 2026-11-11 (1 year, replacing the brief's undecided "3 years"); it comes from configuration, never from code.
@@ -31,10 +31,10 @@ Per eligible request, in its own transaction: delete its files (the existing `de
 - `core`: `parseRetentionDays(env)` (same shape as `parseManagerInviteTtl`), `RetentionService.run({ now, dryRun })` and `.eraseOne(rma, { force })`, `RetentionPort` (`findDue(cutoff, limit)`, `anonymize(requestId)`, `purgeOrphanAudit(cutoff)`). No React, Next.js or MikroORM.
 - `db`: repository implementing the port with the SQL inside the repository only; one migration; entity change.
 - `app`: `scripts/retention.ts` building a small container the way `agent-create.ts` does (it cannot import `server-only` code), `retention:run` and `retention:erase` in the root `package.json`, Awilix registration of the service in `registerCore`/`registerDb`.
-- Effects on consumers: the customer tracker finds requests by order number and e-mail, so an anonymized request is no longer found (404, same as an unknown request); agents still see it, marked "Zanonimizowano" with the free text empty and no photos.
+- Effects on consumers: the customer tracker lists requests by the guest session's order (not by e-mail), so an anonymized request stays visible to its own customer with its status, without text or photos (the photo route answers 404). Agents see it marked "Zanonimizowano" on the card and in the list.
 
 ## 📝 Data Model
-One migration: `return_requests.anonymized_at timestamptz null`, plus an index on `(status, updated_at)` only if the repository test shows the due-query needs it. No change to `evidence_files` or `evidence_audit_events`. The migration is reversible (drop the column); erasure itself is not, by design.
+One migration: `return_requests.anonymized_at timestamptz null`, No index: a partial index would not be in the entity metadata and the next generated migration would drop it. No change to `evidence_files` or `evidence_audit_events`. The migration is reversible (drop the column); erasure itself is not, by design.
 
 ## 📝 API Contracts
 No HTTP route. CLI:
@@ -61,9 +61,18 @@ The agent decision card shows "Zanonimizowano <date>" in place of the customer e
 ## 📝 Decisions in play
 Relies on R16 (to be updated from "3 lata" to 1 year, owner and legal), Q23 (retention "wg prawnika", now answered: 1 year) and D21. Proposes no superseding of a Non-goal. Owner and legal approve the PR's brief change.
 
+## 📝 As built
+Differences from the design above, found while building and reviewing #148:
+- **Tracker:** not a 404 for the customer (see Architecture); no tracker change was needed.
+- **Orphan photos:** the job also deletes staged files that never reached a request once they are older than the retention period (`RetentionPort.purgeOrphans`), because the staged-file purge on the next upload only runs if there is one.
+- **Erased claim drafts:** `SupplierClaimService.send` refuses a draft whose subject and body were erased (409 `claim_erased`), so an empty claim can never be mailed.
+- **Concurrent erasure:** `anonymize` returns `erased: false` when the request was already erased, so `run` does not count it and `eraseOne` answers `alreadyErased`.
+- **No browser scenario in the plan, one added:** QA scenario `RET-013` (`.ai/qa/RET/`), evidence in `doc/previdences/pr-148/`.
+- **Open:** `retention:erase --force` and the scheduled run were not exercised; the clock start (Q2), keeping the order number (Q3) and blanking claim text (Q8) await confirmation.
+
 ## 📋 Phasing
 - **Phase 1 — retention core and job.** Setting, service, port, repository, migration, scripts, tests, `Configuration.md`. Shippable alone: nothing runs until the operator schedules the script.
-- **Phase 2 — erasure request and visibility.** `retention:erase`, runbook, decision-card "Zanonimizowano" state, QA scenario, threat model and brief updates.
+- **Phase 2 — erasure request and visibility.** `retention:erase`, runbook, decision-card "Zanonimizowano" state, QA scenario (RET-013), threat model and brief updates.
 
 ## 📋 Implementation Plan
 Each step leaves the app working, ships with tests, and keeps `lint`, `typecheck`, `test` green.
@@ -76,5 +85,5 @@ Each step leaves the app working, ships with tests, and keeps `lint`, `typecheck
 
 **Phase 2**
 5. `core` and `app`: `eraseOne` and `retention:erase` with the final-status guard and `--force`; tests for not found, not final, forced.
-6. `app`: decision card state for an anonymized request, Storybook story, Polish copy; tracker returns 404 for an anonymized request (test).
+6. `app`: decision card state for an anonymized request, Storybook story, Polish copy; the tracker needs no change (see Architecture).
 7. Docs: erasure runbook in `doc/` (who runs it, how the request is verified, what is and is not erased, backups and sent mail), threat model T-21 row and change log, brief R16 and Q23 (1 year, implemented), `.ai/specs/product-brief.md` Done list; QA scenario in `.ai/qa/RET/`.
