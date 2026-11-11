@@ -122,6 +122,8 @@ export interface ReturnListItem extends ReturnRequest {
   recommendApprove?: boolean;
   /** Same conditions: R10c, the value reaches the manager threshold. A hint; the refund limit (R11) stays the gate. */
   assignManager?: boolean;
+  /** Same conditions: R10a, transport damage. Shown as a text badge; changes no order of the inbox. */
+  highPriority?: boolean;
 }
 
 export type ReturnEventActor = "customer" | "agent" | "system";

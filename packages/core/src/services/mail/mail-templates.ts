@@ -28,11 +28,13 @@ export function renderMail(message: Pick<MailMessage, "template" | "data">): Ren
   const { data } = message;
   switch (message.template) {
     case "return_submitted": {
-      const complaint = data.kind === "complaint";
+      const kind = str(data.kind);
+      const damage = kind === "transport" || kind === "missing";
+      const complaint = kind === "complaint";
       return {
-        subject: `${complaint ? "Reklamacja" : "Zwrot"} przyjęta – ${str(data.rma)}`,
+        subject: `${damage ? "Zgłoszenie przyjęte" : complaint ? "Reklamacja przyjęta" : "Zwrot przyjęta"} – ${str(data.rma)}`,
         text: [
-          `Dziękujemy, ${complaint ? "reklamacja została przyjęta" : "zgłoszenie zwrotu zostało przyjęte"}.`,
+          `Dziękujemy, ${damage ? "zgłoszenie uszkodzenia lub braku zostało przyjęte" : complaint ? "reklamacja została przyjęta" : "zgłoszenie zwrotu zostało przyjęte"}.`,
           `Numer zgłoszenia (RMA): ${str(data.rma)}`,
           "Odpowiemy w ciągu 2 dni roboczych. Status sprawdzisz w portalu, podając numer zamówienia i e-mail.",
         ].join("\n\n"),

@@ -4,10 +4,12 @@ import { CUSTOMER_RATE_RULES, rateKeys, type RateLimiterPort } from "../../secur
 import type { OrderLookup, OrderLookupResult, ReturnOrder } from "../orders/order-lookup.port";
 import { calculateComplaintQuote } from "./complaint-quote";
 import { checkComplaintEligibility } from "./complaint-eligibility";
+import { calculateDamageQuote } from "./damage-quote";
+import { checkDamageEligibility, DEFAULT_TRANSPORT_WINDOW_DAYS, type TransportWindowConfig } from "./damage-eligibility";
 import { checkEligibility, type EligibilityConfig, type IneligibleReason, type OrderEligibility } from "./eligibility";
 import type { GuestSessionService } from "./guest-session.service";
 import { calculateQuote, toQuoteView, validateQuoteLines, type QuoteConfig, type ReturnQuoteView } from "./quote";
-import type { ComplaintResolution, RequestKind, ReturnMethod, ReturnRepository, ReturnResolution } from "./types";
+import { isDamageKind, type ComplaintResolution, type DamageKind, type DamageResolution, type RequestKind, type ReturnMethod, type ReturnRepository, type ReturnResolution } from "./types";
 
 /** One neutral message for a wrong order number and a wrong e-mail alike. */
 export const LOOKUP_NOT_FOUND_MESSAGE = "We could not find an order matching these details";
@@ -42,10 +44,11 @@ export type ReturnQuoteRequest = {
   /** Canonical order number from the verified session. */
   sessionOrderNumber: string;
   items: { lineRef: string; quantity: number }[];
-  returnMethod: ReturnMethod;
 } & (
-  | { kind?: "return"; resolution: ReturnResolution }
-  | { kind: "complaint"; resolution: ComplaintResolution }
+  | { kind?: "return"; resolution: ReturnResolution; returnMethod: ReturnMethod }
+  | { kind: "complaint"; resolution: ComplaintResolution; returnMethod: ReturnMethod }
+  /** Transport damage and missing items have no return leg, so no return method. */
+  | { kind: DamageKind; resolution: DamageResolution }
 );
 
 /**
@@ -60,6 +63,7 @@ export class ReturnLookupService {
   private readonly clock: () => Date;
   private readonly eligibilityConfig: EligibilityConfig;
   private readonly quoteConfig: QuoteConfig;
+  private readonly transportConfig: TransportWindowConfig;
 
   constructor(deps: {
     returnRepository: ReturnRepository;
@@ -69,7 +73,10 @@ export class ReturnLookupService {
     clock: () => Date;
     eligibilityConfig: EligibilityConfig;
     quoteConfig: QuoteConfig;
+    /** Optional so existing wiring keeps the 14-day default (`EASYRMS_TRANSPORT_WINDOW_DAYS`). */
+    transportConfig?: TransportWindowConfig;
   }) {
+    this.transportConfig = deps.transportConfig ?? { windowDays: DEFAULT_TRANSPORT_WINDOW_DAYS };
     this.returnRepository = deps.returnRepository;
     this.orderLookup = deps.orderLookup;
     this.rateLimiter = deps.rateLimiter;
@@ -133,10 +140,7 @@ export class ReturnLookupService {
     if (result.status === "not_found") throw new NotFoundError("Order not found");
     const order = result.order;
     const claimed = await this.returnRepository.claimedQuantities(order.orderNumber);
-    const eligibility =
-      kind === "complaint"
-        ? checkComplaintEligibility(order, this.clock(), claimed)
-        : checkEligibility(order, this.clock(), this.eligibilityConfig, claimed);
+    const eligibility = this.eligibilityOf(kind, order, claimed);
     if (eligibility.status === "not_delivered") {
       return { orderNumber: order.orderNumber, deliveredAt: null, lines: [], trackingUrl: eligibility.trackingUrl };
     }
@@ -163,9 +167,7 @@ export class ReturnLookupService {
 
     const order = result.order;
     const claimed = await this.returnRepository.claimedQuantities(order.orderNumber);
-    const eligibility = input.kind === "complaint"
-      ? checkComplaintEligibility(order, this.clock(), claimed)
-      : checkEligibility(order, this.clock(), this.eligibilityConfig, claimed);
+    const eligibility = this.eligibilityOf(input.kind ?? "return", order, claimed);
     const problems = validateQuoteLines(eligibility, input.items);
     const refs = Object.keys(problems);
     if (refs.length > 0) {
@@ -173,11 +175,21 @@ export class ReturnLookupService {
       for (const ref of refs) fields[`items.${ref}`] = problems[ref] as IneligibleReason;
       throw new ValidationError("Some items cannot be returned", fields);
     }
+    const currency = this.quoteConfig.shippingFee.currency;
     const quote =
       input.kind === "complaint"
-        ? calculateComplaintQuote(order, { lines: input.items, resolution: input.resolution }, this.quoteConfig.shippingFee.currency)
-        : calculateQuote(order, { lines: input.items, resolution: input.resolution, returnMethod: input.returnMethod }, this.quoteConfig);
-    return toQuoteView(quote, this.quoteConfig.shippingFee.currency);
+        ? calculateComplaintQuote(order, { lines: input.items, resolution: input.resolution }, currency)
+        : input.kind !== undefined && isDamageKind(input.kind)
+          ? calculateDamageQuote(order, { lines: input.items, resolution: input.resolution as DamageResolution }, currency)
+          : calculateQuote(order, { lines: input.items, resolution: input.resolution as ReturnResolution, returnMethod: (input as { returnMethod: ReturnMethod }).returnMethod }, this.quoteConfig);
+    return toQuoteView(quote, currency);
+  }
+
+  private eligibilityOf(kind: RequestKind, order: ReturnOrder, claimed: Record<string, number>): OrderEligibility {
+    const now = this.clock();
+    if (kind === "complaint") return checkComplaintEligibility(order, now, claimed);
+    if (isDamageKind(kind)) return checkDamageEligibility(order, now, this.transportConfig, claimed);
+    return checkEligibility(order, now, this.eligibilityConfig, claimed);
   }
 
   private toView(order: ReturnOrder, eligibility: Extract<OrderEligibility, { status: "delivered" }>): ReturnLookupView {
