@@ -57,6 +57,7 @@ const columns: DataTableColumn<ReturnListItem>[] = [
         {item.escalated && <Badge variant="destructive">{copy.escalated}</Badge>}
         {item.recommendApprove && <Badge variant="outline">{copy.recommendApprove}</Badge>}
         {item.assignManager && <Badge variant="outline">{copy.assignManager}</Badge>}
+        {item.highPriority && <Badge variant="outline">{copy.highPriority}</Badge>}
       </span>
     ),
   },

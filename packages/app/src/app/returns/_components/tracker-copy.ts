@@ -44,6 +44,7 @@ export const trackerCopy = {
     exchange: "Wymiana",
     repair: "Naprawa",
     replacement: "Wymiana na nowy egzemplarz",
+    resend_part: "Dosłanie brakującego elementu",
   } satisfies Record<RequestResolution, string>,
   amountLabel: "Kwota",
   exchangeNoteLabel: "Opis wymiany",
@@ -88,4 +89,29 @@ export const complaintTrackerCopy = {
     what_now_resolved: "Reklamacja została rozpatrzona. Dziękujemy!",
     what_now_rejected: "Reklamacja została zamknięta. Jeśli masz pytania, skontaktuj się z nami, podając numer RMA.",
   } satisfies Record<WhatNowKey, string>,
+} as const;
+
+/** The strings that read differently for transport damage and missing items (no return leg, three stages). */
+export const damageTrackerCopy = {
+  title: "Status zgłoszenia",
+  stagesLabel: "Etapy zgłoszenia",
+  summaryHeading: "Szczegóły zgłoszenia",
+  descriptionLabel: { transport: "Opis uszkodzenia", missing: "Opis problemu" },
+  discoveredOnLabel: { transport: "Uszkodzenie zauważone", missing: "Paczka otwarta" },
+  courierNoteLabel: "Adnotacja kuriera",
+  courierNoteAnswers: { true: "Tak", false: "Nie" },
+  /** Same three ids as the other kinds, read as Zgłoszone, Rozpatrzone, Rozwiązane. */
+  stages: { ...trackerCopy.stages, approved: "Rozpatrzone", resolved: "Rozwiązane" } satisfies Record<TrackerStageId, string>,
+  whatNow: {
+    ...trackerCopy.whatNow,
+    what_now_submitted: "Sprawdzamy Twoje zgłoszenie. Nie musisz nic robić.",
+    what_now_approved: "Zgłoszenie zostało zaakceptowane. Nie musisz odsyłać produktu, chyba że poprosimy o to w wiadomości. Przygotowujemy rozwiązanie.",
+    what_now_resolved: "Zgłoszenie zostało rozwiązane. Dziękujemy!",
+    what_now_rejected: "Zgłoszenie zostało zamknięte. Jeśli masz pytania, skontaktuj się z nami, podając numer RMA.",
+  } satisfies Record<WhatNowKey, string>,
+  events: {
+    ...trackerCopy.events,
+    event_approved: "Zgłoszenie rozpatrzone",
+    event_resolved: "Zgłoszenie rozwiązane",
+  } satisfies Record<TrackerEventKey, string>,
 } as const;

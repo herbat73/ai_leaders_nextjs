@@ -1,0 +1,72 @@
+import Link from "next/link";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { warsawDateString, type DamageKind, type ReturnLookupView } from "@easyrms/core";
+import { Banner } from "@easyrms/ui/public";
+
+import { createRequestScope } from "@/server/container";
+import { getTransportConfig } from "@/server/return-config";
+import { GUEST_SESSION_COOKIE, getGuestSessionService } from "@/server/guest-session";
+import { RetryButton } from "../new/retry-button";
+import { damageCopy as copy } from "../damage/copy";
+import { DamageWizard } from "../damage/damage-wizard";
+
+/** Next bundles `@easyrms/core` once per layer, so match on the stable error code, not `instanceof`. */
+function errorCode(error: unknown): string | null {
+  return typeof error === "object" && error !== null && "code" in error && typeof error.code === "string" ? error.code : null;
+}
+
+type Loaded = { kind: "ok"; view: ReturnLookupView } | { kind: "unavailable" };
+
+async function load(orderNumber: string, kind: DamageKind): Promise<Loaded> {
+  const scope = await createRequestScope();
+  try {
+    return { kind: "ok", view: await scope.cradle.returnLookupService.describeOrder(orderNumber, kind) };
+  } catch (error) {
+    const code = errorCode(error);
+    if (code === "service_unavailable") return { kind: "unavailable" };
+    if (code === "not_found") redirect("/");
+    throw error;
+  }
+}
+
+/** The page of the wizard for transport damage or a missing item; the two route files only name the kind. */
+export async function DamagePage({ kind }: { kind: DamageKind }) {
+  const cookieStore = await cookies();
+  const session = await getGuestSessionService().verify(cookieStore.get(GUEST_SESSION_COOKIE)?.value);
+  if (!session) redirect("/");
+
+  const loaded = await load(session.orderNumber, kind);
+  if (loaded.kind === "ok" && loaded.view.deliveredAt === null) redirect("/returns");
+
+  return (
+    <main className="mx-auto max-w-2xl space-y-6 px-4 py-8 sm:px-6">
+      <header className="space-y-1">
+        <Link href="/returns" className="text-sm underline underline-offset-4">
+          {copy.back}
+        </Link>
+        <h1 className="text-2xl font-semibold">{copy.kinds[kind].pageTitle}</h1>
+        <p className="text-sm text-muted-foreground">
+          {copy.orderLabel}: <strong className="font-mono">{session.orderNumber}</strong>
+        </p>
+      </header>
+      {loaded.kind === "unavailable" ? (
+        <Banner tone="error">
+          <p className="font-medium">{copy.unavailable.title}</p>
+          <p>{copy.unavailable.text}</p>
+          <p className="mt-2">
+            <RetryButton label={copy.unavailable.retry} />
+          </p>
+        </Banner>
+      ) : (
+        <DamageWizard
+          kind={kind}
+          windowDays={getTransportConfig().windowDays}
+          lines={loaded.view.lines}
+          today={warsawDateString(new Date())}
+          deliveredOn={loaded.view.deliveredAt ? warsawDateString(new Date(loaded.view.deliveredAt)) : null}
+        />
+      )}
+    </main>
+  );
+}
