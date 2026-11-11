@@ -102,6 +102,8 @@ export interface ReturnRequest {
   courierNote?: boolean | null;
   /** Complaints only: `null` until the complaint is `received`, then the agent's finding. Gates the vendor claim. */
   defectConfirmed?: boolean | null;
+  /** Set once retention or an erasure request removed the personal text and photos (T-21); absent on hand-built values. */
+  anonymizedAt?: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }

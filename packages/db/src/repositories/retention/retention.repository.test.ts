@@ -109,6 +109,17 @@ describe("anonymize", () => {
     expect(await count(`select count(*) as n from "return_request_events" where "return_request_id" = ?`, [seeded.id])).toBeGreaterThan(0);
   });
 
+  it("shows the erasure to the agent read model, and the photo download finds nothing", async () => {
+    const seeded = await seed("RT-7B", "resolved", OLD);
+    const reads = (): MikroOrmReturnRepository => new MikroOrmReturnRepository({ em: db.fork(), logger: { error: () => undefined } });
+    expect((await reads().listByOrder("RT-7B"))[0]?.anonymizedAt).toBeNull();
+    await retention().anonymize(seeded.id);
+    const [read] = await reads().listByOrder("RT-7B");
+    expect(read.anonymizedAt).toBeInstanceOf(Date);
+    expect(read.customerEmail).toBe(`erased-${seeded.rma}@anonymized.invalid`);
+    expect(await evidence().find(seeded.fileId)).toBeNull();
+  });
+
   it("leaves another request's photos and audit rows alone", async () => {
     const erased = await seed("RT-8", "resolved", OLD);
     const kept = await seed("RT-9", "resolved", OLD);
