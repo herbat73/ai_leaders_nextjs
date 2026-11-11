@@ -27,9 +27,9 @@ function setup(options: { due?: RetentionTarget[]; byRma?: RetentionTarget[]; fa
       calls.anonymized.push(id);
       return { files: 2, auditRows: 3 };
     },
-    async purgeOrphanAudit(cutoff) {
+    async purgeOrphans(cutoff) {
       calls.purge.push(cutoff);
-      return 4;
+      return { files: 5, auditRows: 4 };
     },
   };
   const service = new RetentionService({
@@ -46,7 +46,7 @@ describe("RetentionService.run", () => {
     const { service, calls } = setup({ due: [target(1), target(2)] });
     const result = await service.run();
     expect(calls.anonymized).toEqual([1, 2]);
-    expect(result).toMatchObject({ dryRun: false, requests: 2, files: 4, auditRows: 6, orphanAuditRows: 4, rmas: ["RMA-1", "RMA-2"], failed: [] });
+    expect(result).toMatchObject({ dryRun: false, requests: 2, files: 4, auditRows: 6, orphanFiles: 5, orphanAuditRows: 4, rmas: ["RMA-1", "RMA-2"], failed: [] });
   });
 
   it("computes the cutoff from the configured number of days", async () => {

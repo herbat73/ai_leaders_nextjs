@@ -165,17 +165,22 @@ describe("anonymize", () => {
   });
 });
 
-describe("purgeOrphanAudit", () => {
-  it("deletes only old audit rows of files that never reached a request", async () => {
+describe("purgeOrphans", () => {
+  it("deletes old staged files and their audit rows, and nothing that is fresh or attached", async () => {
     const orphan = await evidence().stage(file("RT-13"), LIMITS, LONG_AGO);
     if (orphan.result !== "stored") throw new Error("stage failed");
     const fresh = await evidence().stage(file("RT-14"), LIMITS, LONG_AGO);
     if (fresh.result !== "stored") throw new Error("stage failed");
     await db.query(`update "evidence_audit_events" set "created_at" = ? where "evidence_file_id" = ?`, [OLD, orphan.file.id]);
+    await db.query(`update "evidence_files" set "created_at" = ? where "id" = ?`, [OLD, orphan.file.id]);
     const attached = await seed("RT-15", "submitted", OLD);
     await db.query(`update "evidence_audit_events" set "created_at" = ? where "evidence_file_id" = ?`, [OLD, attached.fileId]);
 
-    expect(await retention().purgeOrphanAudit(CUTOFF)).toBeGreaterThanOrEqual(1);
+    const purged = await retention().purgeOrphans(CUTOFF);
+    expect(purged.files).toBeGreaterThanOrEqual(1);
+    expect(purged.auditRows).toBeGreaterThanOrEqual(1);
+    expect(await count(`select count(*) as n from "evidence_files" where "id" = ?`, [orphan.file.id])).toBe(0);
+    expect(await count(`select count(*) as n from "evidence_files" where "id" in (?, ?)`, [fresh.file.id, attached.fileId])).toBe(2);
     expect(await count(`select count(*) as n from "evidence_audit_events" where "evidence_file_id" = ?`, [orphan.file.id])).toBe(0);
     expect(await count(`select count(*) as n from "evidence_audit_events" where "evidence_file_id" = ?`, [fresh.file.id])).toBe(1);
     expect(await count(`select count(*) as n from "evidence_audit_events" where "evidence_file_id" = ?`, [attached.fileId])).toBe(1);

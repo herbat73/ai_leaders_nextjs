@@ -24,8 +24,11 @@ export interface RetentionPort {
   findDue(cutoff: Date, limit: number, afterId: number): Promise<RetentionTarget[]>;
   findByRma(rma: string): Promise<RetentionTarget | null>;
   anonymize(requestId: number): Promise<AnonymizeCounts>;
-  /** Audit rows of files that never reached a request and are older than `cutoff`; returns how many were deleted. */
-  purgeOrphanAudit(cutoff: Date): Promise<number>;
+  /**
+   * Staged files that never reached a request and are older than `cutoff` (the next upload to their order would purge
+   * them only if there is one), plus the audit rows of those files and any request-less audit row older than `cutoff`.
+   */
+  purgeOrphans(cutoff: Date): Promise<{ files: number; auditRows: number }>;
 }
 
 export interface RetentionRunResult {
@@ -34,6 +37,7 @@ export interface RetentionRunResult {
   requests: number;
   files: number;
   auditRows: number;
+  orphanFiles: number;
   orphanAuditRows: number;
   /** RMA numbers: the requests that would be (dry run) or were anonymized. */
   rmas: string[];

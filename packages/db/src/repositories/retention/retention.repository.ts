@@ -81,8 +81,19 @@ export class MikroOrmRetentionRepository implements RetentionPort {
     );
   }
 
-  async purgeOrphanAudit(cutoff: Date): Promise<number> {
-    const rows = await this.em.execute<{ id: number }[]>(`delete from "evidence_audit_events" where "return_request_id" is null and "created_at" < ? returning "id"`, [cutoff]);
-    return rows.length;
+  async purgeOrphans(cutoff: Date): Promise<{ files: number; auditRows: number }> {
+    return this.em.transactional(
+      async (tx): Promise<{ files: number; auditRows: number }> => {
+        // A staged file is attached by the submit of the same guest session (2 hours at most), so one past the retention
+        // period can no longer be attached by anyone.
+        const files = await tx.execute<{ id: string }[]>(`delete from "evidence_files" where "return_request_id" is null and "created_at" < ? returning "id"`, [cutoff]);
+        const audit = await tx.execute<{ id: number }[]>(
+          `delete from "evidence_audit_events" where "return_request_id" is null and "created_at" < ? returning "id"`,
+          [cutoff],
+        );
+        return { files: files.length, auditRows: audit.length };
+      },
+      { propagation: TransactionPropagation.REQUIRED },
+    );
   }
 }

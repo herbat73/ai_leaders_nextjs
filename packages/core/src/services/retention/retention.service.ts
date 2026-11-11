@@ -26,7 +26,7 @@ export class RetentionService {
   async run(options: { dryRun?: boolean } = {}): Promise<RetentionRunResult> {
     const dryRun = options.dryRun === true;
     const cutoff = new Date(this.clock().getTime() - this.retentionDays * DAY_MS);
-    const result: RetentionRunResult = { dryRun, cutoff, requests: 0, files: 0, auditRows: 0, orphanAuditRows: 0, rmas: [], failed: [] };
+    const result: RetentionRunResult = { dryRun, cutoff, requests: 0, files: 0, auditRows: 0, orphanFiles: 0, orphanAuditRows: 0, rmas: [], failed: [] };
 
     let afterId = 0;
     for (;;) {
@@ -52,7 +52,11 @@ export class RetentionService {
       }
     }
 
-    if (!dryRun) result.orphanAuditRows = await this.retention.purgeOrphanAudit(cutoff);
+    if (!dryRun) {
+      const orphans = await this.retention.purgeOrphans(cutoff);
+      result.orphanFiles = orphans.files;
+      result.orphanAuditRows = orphans.auditRows;
+    }
     return result;
   }
 

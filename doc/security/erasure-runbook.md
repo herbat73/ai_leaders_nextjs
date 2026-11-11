@@ -26,7 +26,7 @@ retention period (R16, one year after a request is closed) has passed.
 
 Photos and their audit rows; the customer e-mail (replaced by `erased-<RMA>@anonymized.invalid`); free text (reason,
 defect description, exchange note, decision note, item comments, timeline notes); the subject, body and answer note of the
-linked supplier claim.
+linked supplier claim (a draft claim whose text was erased can no longer be sent: 409 `claim_erased`). Photos that were uploaded but never attached to a request are deleted once they are older than the retention period.
 
 ## What is kept
 

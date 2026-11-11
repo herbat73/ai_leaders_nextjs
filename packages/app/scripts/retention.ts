@@ -77,7 +77,7 @@ async function main(): Promise<number> {
       console.log(`Retention ${retentionDays} days, cutoff ${result.cutoff.toISOString()}: ${verb} ${result.requests} request(s).`);
       if (result.rmas.length > 0) console.log(`RMA: ${result.rmas.join(", ")}`);
       if (!result.dryRun) {
-        console.log(`Deleted ${result.files} file(s), ${result.auditRows} audit row(s) and ${result.orphanAuditRows} orphan audit row(s).`);
+        console.log(`Deleted ${result.files} file(s) and ${result.auditRows} audit row(s) of those requests, and ${result.orphanFiles} orphan file(s) with ${result.orphanAuditRows} audit row(s).`);
       }
       if (result.failed.length > 0) {
         console.error(`Failed: ${result.failed.map((row) => row.rma).join(", ")}`);

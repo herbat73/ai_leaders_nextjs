@@ -186,6 +186,16 @@ describe("SupplierClaimService.send", () => {
     expect(claims[0]?.status).toBe("draft");
   });
 
+  it("refuses a draft whose text was erased by retention, even when the transport delivers", async () => {
+    const { service, claims, sent } = setup({ delivers: false });
+    await service.create(create, AGENT);
+    claims[0].subject = "";
+    claims[0].body = "";
+    const error = await service.send(1, AGENT).catch((e: unknown) => e);
+    expect(error).toMatchObject({ status: 409, code: "claim_erased" });
+    expect(sent).toHaveLength(0);
+  });
+
   it("answers 502 mail_failed when the mail server fails", async () => {
     const { service, claims } = setup({ mailFails: true });
     await service.create(create, AGENT);
