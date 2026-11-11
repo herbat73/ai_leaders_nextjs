@@ -71,7 +71,8 @@ interface UploadResponse {
 }
 
 const MB = 1024 * 1024;
-const sizeText = (bytes: number): string => `${(bytes / MB).toFixed(1).replace(".", ",")} MB`;
+const sizeText = (bytes: number): string =>
+  bytes < MB ? `${Math.max(1, Math.round(bytes / 1024))} KB` : `${(bytes / MB).toFixed(1).replace(".", ",")} MB`;
 
 /** Maps an upload failure to a copy key: the code is stable, the server message is never shown. */
 function uploadErrorKey(code: string, status: number): keyof typeof copy.photos.errors {

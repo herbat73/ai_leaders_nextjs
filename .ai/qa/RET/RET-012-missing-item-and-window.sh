@@ -2,14 +2,19 @@
 # RET-012: a missing-item report through the API, the 14-day window, the remedies per kind, and the agent decision.
 # Scenario: .ai/qa/RET/RET-012-missing-item-and-window.md
 # Priority: High. Type: API with an agent UI step. Role: guest customer, then agent (QA account with MANAGE_RULES).
+# Needs the ClamAV container (`docker compose up -d --wait clamav`) because a missing-item report needs a photo.
 # Order data: seeded PL-10001 (delivered 3 days ago, line L1) and PL-10003 (delivered 120 days ago).
 QA_ID=RET-012
 . "$(cd "$(dirname "$0")/../lib" && pwd)/common.sh"
 qa_init
 
+FX=$(mktemp -d)
+node "$QA_DIR/lib/evidence-fixtures.mjs" "$FX" >/dev/null || fail "could not build the fixtures"
+docker exec easyrms-clamav clamdcheck.sh >/dev/null 2>&1 || fail "the clamav container is not healthy (docker compose up -d --wait clamav)"
+stage_photo() { curl -s -b "$COOKIES.guest" -H 'x-requested-with: fetch' -X POST "$BASE_URL/api/evidence" -F "file=@$FX/ok.png" | json_get data.id; }
 YESTERDAY=$(node -e 'console.log(new Date(Date.now()-864e5).toLocaleDateString("sv-SE",{timeZone:"Europe/Warsaw"}))')
-body() { # kind, resolution, lineRef
-  printf '{"kind":"%s","items":[{"lineRef":"%s","quantity":1}],"defectDescription":"W paczce brakowało ładowarki do zamówionego produktu.","defectDiscoveredOn":"%s","resolution":"%s","acknowledged":true,"idempotencyKey":"%s"}' "$1" "$3" "$YESTERDAY" "$2" "$(new_key)"
+body() { # kind, resolution, lineRef, photo id (a random UUID is enough where the request is refused before the photos are looked at)
+  printf '{"kind":"%s","items":[{"lineRef":"%s","quantity":1}],"defectDescription":"W paczce brakowało ładowarki do zamówionego produktu.","defectDiscoveredOn":"%s","resolution":"%s","evidenceFileIds":["%s"],"acknowledged":true,"idempotencyKey":"%s"}' "$1" "$3" "$YESTERDAY" "$2" "${4:-$(new_key)}" "$(new_key)"
 }
 
 step "negative: the window is 14 days, so PL-10003 (delivered 120 days ago) is refused"
@@ -23,8 +28,10 @@ OUT=$(guest_submit "$(body transport resend_part L1)")
 printf '%s' "$OUT" | grep -q '"ok":true\|"rma"' && fail "resend_part accepted for transport: $OUT"
 printf '%s' "$OUT" | grep -q 'validation_error' || fail "unexpected answer: $OUT"
 
-step "a missing-item report with resend_part is accepted and has no amount"
-OUT=$(guest_submit "$(body missing resend_part L1)")
+step "a missing-item report with a photo and resend_part is accepted and has no amount"
+PHOTO=$(stage_photo)
+[ -n "$PHOTO" ] || fail "could not stage a photo"
+OUT=$(guest_submit "$(body missing resend_part L1 "$PHOTO")")
 RMA=$(printf '%s' "$OUT" | sed -n 's/.*"rma":"\(RMA-[0-9]*-[0-9]*\)".*/\1/p')
 [ -n "$RMA" ] || fail "missing-item report not created: $OUT"
 printf '%s' "$OUT" | grep -q '"resolution":"resend_part"' || fail "remedy not echoed: $OUT"
@@ -38,6 +45,7 @@ step "the agent sees the kind and approves, then resolves"
 agent_login_ui
 open_card "$RMA"
 expect_text "Brak elementu" "kind missing on the card"
+expect_snap 'link "Otwórz zdjęcie: ok.png"' "the photo thumbnail is missing on the decision card"
 click_role button "Zatwierdź"
 wait_text "Zatwierdzone"
 click_role button "Zakończ"
@@ -47,4 +55,5 @@ shot 01-card-resolved
 step "the inbox filters by the new kind"
 ab open "$BASE_URL/admin/returns?kind=missing" >/dev/null 2>&1
 wait_text "$RMA"
+rm -rf "$FX"
 echo "PASS: $QA_ID ($RMA)"

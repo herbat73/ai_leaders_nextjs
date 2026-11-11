@@ -22,7 +22,18 @@ Attaching files to supplier claim mail (Q9), customer uploads after submit (Q12)
 
 ### Phase 3: Photos in the product
 
-- [ ] 3.1 core and app: POST /api/returns accepts evidenceFileIds, attached once inside the order lock, then required (1 to 6)
-- [ ] 3.2 app: wizard photo step with upload, progress, errors, removal, counters, accessibility
-- [ ] 3.3 app and ui: agent-card and tracker thumbnails, Storybook stories
-- [ ] 3.4 QA scenarios and evidence, brief and threat-model updates, full gate
+- [x] 3.1 core and app: POST /api/returns accepts evidenceFileIds, attached once inside the order lock, then required (1 to 6) — 0eb3694
+- [x] 3.2 app: wizard photo step with upload, progress, errors, removal, counters, accessibility — 9f2dd37
+- [x] 3.3 app and ui: agent-card and tracker thumbnails, Storybook stories — 78a180c
+- [x] 3.4 QA scenarios and evidence, brief and threat-model updates, full gate
+
+## Outcome
+
+Phase 3 implemented; with Phases 1 and 2 merged the D21 slice is complete. #140 is closed by this PR.
+
+- Gate: `typecheck`, `test` (core 1024, app 27, plus db), `lint` (0 errors), `audit`, `docs:check` (43 components), `storybook:build`, `NODE_ENV=production npm run build` all green.
+- `npm run test:db` (outside the gate): 171 passed, including the attach inside the submit transaction (a refused photo rolls the request back), `deleteStaged`, and evidence in the request detail.
+- Scenarios against the running app with the real ClamAV container, all passing: RET-011 (browser: photo step, negatives, thumbnails, agent card, accessibility names), RET-012, EVD-001, EVD-002 (attach, foreign and reused ids, take-back, replay, tracker and card links).
+- Screenshots: `doc/previdences/pr-143/`.
+- Decisions made without asking: `DELETE /api/evidence/[id]` was added (staged files of the own order only) so a customer can take a photo back without using up the 6-file count; upload progress is an indeterminate bar plus text because `fetch` has no upload progress and `apiCall` stays the only fetch site; `PhotoThumbnails` is one public component used by the customer tracker, the agent preview and the decision card (admin imports it from `@easyrms/ui/public`); photos are required by the schema and checked again in the service.
+- Not done on purpose: retention job and automatic erasure (T-21), audit events (T-23), photos in claim mail (Q9), uploads after submit (Q12).
