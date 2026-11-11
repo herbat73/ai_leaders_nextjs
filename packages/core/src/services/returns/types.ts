@@ -20,8 +20,18 @@ export type StoredReturnStatus = ReturnStatus | "unknown";
 
 export const RETURN_KIND = "return";
 export const COMPLAINT_KIND = "complaint";
-export const REQUEST_KINDS = [RETURN_KIND, COMPLAINT_KIND] as const;
+export const TRANSPORT_KIND = "transport";
+export const MISSING_KIND = "missing";
+export const REQUEST_KINDS = [RETURN_KIND, COMPLAINT_KIND, TRANSPORT_KIND, MISSING_KIND] as const;
 export type RequestKind = (typeof REQUEST_KINDS)[number];
+
+/** Transport damage (UC-04) and a missing or wrong item (UC-05): no return leg, decided from the customer's report. */
+export const DAMAGE_KINDS = [TRANSPORT_KIND, MISSING_KIND] as const;
+export type DamageKind = (typeof DAMAGE_KINDS)[number];
+
+export function isDamageKind(kind: string | undefined): kind is DamageKind {
+  return kind === TRANSPORT_KIND || kind === MISSING_KIND;
+}
 
 export const RETURN_RESOLUTIONS = ["refund", "store_credit", "exchange"] as const;
 export type ReturnResolution = (typeof RETURN_RESOLUTIONS)[number];
@@ -30,8 +40,13 @@ export type ReturnResolution = (typeof RETURN_RESOLUTIONS)[number];
 export const COMPLAINT_RESOLUTIONS = ["repair", "replacement", "refund"] as const;
 export type ComplaintResolution = (typeof COMPLAINT_RESOLUTIONS)[number];
 
+/** Remedies of transport damage; a missing or wrong item may also have the missing part sent (R13: one remedy per request). */
+export const TRANSPORT_RESOLUTIONS = ["replacement", "refund"] as const;
+export const MISSING_RESOLUTIONS = ["resend_part", "replacement", "refund"] as const;
+export type DamageResolution = (typeof MISSING_RESOLUTIONS)[number];
+
 /** Every resolution a stored request can carry. */
-export type RequestResolution = ReturnResolution | ComplaintResolution;
+export type RequestResolution = ReturnResolution | ComplaintResolution | DamageResolution;
 
 export const RETURN_METHODS = ["parcel_locker", "courier", "store"] as const;
 export type ReturnMethod = (typeof RETURN_METHODS)[number];
@@ -41,7 +56,11 @@ export type ReturnReasonCode = (typeof RETURN_REASON_CODES)[number];
 
 /** The single item reason of a complaint: the defect itself is described once on the request. */
 export const COMPLAINT_REASON_CODE = "defective";
-export type ItemReasonCode = ReturnReasonCode | typeof COMPLAINT_REASON_CODE;
+/** Item reasons of transport damage (one) and of a missing or wrong item (two). */
+export const TRANSPORT_REASON_CODE = "damaged_in_transit";
+export const MISSING_REASON_CODES = ["missing_element", "wrong_item"] as const;
+export type MissingReasonCode = (typeof MISSING_REASON_CODES)[number];
+export type ItemReasonCode = ReturnReasonCode | typeof COMPLAINT_REASON_CODE | typeof TRANSPORT_REASON_CODE | MissingReasonCode;
 
 /** One returned order line. Name and price are a snapshot; the order platform stays the source of truth. */
 export interface ReturnItem {
@@ -78,6 +97,8 @@ export interface ReturnRequest {
   defectDescription?: string | null;
   /** Complaints only: `YYYY-MM-DD`, the day the customer noticed the defect. */
   defectDiscoveredOn?: string | null;
+  /** Transport damage only: whether the parcel was accepted with a courier note; `null` when not answered (Q11). */
+  courierNote?: boolean | null;
   /** Complaints only: `null` until the complaint is `received`, then the agent's finding. Gates the vendor claim. */
   defectConfirmed?: boolean | null;
   createdAt: Date;
@@ -101,6 +122,8 @@ export interface ReturnListItem extends ReturnRequest {
   recommendApprove?: boolean;
   /** Same conditions: R10c, the value reaches the manager threshold. A hint; the refund limit (R11) stays the gate. */
   assignManager?: boolean;
+  /** Same conditions: R10a, transport damage. Shown as a text badge; changes no order of the inbox. */
+  highPriority?: boolean;
 }
 
 export type ReturnEventActor = "customer" | "agent" | "system";
@@ -170,11 +193,14 @@ export interface NewReturnRequest {
   /** `null` for `exchange`, `repair` and `replacement`. */
   resolutionAmount: Money | null;
   exchangeNote?: string;
-  returnMethod: ReturnMethod;
+  /** `null` for transport and missing: there is no return leg. */
+  returnMethod: ReturnMethod | null;
   idempotencyKey: string;
-  /** Complaints only. */
+  /** Complaints, transport and missing. */
   defectDescription?: string;
   defectDiscoveredOn?: string;
+  /** Transport only. */
+  courierNote?: boolean;
 }
 
 export interface ReturnListFilter {

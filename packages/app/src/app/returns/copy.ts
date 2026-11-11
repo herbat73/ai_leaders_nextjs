@@ -5,8 +5,10 @@ export const overviewCopy = {
   empty: "Nie masz jeszcze zgłoszeń",
   start: "Rozpocznij zwrot",
   startComplaint: "Zgłoś reklamację produktu",
-  kinds: { return: "Zwrot", complaint: "Reklamacja" },
-  listLabel: "Zgłoszenia zwrotu i reklamacji",
+  startTransport: "Uszkodzenie w transporcie",
+  startMissing: "Brak elementu / inny produkt",
+  kinds: { return: "Zwrot", complaint: "Reklamacja", transport: "Uszkodzenie w transporcie", missing: "Brak elementu" },
+  listLabel: "Zgłoszenia zwrotów, reklamacji, uszkodzeń i braków",
   submittedOn: "Zgłoszono",
   emptyFiltered: "Brak zgłoszeń dla wybranych filtrów",
   filters: {

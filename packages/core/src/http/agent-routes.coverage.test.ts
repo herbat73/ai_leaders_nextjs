@@ -17,6 +17,8 @@ const PUBLIC_ROUTES = new Set([
   "GET /returns",
   "GET /returns/new",
   "GET /returns/complaint/new",
+  "GET /returns/transport/new",
+  "GET /returns/missing/new",
   "GET /returns/abc",
   "GET /admin/login",
   "GET /admin/invite/abc",

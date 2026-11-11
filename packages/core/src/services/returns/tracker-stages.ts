@@ -1,4 +1,4 @@
-import type { StoredReturnStatus } from "./types";
+import { isDamageKind, type StoredReturnStatus } from "./types";
 
 /** The five customer-facing stages, in order. The page maps each id to Polish copy. */
 export const TRACKER_STAGE_IDS = [
@@ -9,6 +9,9 @@ export const TRACKER_STAGE_IDS = [
   "resolved",
 ] as const;
 export type TrackerStageId = (typeof TRACKER_STAGE_IDS)[number];
+
+/** Transport damage and missing items have no return leg: three stages (Zgłoszone, Rozpatrzone, Rozwiązane). */
+export const DAMAGE_TRACKER_STAGE_IDS = ["submitted", "approved", "resolved"] as const satisfies readonly TrackerStageId[];
 
 export type TrackerStageState = "done" | "current" | "upcoming";
 
@@ -46,9 +49,10 @@ export function whatNowKey(status: StoredReturnStatus): WhatNowKey {
 function stagesAt(
   current: TrackerStageId,
   currentState: TrackerStageState = "current",
+  ids: readonly TrackerStageId[] = TRACKER_STAGE_IDS,
 ): TrackerStage[] {
-  const currentIndex = TRACKER_STAGE_IDS.indexOf(current);
-  return TRACKER_STAGE_IDS.map((id, index) => ({
+  const currentIndex = ids.indexOf(current);
+  return ids.map((id, index) => ({
     id,
     state:
       index < currentIndex
@@ -70,7 +74,8 @@ function stagesAt(
  *   state with no stage done.
  * - `resolved` marks every stage done: the journey is complete and nothing is current.
  */
-export function trackerView(status: StoredReturnStatus): TrackerView {
+export function trackerView(status: StoredReturnStatus, kind?: string): TrackerView {
+  if (isDamageKind(kind)) return damageTrackerView(status);
   const whatNow = whatNowKey(status);
   const showReplyTarget = status === "submitted";
   switch (status) {
@@ -96,6 +101,29 @@ export function trackerView(status: StoredReturnStatus): TrackerView {
         whatNow,
         showReplyTarget,
       };
+    case "rejected":
+    case "cancelled":
+    case "unknown":
+      return { stages: [], closed: { kind: status }, whatNow, showReplyTarget };
+  }
+}
+
+/** The three-stage path of transport damage and missing items; the closed states are the same as for the other kinds. */
+function damageTrackerView(status: StoredReturnStatus): TrackerView {
+  const whatNow = whatNowKey(status);
+  const showReplyTarget = status === "submitted";
+  const ids = DAMAGE_TRACKER_STAGE_IDS;
+  switch (status) {
+    case "submitted":
+    case "awaiting_customer":
+      return { stages: stagesAt("submitted", "current", ids), ...(status === "awaiting_customer" ? { banner: "awaiting_customer" as const } : {}), whatNow, showReplyTarget };
+    case "approved":
+    case "in_transit":
+    case "received":
+    case "in_service":
+      return { stages: stagesAt("approved", "current", ids), whatNow, showReplyTarget };
+    case "resolved":
+      return { stages: ids.map((id) => ({ id, state: "done" as const })), whatNow, showReplyTarget };
     case "rejected":
     case "cancelled":
     case "unknown":

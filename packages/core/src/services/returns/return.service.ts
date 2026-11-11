@@ -11,6 +11,7 @@ import {
 import type { ApiLogger } from "../../http/types";
 import { CUSTOMER_RATE_RULES, rateKeys, type RateLimiterPort } from "../../security/rate-limiter";
 import type { ComplaintSubmitBody } from "../../validators/returns/complaint-submit.schema";
+import type { DamageSubmitBody } from "../../validators/returns/damage-submit.schema";
 import type { ReturnSubmitBody } from "../../validators/returns/return-submit.schema";
 import { hasPermission } from "../agents/permissions";
 import type { AgentContext } from "../agents/types";
@@ -20,6 +21,8 @@ import { requiresManagerApproval, type ApprovalConfig } from "./approval";
 import { compareDecision, recommend } from "./recommendation";
 import { RECOMMENDATIONS_OFF, type RecommendationConfig } from "./recommendation-config";
 import { calculateComplaintQuote } from "./complaint-quote";
+import { calculateDamageQuote } from "./damage-quote";
+import { checkDamageEligibility, DEFAULT_TRANSPORT_WINDOW_DAYS, type TransportWindowConfig } from "./damage-eligibility";
 import { checkComplaintEligibility, warsawDateString } from "./complaint-eligibility";
 import { COMPLAINT_ESCALATION_DAY, complaintAwaitsAnswer, complaintDaysLeft, complaintDueAt, complaintEscalated } from "./complaint-sla";
 import { checkDecisionNote } from "./decision-note";
@@ -33,6 +36,9 @@ import {
   COMPLAINT_REASON_CODE,
   RETURN_KIND,
   RETURN_STATUSES,
+  TRANSPORT_KIND,
+  TRANSPORT_REASON_CODE,
+  isDamageKind,
   type RequestKind,
   type ReturnDetailView,
   type ReturnListFilter,
@@ -82,8 +88,14 @@ function snapshotOf(
   return { lineRef: line.lineRef, sku: line.sku, name: line.name, quantity: item.quantity, unitPrice: line.unitPrice };
 }
 
-function isComplaintBody(input: ReturnSubmitBody | ComplaintSubmitBody): input is ComplaintSubmitBody {
+type SubmitBody = ReturnSubmitBody | ComplaintSubmitBody | DamageSubmitBody;
+
+function isComplaintBody(input: SubmitBody): input is ComplaintSubmitBody {
   return "kind" in input && input.kind === COMPLAINT_KIND;
+}
+
+function isDamageBody(input: SubmitBody): input is DamageSubmitBody {
+  return "kind" in input && isDamageKind(input.kind);
 }
 
 function toAmountView(amount: Money | null | undefined): ResolutionAmountView | null {
@@ -107,6 +119,7 @@ export class ReturnService {
   private readonly quoteConfig: QuoteConfig;
   private readonly approvalConfig: ApprovalConfig;
   private readonly recommendationConfig: RecommendationConfig;
+  private readonly transportConfig: TransportWindowConfig;
 
   constructor(deps: {
     returnRepository: ReturnRepository;
@@ -120,7 +133,10 @@ export class ReturnService {
     approvalConfig: ApprovalConfig;
     /** Optional so existing wiring stays off: recommendations are computed only when `enabled`. */
     recommendationConfig?: RecommendationConfig;
+    /** Optional: 14 days when absent (`EASYRMS_TRANSPORT_WINDOW_DAYS`, R03). */
+    transportConfig?: TransportWindowConfig;
   }) {
+    this.transportConfig = deps.transportConfig ?? { windowDays: DEFAULT_TRANSPORT_WINDOW_DAYS };
     this.returnRepository = deps.returnRepository;
     this.clock = deps.clock;
     this.mailPort = deps.mailPort;
@@ -257,7 +273,7 @@ export class ReturnService {
    * The replay shortcut runs before the eligibility check because a retry must not trip over its own consumed
    * quantity or a window that closed after the first attempt; the in-lock lookup still settles two racing retries.
    */
-  async submit(sessionOrderNumber: string, input: ReturnSubmitBody | ComplaintSubmitBody): Promise<ReturnSubmitResult> {
+  async submit(sessionOrderNumber: string, input: SubmitBody): Promise<ReturnSubmitResult> {
     const sessionKey = rateKeys.quote(sessionOrderNumber);
     if (!(await this.rateLimiter.consume(sessionKey, CUSTOMER_RATE_RULES.session)).allowed) throw new TooManyRequestsError();
 
@@ -285,12 +301,14 @@ export class ReturnService {
     const eligibilityOf = (claimed: Record<string, number>) =>
       isComplaintBody(input)
         ? checkComplaintEligibility(order, this.clock(), claimed)
-        : checkEligibility(order, this.clock(), this.eligibilityConfig, claimed);
+        : isDamageBody(input)
+          ? checkDamageEligibility(order, this.clock(), this.transportConfig, claimed)
+          : checkEligibility(order, this.clock(), this.eligibilityConfig, claimed);
     const claimedBefore = await this.returnRepository.claimedQuantities(orderNumber);
     const problems = validateQuoteLines(eligibilityOf(claimedBefore), lines);
     if (Object.keys(problems).length > 0) throw new ValidationError("Some items cannot be returned", fieldErrorsOf(problems));
     // The defect cannot predate the delivery (both are Warsaw calendar days; `YYYY-MM-DD` strings compare as dates).
-    if (isComplaintBody(input) && order.deliveredAt && input.defectDiscoveredOn < warsawDateString(order.deliveredAt)) {
+    if ((isComplaintBody(input) || isDamageBody(input)) && order.deliveredAt && input.defectDiscoveredOn < warsawDateString(order.deliveredAt)) {
       throw new ValidationError("The defect cannot predate the delivery", { defectDiscoveredOn: "before_delivery" });
     }
 
@@ -309,31 +327,41 @@ export class ReturnService {
       // Recomputed here: amounts sent by the client are never read (R12).
       const quote = isComplaintBody(input)
         ? calculateComplaintQuote(order, { lines, resolution: input.resolution })
-        : calculateQuote(order, { lines, resolution: input.resolution, returnMethod: input.returnMethod }, this.quoteConfig);
+        : isDamageBody(input)
+          ? calculateDamageQuote(order, { lines, resolution: input.resolution })
+          : calculateQuote(order, { lines, resolution: input.resolution, returnMethod: input.returnMethod }, this.quoteConfig);
       const byRef = new Map(order.lines.map((line) => [line.lineRef, line]));
       const request = await tx.createWithItems({
         orderNumber,
         customerEmail: order.customerEmail,
-        kind: isComplaintBody(input) ? COMPLAINT_KIND : RETURN_KIND,
+        kind: isComplaintBody(input) ? COMPLAINT_KIND : isDamageBody(input) ? input.kind : RETURN_KIND,
         items: isComplaintBody(input)
           ? input.items.map((item) => ({
               ...snapshotOf(byRef, item),
               reasonCode: COMPLAINT_REASON_CODE,
               ...(item.serialNumber ? { serialNumber: item.serialNumber } : {}),
             }))
-          : input.items.map((item) => ({
+          : isDamageBody(input)
+            ? input.items.map((item) => ({
+                ...snapshotOf(byRef, item),
+                reasonCode: input.kind === TRANSPORT_KIND ? TRANSPORT_REASON_CODE : (item.reasonCode ?? "missing_element"),
+              }))
+            : input.items.map((item) => ({
               ...snapshotOf(byRef, item),
               reasonCode: item.reasonCode,
               ...(item.comment ? { comment: item.comment } : {}),
             })),
         resolution: input.resolution,
         resolutionAmount: quote.amount,
-        ...(!isComplaintBody(input) && input.resolution === "exchange" && input.exchangeNote ? { exchangeNote: input.exchangeNote } : {}),
-        returnMethod: input.returnMethod,
+        ...(!isComplaintBody(input) && !isDamageBody(input) && input.resolution === "exchange" && input.exchangeNote
+          ? { exchangeNote: input.exchangeNote }
+          : {}),
+        returnMethod: isDamageBody(input) ? null : input.returnMethod,
         idempotencyKey: input.idempotencyKey,
-        ...(isComplaintBody(input)
+        ...(isComplaintBody(input) || isDamageBody(input)
           ? { defectDescription: input.defectDescription, defectDiscoveredOn: input.defectDiscoveredOn }
           : {}),
+        ...(isDamageBody(input) && input.kind === TRANSPORT_KIND && input.courierNote !== undefined ? { courierNote: input.courierNote } : {}),
       });
       return { created: true, request };
     });
@@ -387,7 +415,12 @@ export class ReturnService {
   private withRulesHints(item: ReturnListItem): ReturnListItem {
     if (!this.recommendationConfig.enabled || item.status !== "submitted") return item;
     const recommendation = recommend(item, this.recommendationConfig.rules);
-    return { ...item, recommendApprove: recommendation.recommended === "approve", assignManager: recommendation.assignManager };
+    return {
+      ...item,
+      recommendApprove: recommendation.recommended === "approve",
+      assignManager: recommendation.assignManager,
+      ...(recommendation.highPriority ? { highPriority: true } : {}),
+    };
   }
 
   private toListItem(request: ReturnRequest, now: Date): ReturnListItem {

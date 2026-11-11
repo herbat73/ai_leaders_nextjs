@@ -96,6 +96,12 @@ export default async function ReturnsOverviewPage({
         <Link href="/returns/complaint/new" className={actionClassName("secondary")}>
           {copy.startComplaint}
         </Link>
+        <Link href="/returns/transport/new" className={actionClassName("secondary")}>
+          {copy.startTransport}
+        </Link>
+        <Link href="/returns/missing/new" className={actionClassName("secondary")}>
+          {copy.startMissing}
+        </Link>
       </div>
     </main>
   );

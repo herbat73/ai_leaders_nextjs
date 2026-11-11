@@ -22,6 +22,8 @@ export const ReturnRequestSchema = defineEntity({
     defectDescription: p.text().nullable(),
     defectDiscoveredOn: p.string().columnType("date").nullable(),
     defectConfirmed: p.boolean().nullable(),
+    // Transport damage only: parcel accepted with a courier note; null when not answered.
+    courierNote: p.boolean().nullable(),
     idempotencyKey: p.uuid().nullable().unique(),
     createdAt: p.datetime().onCreate(() => new Date()),
     updatedAt: p

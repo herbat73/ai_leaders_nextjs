@@ -102,3 +102,21 @@ describe("whatNowKey", () => {
     expect(whatNowKey("approved")).toBe("what_now_approved");
   });
 });
+
+describe("trackerView for transport damage and missing items", () => {
+  it.each(["transport", "missing"])("has three stages and no return leg for %s", (kind) => {
+    expect(trackerView("submitted", kind).stages.map((stage) => `${stage.id}:${stage.state}`)).toEqual([
+      "submitted:current",
+      "approved:upcoming",
+      "resolved:upcoming",
+    ]);
+    expect(trackerView("approved", kind).stages.map((stage) => stage.state)).toEqual(["done", "current", "upcoming"]);
+    expect(trackerView("resolved", kind).stages.map((stage) => stage.state)).toEqual(["done", "done", "done"]);
+  });
+
+  it("closes a rejected report like the other kinds and keeps the five stages for returns", () => {
+    expect(trackerView("rejected", "transport")).toMatchObject({ stages: [], closed: { kind: "rejected" } });
+    expect(trackerView("approved", "return").stages).toHaveLength(5);
+    expect(trackerView("approved").stages).toHaveLength(5);
+  });
+});

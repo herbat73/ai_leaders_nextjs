@@ -55,3 +55,12 @@ describe("selectMailTransport", () => {
     expect(() => selectMailTransport(input)).toThrow(/EASYRMS_/);
   });
 });
+
+describe("return_submitted for transport damage and missing items", () => {
+  it.each(["transport", "missing"])("says the report was accepted for %s", (kind) => {
+    const mail = renderMail({ template: "return_submitted", data: { rma: "RMA-2026-00007", kind } });
+    expect(mail.subject).toBe("Zgłoszenie przyjęte – RMA-2026-00007");
+    expect(mail.text).toContain("zgłoszenie uszkodzenia lub braku zostało przyjęte");
+    expect(mail.text).toContain("RMA-2026-00007");
+  });
+});

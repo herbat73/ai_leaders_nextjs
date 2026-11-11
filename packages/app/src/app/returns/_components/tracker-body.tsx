@@ -1,8 +1,8 @@
-import { formatDatePl, formatEventTime, formatMoney, trackerEventView, trackerView, type ReturnDetailView } from "@easyrms/core";
+import { formatDatePl, formatEventTime, formatMoney, isDamageKind, trackerEventView, trackerView, type ReturnDetailView } from "@easyrms/core";
 import { Banner, StageList, Timeline, type Stage } from "@easyrms/ui/public";
 import type { ReactElement } from "react";
 
-import { complaintTrackerCopy, trackerCopy as copy } from "./tracker-copy";
+import { complaintTrackerCopy, damageTrackerCopy, trackerCopy as copy } from "./tracker-copy";
 
 /**
  * The customer-facing tracker sections (status, what now, summary, items, timeline) for one return. Shared by the
@@ -12,17 +12,20 @@ import { complaintTrackerCopy, trackerCopy as copy } from "./tracker-copy";
 export function TrackerBody({ detail }: { detail: ReturnDetailView }): ReactElement {
   const { request, decisionNote, items, events } = detail;
   const complaint = request.kind === "complaint";
+  const damageKind = isDamageKind(request.kind) ? request.kind : null;
   const kindCopy = complaint
-    ? complaintTrackerCopy
-    : { stagesLabel: copy.stagesLabel, summaryHeading: copy.summaryHeading, whatNow: copy.whatNow };
-  const view = trackerView(request.status);
-  const stages: Stage[] = view.stages.map((stage) => ({ id: stage.id, label: copy.stages[stage.id], state: stage.state }));
+    ? { ...complaintTrackerCopy, stages: copy.stages, events: copy.events }
+    : damageKind
+      ? damageTrackerCopy
+      : { stagesLabel: copy.stagesLabel, summaryHeading: copy.summaryHeading, whatNow: copy.whatNow, stages: copy.stages, events: copy.events };
+  const view = trackerView(request.status, request.kind);
+  const stages: Stage[] = view.stages.map((stage) => ({ id: stage.id, label: kindCopy.stages[stage.id], state: stage.state }));
   const closed = view.closed
     ? { label: copy.closed[view.closed.kind], reason: view.closed.kind === "rejected" ? (decisionNote ?? undefined) : undefined }
     : undefined;
   const timeline = events.map(trackerEventView).map((event) => ({
     id: event.id,
-    label: copy.events[event.key],
+    label: kindCopy.events[event.key],
     actor: copy.actors[event.actor],
     at: formatEventTime(event.at),
     note: event.note ?? undefined,
@@ -85,6 +88,24 @@ export function TrackerBody({ detail }: { detail: ReturnDetailView }): ReactElem
             <>
               <dt className="text-muted-foreground">{complaintTrackerCopy.discoveredOnLabel}</dt>
               <dd>{formatDatePl(new Date(`${request.defectDiscoveredOn}T12:00:00Z`))}</dd>
+            </>
+          )}
+          {damageKind && request.defectDiscoveredOn && (
+            <>
+              <dt className="text-muted-foreground">{damageTrackerCopy.discoveredOnLabel[damageKind]}</dt>
+              <dd>{formatDatePl(new Date(`${request.defectDiscoveredOn}T12:00:00Z`))}</dd>
+            </>
+          )}
+          {damageKind && request.defectDescription && (
+            <>
+              <dt className="text-muted-foreground">{damageTrackerCopy.descriptionLabel[damageKind]}</dt>
+              <dd className="whitespace-pre-wrap break-words">{request.defectDescription}</dd>
+            </>
+          )}
+          {damageKind === "transport" && request.courierNote !== null && request.courierNote !== undefined && (
+            <>
+              <dt className="text-muted-foreground">{damageTrackerCopy.courierNoteLabel}</dt>
+              <dd>{damageTrackerCopy.courierNoteAnswers[request.courierNote ? "true" : "false"]}</dd>
             </>
           )}
           {complaint && request.defectDescription && (

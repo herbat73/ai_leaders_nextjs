@@ -32,8 +32,9 @@ export const GET = apiHandler(async (request) => {
 /**
  * Customer submission. Session required (401); the order comes from the cookie, never from the body. 201 for a new
  * request, 200 for a replay of the same `idempotencyKey`. `resolutionAmount` is `null` for `exchange`, `repair` and
- * `replacement`, else `{ amountMinor, currency, text }`. `kind: "complaint"` selects the complaint body (defect
- * description and date, serial numbers, remedy); no `kind` is a return. The legacy `orderNumber`/`customerEmail`/`reason`
+ * `replacement` and `resend_part`, else `{ amountMinor, currency, text }`. `kind: "complaint"` selects the complaint body
+ * (defect description and date, serial numbers, remedy); `kind: "transport"` or `"missing"` the damage body (description,
+ * noticed-on date, optional `courierNote` for transport, remedy, no return method, no files yet); no `kind` is a return. The legacy `orderNumber`/`customerEmail`/`reason`
  * body is a 400 `validation_error`.
  */
 export const POST = apiHandler(async (request) => {

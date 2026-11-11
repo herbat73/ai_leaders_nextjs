@@ -128,6 +128,28 @@ export default async function ReturnCardPage({ params }: { params: Promise<{ id:
                   <dd>{copy.returnMethods[request.returnMethod]}</dd>
                 </>
               )}
+              {(request.kind === "transport" || request.kind === "missing") && (
+                <>
+                  {request.defectDescription && (
+                    <>
+                      <dt className="text-muted-foreground">{copy.damageDescription}</dt>
+                      <dd className="whitespace-pre-wrap break-words">{request.defectDescription}</dd>
+                    </>
+                  )}
+                  {request.defectDiscoveredOn && (
+                    <>
+                      <dt className="text-muted-foreground">{copy.damageDiscoveredOn[request.kind]}</dt>
+                      <dd>{formatDatePl(new Date(`${request.defectDiscoveredOn}T12:00:00Z`))}</dd>
+                    </>
+                  )}
+                  {request.kind === "transport" && request.courierNote != null && (
+                    <>
+                      <dt className="text-muted-foreground">{copy.courierNote}</dt>
+                      <dd>{copy.courierNoteAnswers[request.courierNote ? "true" : "false"]}</dd>
+                    </>
+                  )}
+                </>
+              )}
               {request.kind === "complaint" && (
                 <>
                   {request.defectDescription && (
@@ -167,7 +189,7 @@ export default async function ReturnCardPage({ params }: { params: Promise<{ id:
         {items.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle>{request.kind === "complaint" ? copy.itemsComplaint : copy.items}</CardTitle>
+              <CardTitle>{request.kind === "complaint" ? copy.itemsComplaint : request.kind === "return" ? copy.items : copy.itemsReported}</CardTitle>
             </CardHeader>
             <CardContent>
               <ul className="divide-y text-sm">
@@ -214,6 +236,7 @@ export default async function ReturnCardPage({ params }: { params: Promise<{ id:
                     : copy.recommendation.approve
                   : copy.recommendation.none}
               </p>
+              {recommendation.highPriority && <p>{copy.recommendation.highPriority}</p>}
               {recommendation.assignManager && <p>{copy.recommendation.manager}</p>}
               {recommendation.rules.length > 0 && (
                 <p className="text-muted-foreground">

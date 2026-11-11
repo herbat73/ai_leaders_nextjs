@@ -28,7 +28,20 @@ export const complaintStateMachine = defineStateMachine<ReturnStatus>({
   },
 });
 
-/** The state machine of a request kind; anything but `complaint` is a return. */
+/**
+ * Transport damage and missing items have no return leg (docs/02 section 2.6: a return is usually unnecessary): an
+ * approved request goes straight to `resolved`. When the goods are needed back, the agent asks by mail.
+ */
+export const damageStateMachine = defineStateMachine<ReturnStatus>({
+  transitions: {
+    submitted: ["approved", "rejected"],
+    approved: ["resolved"],
+  },
+});
+
+/** The state machine of a request kind; an unknown kind is a return. */
 export function stateMachineFor(kind: string | undefined): StateMachine<ReturnStatus> {
-  return kind === "complaint" ? complaintStateMachine : returnStateMachine;
+  if (kind === "complaint") return complaintStateMachine;
+  if (kind === "transport" || kind === "missing") return damageStateMachine;
+  return returnStateMachine;
 }
