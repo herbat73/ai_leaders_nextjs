@@ -8,7 +8,9 @@ import { detectImageType, sanitizeLabel } from "./detect";
 import {
   DEFAULT_EVIDENCE_LIMITS,
   type AttachOutcome,
+  type EvidenceAuditEntry,
   type EvidenceContent,
+  type EvidenceFile,
   type EvidenceContentType,
   type EvidenceLimits,
   type EvidencePort,
@@ -25,7 +27,7 @@ export const evidenceRateKey = (orderNumber: string, ip: string): string => `evi
 export const STAGED_FILE_TTL_MS = GUEST_SESSION_TTL_SECONDS * 1000;
 
 /** Who reads a file: any signed-in agent, or the guest session of exactly one order. */
-export type EvidencePrincipal = { kind: "agent" } | { kind: "guest"; orderNumber: string };
+export type EvidencePrincipal = { kind: "agent"; agentId?: number } | { kind: "guest"; orderNumber: string };
 
 export interface EvidenceUploadResult {
   id: string;
@@ -130,6 +132,7 @@ export class EvidenceService {
     const content = await this.evidence.find(id);
     if (!content) throw new NotFoundError(NOT_FOUND_MESSAGE);
     if (principal.kind === "guest" && principal.orderNumber !== content.file.orderNumber) throw new NotFoundError(NOT_FOUND_MESSAGE);
+    if (principal.kind === "agent" && principal.agentId !== undefined) await this.auditDownload(content.file, principal.agentId);
     return content;
   }
 
@@ -139,6 +142,24 @@ export class EvidenceService {
    */
   async removeStaged(orderNumber: string, id: string): Promise<void> {
     if (!(await this.evidence.deleteStaged(orderNumber, id))) throw new NotFoundError(NOT_FOUND_MESSAGE);
+  }
+
+  /**
+   * Agent downloads are recorded, but a failing audit write must not stop an agent from reading a customer's evidence
+   * (a read is not a change): it is logged without values and the read goes on. Adds and removals are the opposite:
+   * they write their row inside their own transaction, so a failed audit write fails the change (fail closed).
+   */
+  private async auditDownload(file: EvidenceFile, agentId: number): Promise<void> {
+    try {
+      await this.evidence.recordDownload({ evidenceFileId: file.id, orderNumber: file.orderNumber, returnRequestId: file.returnRequestId, agentId });
+    } catch (error) {
+      this.logger.error("evidence download audit failed", { name: error instanceof Error ? error.name : typeof error });
+    }
+  }
+
+  /** The audit trail of a request's photos, for the agent's decision card. */
+  listAudit(returnRequestId: number): Promise<EvidenceAuditEntry[]> {
+    return this.evidence.listAudit(returnRequestId);
   }
 
   /** Attaches staged files of the order to a request, once. */

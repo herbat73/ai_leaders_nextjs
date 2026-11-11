@@ -22,7 +22,7 @@ export const GET = apiHandler(async (request, { params }) => {
     if (isAppError(error)) return null;
     throw error;
   });
-  let principal: EvidencePrincipal | null = agent ? { kind: "agent" } : null;
+  let principal: EvidencePrincipal | null = agent ? { kind: "agent", agentId: agent.id } : null;
   if (!principal) {
     const session = await scope.cradle.guestSessionService.verify(readSessionToken(request.headers.get("cookie")));
     if (session) principal = { kind: "guest", orderNumber: session.orderNumber };

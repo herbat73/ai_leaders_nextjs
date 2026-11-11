@@ -342,7 +342,9 @@ describe("Migration20261111100000", () => {
       await database.migrateUp();
       const em = database.fork();
       await new MikroOrmEvidenceRepository({ em }).stage(file("M-1"), LIMITS, LONG_AGO);
-      await expect(database.migrateDown(MIGRATIONS.courierNote)).rejects.toThrow(/Refusing to roll back/);
+      // The audit trail (a later migration) would refuse first; empty it to reach the files migration.
+      await database.query(`delete from "evidence_audit_events"`);
+      await expect(database.migrateDown(MIGRATIONS.courierNote)).rejects.toThrow(/evidence files exist/);
       expect(await database.query(`select 1 from "evidence_files"`)).toHaveLength(1);
     } finally {
       await database.close();

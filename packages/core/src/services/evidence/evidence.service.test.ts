@@ -5,7 +5,9 @@ import { RateLimiter } from "../../security/rate-limiter";
 import { detectImageType, sanitizeLabel } from "./detect";
 import { EvidenceService, EVIDENCE_UPLOAD_RULE, STAGED_FILE_TTL_MS } from "./evidence.service";
 import type {
+  EvidenceAuditEntry,
   EvidenceContent,
+  NewEvidenceDownload,
   EvidenceFile,
   EvidenceLimits,
   EvidencePort,
@@ -26,7 +28,8 @@ const HTML = new TextEncoder().encode("<html><script>alert(1)</script></html>");
 
 const LIMITS: EvidenceLimits = { maxFileBytes: 100, maxFilesPerRequest: 2, maxBytesPerOrder: 150, maxPixels: 1000 };
 
-function setup(options: { scan?: ScanVerdict; inspect?: InspectOutcome; sanitize?: SanitizeOutcome; stage?: StageOutcome } = {}) {
+function setup(options: { scan?: ScanVerdict; inspect?: InspectOutcome; sanitize?: SanitizeOutcome; stage?: StageOutcome; recordDownload?: () => Promise<void> } = {}) {
+  const downloads: NewEvidenceDownload[] = [];
   const stored: EvidenceFile[] = [];
   const calls: string[] = [];
   const staged: { staleBefore: Date; bytes: Uint8Array; label: string; sha256: string; contentType: string }[] = [];
@@ -53,6 +56,13 @@ function setup(options: { scan?: ScanVerdict; inspect?: InspectOutcome; sanitize
       return file ? ({ file, data: new Uint8Array([1]) } satisfies EvidenceContent) : null;
     },
     attach: async () => ({ result: "invalid" }),
+    recordDownload: async (input) => {
+      if (options.recordDownload) return options.recordDownload();
+      downloads.push(input);
+    },
+    listAudit: async (): Promise<EvidenceAuditEntry[]> => [
+      { id: 1, evidenceFileId: "f", label: "a.jpg", action: "added", actor: "guest", agentName: null, createdAt: NOW },
+    ],
     deleteStaged: async (orderNumber, id) => {
       const index = stored.findIndex((candidate) => candidate.id === id && candidate.orderNumber === orderNumber && candidate.returnRequestId === null);
       if (index < 0) return false;
@@ -87,7 +97,7 @@ function setup(options: { scan?: ScanVerdict; inspect?: InspectOutcome; sanitize
     logger,
     evidenceLimits: LIMITS,
   });
-  return { service, calls, staged, stored, logger };
+  return { service, calls, staged, stored, logger, downloads };
 }
 
 const upload = (service: EvidenceService, data: Uint8Array, name: string | null = "photo.jpg", ip = "1.1.1.1", order = "PL-10001") =>
@@ -243,6 +253,52 @@ describe("read (T-17)", () => {
     const unknown = await failure(service.read("00000000-0000-4000-8000-000000000000", { kind: "agent" }));
     expect([foreign.status, foreign.code, foreign.message]).toEqual([unknown.status, unknown.code, unknown.message]);
     expect(foreign.status).toBe(404);
+  });
+});
+
+describe("audit of agent downloads (T-23)", () => {
+  async function uploaded(ctx = setup()) {
+    const { id } = await upload(ctx.service, JPEG, "a.jpg", "1.1.1.1", "PL-10001");
+    return { ...ctx, id };
+  }
+
+  it("records an agent download with the file's order, its request and the agent", async () => {
+    const { service, id, stored, downloads } = await uploaded();
+    stored[0] = { ...(stored[0] as EvidenceFile), returnRequestId: 7 };
+    await service.read(id, { kind: "agent", agentId: 42 });
+    expect(downloads).toEqual([{ evidenceFileId: id, orderNumber: "PL-10001", returnRequestId: 7, agentId: 42 }]);
+  });
+
+  it("does not record the customer reading their own file, or an agent context without an id", async () => {
+    const { service, id, downloads } = await uploaded();
+    await service.read(id, { kind: "guest", orderNumber: "PL-10001" });
+    await service.read(id, { kind: "agent" });
+    expect(downloads).toEqual([]);
+  });
+
+  it("records nothing for a read that is refused: another order, unknown id", async () => {
+    const { service, id, downloads } = await uploaded();
+    await failure(service.read(id, { kind: "guest", orderNumber: "PL-10005" }));
+    await failure(service.read("00000000-0000-4000-8000-000000000000", { kind: "agent", agentId: 42 }));
+    expect(downloads).toEqual([]);
+  });
+
+  it("does not block the read when the audit write fails: the agent still gets the file, and the failure is logged without values", async () => {
+    const ctx = setup({
+      recordDownload: async () => {
+        throw new Error("connection to 10.0.0.5 refused for customer anna.kowalska@example.pl");
+      },
+    });
+    const { service, id, logger } = await uploaded(ctx);
+    expect((await service.read(id, { kind: "agent", agentId: 42 })).file.id).toBe(id);
+    expect(logger.error).toHaveBeenCalledTimes(1);
+    expect(JSON.stringify(logger.error.mock.calls)).not.toContain("anna.kowalska");
+    expect(JSON.stringify(logger.error.mock.calls)).not.toContain("10.0.0.5");
+  });
+
+  it("hands the trail of a request to the caller", async () => {
+    const { service } = setup();
+    expect((await service.listAudit(7)).map((entry) => entry.action)).toEqual(["added"]);
   });
 });
 

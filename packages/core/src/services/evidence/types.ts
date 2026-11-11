@@ -54,6 +54,31 @@ export interface EvidenceSummary {
   byteSize: number;
 }
 
+/** What the audit trail records (T-23). A guest reading their own file is not recorded: it is thumbnail noise. */
+export const EVIDENCE_AUDIT_ACTIONS = ["added", "removed", "downloaded"] as const;
+export type EvidenceAuditAction = (typeof EVIDENCE_AUDIT_ACTIONS)[number];
+export type EvidenceAuditActor = "guest" | "agent";
+
+/** One audit row as agents see it. The file may be gone (the record outlives it), then `label` is `null`. */
+export interface EvidenceAuditEntry {
+  id: number;
+  evidenceFileId: string;
+  label: string | null;
+  action: EvidenceAuditAction;
+  actor: EvidenceAuditActor;
+  /** Display name of the agent behind an `agent` entry; `null` for guests or a disabled-and-removed agent. */
+  agentName: string | null;
+  createdAt: Date;
+}
+
+/** An agent opened a file; `returnRequestId` is the file's request (`null` for a staged file). */
+export interface NewEvidenceDownload {
+  evidenceFileId: string;
+  orderNumber: string;
+  returnRequestId: number | null;
+  agentId: number;
+}
+
 export interface EvidenceContent {
   file: EvidenceFile;
   data: Uint8Array;
@@ -92,6 +117,14 @@ export interface EvidencePort {
   attach(orderNumber: string, ids: readonly string[], returnRequestId: number): Promise<AttachOutcome>;
   /** Removes one staged (unattached) file of the order before submit; `false` when there is no such file (unknown, foreign or already attached). */
   deleteStaged(orderNumber: string, id: string): Promise<boolean>;
+  /**
+   * Records an agent opening a file, once per (agent, file) per 10 minutes so thumbnail reloads do not flood the trail.
+   * `stage`, `deleteStaged` and `attach` write their own audit rows inside their transactions; this is the one write
+   * that is separate, because a read has no transaction to join.
+   */
+  recordDownload(input: NewEvidenceDownload): Promise<void>;
+  /** The audit trail of a request's files, oldest first. Agents only; never part of any customer view. */
+  listAudit(returnRequestId: number): Promise<EvidenceAuditEntry[]>;
   /** Deletes every file of a request (erasure path, Q8); returns how many. */
   deleteForRequest(returnRequestId: number): Promise<number>;
 }
