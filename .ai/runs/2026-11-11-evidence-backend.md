@@ -22,7 +22,18 @@ Photos in the product, retention job (T-21), audit events (T-23), a private obje
 
 ### Phase 2: Evidence backend
 
-- [ ] 2.1 core: EvidencePort, MalwareScannerPort, ImageSanitizerPort, EvidenceService (limits, ordering, authorization)
-- [ ] 2.2 db: evidence entity, migration, repository (staged insert under order lock with quota, attach, delete-for-request, orphan purge)
-- [ ] 2.3 app: ClamAV adapter, sharp sanitizer, env wiring, docker-compose ClamAV, Configuration.md and .env.example
-- [ ] 2.4 app: POST /api/evidence and GET /api/evidence/[id], integration tests, threat-model status update
+- [x] 2.1 core: EvidencePort, MalwareScannerPort, ImageSanitizerPort, EvidenceService (limits, ordering, authorization) — 3c07646
+- [x] 2.2 db: evidence entity, migration, repository (staged insert under order lock with quota, attach, delete-for-request, orphan purge) — 44e0f43
+- [x] 2.3 app: ClamAV adapter, sharp sanitizer, env wiring, docker-compose ClamAV, Configuration.md and .env.example — 444fbc4
+- [x] 2.4 app: POST /api/evidence and GET /api/evidence/[id], integration tests, threat-model status update — 6dafb15
+
+## Outcome
+
+Phase 2 implemented; Phase 3 is not started (#140 stays open).
+
+- Gate: `typecheck`, `test` (core 1007, app 27, plus the db suite below), `lint` (0 errors), `audit`, `docs:check`, `storybook:build` and `NODE_ENV=production npm run build` all green.
+- `npm run test:db` (outside the gate) against the local Docker Postgres: 14 files, evidence repository and migration tests included, including the two-tab quota race and the atomic double attach.
+- Real scanner: `CLAMD_LIVE=1 npm test -w @easyrms/app` against the `clamav-debian:1.4` container flags the EICAR string as infected.
+- `EVD-001` (curl against the running app, real clamd, QA database) passes, including the 503 with the scanner container stopped and the recovery afterwards.
+- Not done on purpose: no change to `POST /api/returns`, no wizard step, no thumbnails, no retention job (T-21), no audit events (T-23), no PowerShell version of EVD-001.
+- Deviation from the spec text: `clamav/clamav` has no arm64 image, so `docker-compose.yml` uses `clamav/clamav-debian:1.4`.
