@@ -1,5 +1,5 @@
 import type { Money } from "../../domain/money";
-import type { AttachOutcome } from "../evidence/types";
+import type { AttachOutcome, EvidenceSummary } from "../evidence/types";
 import type { Recommendation } from "./recommendation";
 
 export const RETURN_STATUSES = [
@@ -159,6 +159,8 @@ export interface ReturnDetail {
   decisionNote: string | null;
   items: ReturnItem[];
   events: ReturnEvent[];
+  /** Transport and missing reports: the attached photos, oldest first; absent on other kinds and on hand-built values (tests). */
+  evidence?: EvidenceSummary[];
 }
 
 /** What the decision card shows: the detail with the derived list values on the request. */
@@ -167,6 +169,8 @@ export interface ReturnDetailView {
   decisionNote: string | null;
   items: ReturnItem[];
   events: ReturnEvent[];
+  /** Same as `ReturnDetail.evidence`. */
+  evidence?: EvidenceSummary[];
   /** Agent reads only, and only while the rules recommendations flag is on and the request awaits a decision. */
   recommendation?: Recommendation;
 }

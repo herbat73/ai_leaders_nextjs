@@ -7,6 +7,7 @@ import {
   COMPLAINT_REASON_CODE,
   COMPLAINT_KIND,
   COMPLAINT_RESOLUTIONS,
+  EVIDENCE_CONTENT_TYPES,
   MISSING_REASON_CODES,
   MISSING_RESOLUTIONS,
   REQUEST_KINDS,
@@ -16,6 +17,7 @@ import {
   toReturnStatus,
   type ApiLogger,
   type AttachOutcome,
+  type EvidenceSummary,
   ConflictError,
   RETURN_METHODS,
   RETURN_REASON_CODES,
@@ -256,6 +258,19 @@ export class MikroOrmReturnRepository implements ReturnRepository {
     }, joinOrOpen());
   }
 
+  private async evidenceOf(returnRequestId: number): Promise<EvidenceSummary[]> {
+    const rows = await this.em.execute<{ id: string; label: string; content_type: string; byte_size: number }[]>(
+      `select "id", "label", "content_type", "byte_size" from "evidence_files" where "return_request_id" = ? order by "created_at", "id"`,
+      [returnRequestId],
+    );
+    return rows.map((row) => ({
+      id: row.id,
+      label: row.label,
+      contentType: EVIDENCE_CONTENT_TYPES.find((type) => type === row.content_type) ?? "image/jpeg",
+      byteSize: Number(row.byte_size),
+    }));
+  }
+
   private async toDetail(row: ReturnRequestEntity, withAgent: boolean): Promise<ReturnDetail> {
     const events = await this.em.find(
       ReturnRequestEventSchema,
@@ -264,11 +279,14 @@ export class MikroOrmReturnRepository implements ReturnRepository {
       { orderBy: { createdAt: "asc", id: "asc" }, ...(withAgent ? { populate: ["agent"] as const } : {}), refresh: true },
     );
     const items = await this.em.find(ReturnRequestItemSchema, { returnRequest: row.id }, { orderBy: { id: "asc" } });
+    const request = toDomain(row);
     return {
-      request: toDomain(row),
+      request,
       decisionNote: row.decisionNote ?? null,
       items: items.map(toItem),
       events: events.map((event) => toEvent(event, withAgent)),
+      // Metadata only: the bytes stay in the table until the download route asks for one file.
+      ...(request.kind === "transport" || request.kind === "missing" ? { evidence: await this.evidenceOf(row.id) } : {}),
     };
   }
 

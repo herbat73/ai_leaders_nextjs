@@ -273,6 +273,44 @@ describe("attach inside the submit transaction", () => {
   });
 });
 
+describe("evidence in the request detail", () => {
+  const returns = () => new MikroOrmReturnRepository({ em: db.fork(), logger: { error: () => undefined } });
+
+  it("lists the attached photos with metadata only, oldest first, for a customer and an agent read alike", async () => {
+    const order = "V-1";
+    const first = await repository().stage(file(order, 80, { label: "front.jpg" }), LIMITS, LONG_AGO);
+    const second = await repository().stage(file(order, 90, { label: "back.jpg", contentType: "image/png" }), LIMITS, LONG_AGO);
+    const leftover = await repository().stage(file(order, 70, { label: "unused.jpg" }), LIMITS, LONG_AGO);
+    if (first.result !== "stored" || second.result !== "stored" || leftover.result !== "stored") throw new Error("stage failed");
+    const requestId = await createRequest(order);
+    await repository().attach(order, [second.file.id, first.file.id], requestId);
+
+    const detail = await returns().findDetail(requestId);
+    expect(detail?.evidence).toEqual([
+      { id: first.file.id, label: "front.jpg", contentType: "image/jpeg", byteSize: 80 },
+      { id: second.file.id, label: "back.jpg", contentType: "image/png", byteSize: 90 },
+    ]);
+    expect(JSON.stringify(detail?.evidence)).not.toContain("data");
+    const rma = (await returns().findDetail(requestId))?.request.rma ?? "";
+    expect((await returns().findByRma(rma))?.evidence?.map((e) => e.id)).toEqual([first.file.id, second.file.id]);
+  });
+
+  it("has an empty list for a report without photos and none at all for a return", async () => {
+    const noPhotos = await createRequest("V-2");
+    expect((await returns().findDetail(noPhotos))?.evidence).toEqual([]);
+    const ret = await returns().createWithItems({
+      orderNumber: "V-3",
+      customerEmail: "c@example.com",
+      items: [{ lineRef: "L1", sku: "S", name: "Kettle", quantity: 1, unitPrice: money(1000), reasonCode: "size" }],
+      resolution: "refund",
+      resolutionAmount: money(1000),
+      returnMethod: "store",
+      idempotencyKey: randomUUID(),
+    });
+    expect((await returns().findDetail(ret.id))?.evidence).toBeUndefined();
+  });
+});
+
 describe("deleteForRequest", () => {
   it("deletes the files of one request and nothing else", async () => {
     const order = "D-1";

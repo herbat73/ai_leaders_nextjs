@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { checkDamageWizardStep, damageSubmitSignature, firstInvalidDamageStep, type DamageWizardState } from "./damage-wizard-steps";
+import { DAMAGE_WIZARD_STEPS, checkDamageWizardStep, damageSubmitSignature, firstInvalidDamageStep, type DamageWizardState } from "./damage-wizard-steps";
 
 const lines = [
   { lineRef: "L1", remainingQuantity: 2, eligible: true },
@@ -13,6 +13,7 @@ const valid: DamageWizardState = {
   defectDescription: "The box was crushed and the sole is cracked.",
   defectDiscoveredOn: "2026-11-04",
   courierNote: null,
+  evidenceFileIds: ["aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"],
   resolution: "replacement",
   acknowledged: true,
 };
@@ -44,6 +45,22 @@ describe("damage wizard steps", () => {
 
   it("does not require the courier note (Q11)", () => {
     expect(problemsOf("details", { ...valid, courierNote: null })).toEqual([]);
+  });
+
+  it("requires one to six photos before the remedy", () => {
+    expect(problemsOf("photos", { ...valid, evidenceFileIds: [] })).toEqual(["photos_missing"]);
+    expect(problemsOf("photos", valid)).toEqual([]);
+    expect(problemsOf("photos", { ...valid, evidenceFileIds: Array.from({ length: 6 }, (_, i) => String(i)) })).toEqual([]);
+    expect(problemsOf("photos", { ...valid, evidenceFileIds: Array.from({ length: 7 }, (_, i) => String(i)) })).toEqual(["photos_too_many"]);
+    expect(firstInvalidDamageStep({ ...valid, evidenceFileIds: [], resolution: null }, lines, context)).toBe("photos");
+  });
+
+  it("puts the photos step between the details and the remedy", () => {
+    expect(DAMAGE_WIZARD_STEPS).toEqual(["items", "details", "photos", "resolution", "summary"]);
+  });
+
+  it("changes the signature when a photo is added, so a retry after a change gets a new idempotency key", () => {
+    expect(damageSubmitSignature(valid)).not.toBe(damageSubmitSignature({ ...valid, evidenceFileIds: [...valid.evidenceFileIds, "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"] }));
   });
 
   it("checks the remedy against the kind", () => {

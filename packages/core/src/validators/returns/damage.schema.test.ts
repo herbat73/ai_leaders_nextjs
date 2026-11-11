@@ -11,6 +11,7 @@ const base = {
   defectDescription: "The box was crushed and the sole is cracked.",
   defectDiscoveredOn: "2026-11-04",
   courierNote: false,
+  evidenceFileIds: ["aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"],
   resolution: "replacement",
   acknowledged: true,
   idempotencyKey: "6f1c2b1e-0a52-4c8e-9a76-3c8a1c1d2e3f",
@@ -48,10 +49,9 @@ describe("damageSubmitSchema", () => {
     expect(pathsOf(result)).toContain(path);
   });
 
-  it("drops a return method and evidence ids it does not read", () => {
-    const result = damageSubmitSchema(now).safeParse({ ...base, returnMethod: "courier", evidenceFileIds: ["x"] });
+  it("drops a return method it does not read", () => {
+    const result = damageSubmitSchema(now).safeParse({ ...base, returnMethod: "courier" });
     expect(result.success && Object.keys(result.data)).not.toContain("returnMethod");
-    expect(result.success && Object.keys(result.data)).not.toContain("evidenceFileIds");
   });
 });
 
@@ -59,7 +59,9 @@ describe("evidenceFileIds", () => {
   const PHOTO = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
   const parse = (evidenceFileIds: unknown) => damageSubmitSchema(now).safeParse({ ...base, evidenceFileIds });
 
-  it("is optional, and accepts one to six distinct UUIDs", () => {
+  it("is required: one to six distinct UUIDs", () => {
+    expect(damageSubmitSchema(now).safeParse({ ...base, evidenceFileIds: undefined }).success).toBe(false);
+    expect(parse([]).success).toBe(false);
     expect(damageSubmitSchema(now).safeParse(base).success).toBe(true);
     expect(parse([PHOTO]).success).toBe(true);
     const six = Array.from({ length: 6 }, (_, i) => `aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa${i}`);

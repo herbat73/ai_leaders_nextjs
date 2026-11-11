@@ -12,6 +12,8 @@ import { ReturnLookupService } from "./return-lookup.service";
 import { ReturnService } from "./return.service";
 import type { NewReturnRequest, ReturnRepository, ReturnRequest } from "./types";
 
+const PHOTO_A = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+const PHOTO_B = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
 const NOW = new Date("2026-11-05T10:00:00Z");
 const KEY_A = "11111111-1111-4111-8111-111111111111";
 const AGENT = { id: 7, permissions: [] as never[] };
@@ -116,6 +118,7 @@ function damage(overrides: Partial<DamageSubmitBody> = {}): DamageSubmitBody {
     defectDescription: "The box was crushed and the sole is cracked.",
     defectDiscoveredOn: "2026-11-04",
     resolution: "replacement",
+    evidenceFileIds: [PHOTO_A],
     acknowledged: true,
     idempotencyKey: KEY_A,
     ...overrides,
@@ -205,9 +208,6 @@ describe("ReturnService.submit with kind transport", () => {
   });
 });
 
-const PHOTO_A = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
-const PHOTO_B = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
-
 describe("ReturnService.submit with evidence files", () => {
   it("attaches the staged files to the new request, for the canonical order, in the order lock", async () => {
     const { repo, service } = setup();
@@ -218,13 +218,18 @@ describe("ReturnService.submit with evidence files", () => {
     expect(attach).toHaveBeenCalledWith("PL-10001", [PHOTO_A, PHOTO_B], 1);
   });
 
-  it("does not call attach when there are no ids (the interim before photos are required)", async () => {
-    const { repo, service } = setup();
+  it("refuses a report without photos, and an empty list, before looking at the order (Q14)", async () => {
+    const { repo, service, sent } = setup();
     const attach = vi.fn(async () => ({ result: "attached" as const, files: [] }));
     repo.attachEvidence = attach;
-    await service.submit("PL-10001", damage());
-    await service.submit("PL-10005", damage({ idempotencyKey: "33333333-3333-4333-8333-333333333333", evidenceFileIds: [] }));
+    for (const evidenceFileIds of [[], undefined as unknown as string[]]) {
+      const error = await failure(service.submit("PL-10001", damage({ evidenceFileIds })));
+      expect(error).toBeInstanceOf(ValidationError);
+      expect(fieldsOf(error)).toEqual({ evidenceFileIds: "required" });
+    }
     expect(attach).not.toHaveBeenCalled();
+    expect(repo.inputs).toEqual([]);
+    expect(sent).toEqual([]);
   });
 
   it("refuses the submit with one 400 when an id is unknown, foreign or already attached, and sends no mail", async () => {
@@ -251,12 +256,12 @@ describe("ReturnService.submit with evidence files", () => {
     repo.findByIdempotencyKey = first;
   });
 
-  it("does not attach for a missing-item report without ids either", async () => {
+  it("attaches for a missing-item report too", async () => {
     const { repo, service } = setup();
     const attach = vi.fn(async () => ({ result: "attached" as const, files: [] }));
     repo.attachEvidence = attach;
     await service.submit("PL-10001", damage({ kind: "missing", resolution: "resend_part" }));
-    expect(attach).not.toHaveBeenCalled();
+    expect(attach).toHaveBeenCalledWith("PL-10001", [PHOTO_A], 1);
   });
 });
 

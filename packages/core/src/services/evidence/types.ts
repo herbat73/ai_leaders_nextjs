@@ -46,6 +46,14 @@ export interface EvidenceFile {
   createdAt: Date;
 }
 
+/** What a request detail shows of an attached file: enough to render a thumbnail through the download route, never the bytes. */
+export interface EvidenceSummary {
+  id: string;
+  label: string;
+  contentType: EvidenceContentType;
+  byteSize: number;
+}
+
 export interface EvidenceContent {
   file: EvidenceFile;
   data: Uint8Array;

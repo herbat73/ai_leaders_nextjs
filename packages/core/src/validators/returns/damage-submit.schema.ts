@@ -15,16 +15,16 @@ export interface DamageSubmitBody {
   defectDiscoveredOn: string;
   /** Transport only, optional (Q11): was the parcel accepted with a courier note. */
   courierNote?: boolean;
-  /** Staged files of this session's order, uploaded through `POST /api/evidence`; optional until the wizard sends them. */
-  evidenceFileIds?: string[];
+  /** One to six staged files of this session's order, uploaded through `POST /api/evidence` (Q2, Q14). */
+  evidenceFileIds: string[];
   resolution: DamageResolution;
   acknowledged: true;
   idempotencyKey: string;
 }
 
 /**
- * Body of `POST /api/returns` with `kind: "transport"` or `"missing"`. No return method and no evidence ids (photos come
- * in a later phase; an unknown key is dropped). `now` is injected as for complaints: the noticed-on date may not lie in
+ * Body of `POST /api/returns` with `kind: "transport"` or `"missing"`. No return method; at least one photo is required
+ * (Q2, Q14). `now` is injected as for complaints: the noticed-on date may not lie in
  * the future; that it is not before delivery is checked by the service, which knows the order.
  */
 export function damageSubmitSchema(now: Date): z.ZodType<DamageSubmitBody> {
@@ -47,7 +47,10 @@ export function damageSubmitSchema(now: Date): z.ZodType<DamageSubmitBody> {
         .refine((value) => new Date(`${value}T00:00:00Z`).toISOString().startsWith(value), "Not a valid date")
         .refine((value) => value <= today, "The date cannot be in the future"),
       courierNote: z.boolean().optional(),
-      evidenceFileIds: z.array(z.uuid("Not a valid file id")).max(MAX_EVIDENCE_FILES, `At most ${MAX_EVIDENCE_FILES} photos`).optional(),
+      evidenceFileIds: z
+        .array(z.uuid("Not a valid file id"))
+        .min(1, "Add at least one photo")
+        .max(MAX_EVIDENCE_FILES, `At most ${MAX_EVIDENCE_FILES} photos`),
       resolution: z.enum(MISSING_RESOLUTIONS),
       acknowledged: z.literal(true, { error: "You must accept the terms" }),
       idempotencyKey: z.uuid("Idempotency key must be a UUID"),
@@ -59,7 +62,7 @@ export function damageSubmitSchema(now: Date): z.ZodType<DamageSubmitBody> {
       if (body.kind === "missing" && body.courierNote !== undefined) {
         ctx.addIssue({ code: "custom", path: ["courierNote"], message: "The courier note applies to transport damage only" });
       }
-      if (new Set(body.evidenceFileIds ?? []).size !== (body.evidenceFileIds ?? []).length) {
+      if (new Set(body.evidenceFileIds).size !== body.evidenceFileIds.length) {
         ctx.addIssue({ code: "custom", path: ["evidenceFileIds"], message: "The same photo is listed twice" });
       }
       const seen = new Set<string>();

@@ -297,6 +297,11 @@ export class ReturnService {
     const earlier = await this.returnRepository.findByIdempotencyKey(input.idempotencyKey);
     if (earlier) return this.toSubmitResult(this.replayOf(earlier, orderNumber), false);
 
+    // Defense in depth: the schema already requires one to six photos; a caller that skips it still cannot file a report without any.
+    if (isDamageBody(input) && (input.evidenceFileIds ?? []).length === 0) {
+      throw new ValidationError("Add at least one photo", { evidenceFileIds: "required" });
+    }
+
     const lines = input.items.map(({ lineRef, quantity }) => ({ lineRef, quantity }));
     const eligibilityOf = (claimed: Record<string, number>) =>
       isComplaintBody(input)
@@ -365,7 +370,7 @@ export class ReturnService {
       });
       // Same transaction as the insert: an id that is unknown, of another order or already attached (one answer for
       // all three, T-17) rolls the whole submit back, so no request is left without the photos it was filed with.
-      if (isDamageBody(input) && input.evidenceFileIds && input.evidenceFileIds.length > 0) {
+      if (isDamageBody(input)) {
         const attached = await tx.attachEvidence(orderNumber, input.evidenceFileIds, request.id);
         if (attached.result === "invalid") throw new ValidationError("Some photos cannot be used", { evidenceFileIds: "invalid" });
       }
