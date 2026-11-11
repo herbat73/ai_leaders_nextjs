@@ -10,6 +10,8 @@ export interface RetentionTarget {
 }
 
 export interface AnonymizeCounts {
+  /** `false` when the request was already erased (for example by a concurrent run) and this call changed nothing. */
+  erased: boolean;
   files: number;
   auditRows: number;
 }

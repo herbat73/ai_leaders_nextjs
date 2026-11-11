@@ -88,7 +88,7 @@ describe("findDue", () => {
 describe("anonymize", () => {
   it("removes files, audit rows and personal text, and keeps the facts", async () => {
     const seeded = await seed("RT-7", "resolved", OLD);
-    expect(await retention().anonymize(seeded.id)).toEqual({ files: 1, auditRows: 1 });
+    expect(await retention().anonymize(seeded.id)).toEqual({ erased: true, files: 1, auditRows: 1 });
 
     expect(await count(`select count(*) as n from "evidence_files" where "return_request_id" = ?`, [seeded.id])).toBe(0);
     expect(await count(`select count(*) as n from "evidence_audit_events" where "evidence_file_id" = ?`, [seeded.fileId])).toBe(0);
@@ -149,7 +149,7 @@ describe("anonymize", () => {
   it("does nothing the second time", async () => {
     const seeded = await seed("RT-11", "resolved", OLD);
     await retention().anonymize(seeded.id);
-    expect(await retention().anonymize(seeded.id)).toEqual({ files: 0, auditRows: 0 });
+    expect(await retention().anonymize(seeded.id)).toEqual({ erased: false, files: 0, auditRows: 0 });
   });
 
   it("rolls everything back when a statement fails", async () => {

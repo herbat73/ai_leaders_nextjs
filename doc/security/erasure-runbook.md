@@ -5,12 +5,13 @@ retention period (R16, one year after a request is closed) has passed.
 
 ## Automatic retention
 
-1. Schedule `npm run retention:run` once a day with the operator's cron or job runner. The environment must carry the
+1. Apply the database migrations first (`npm run db:migrate`): the script needs the `anonymized_at` column and fails without it.
+2. Schedule `npm run retention:run` once a day with the operator's cron or job runner. The environment must carry the
    same `EASYRMS_DATABASE_URL` as the app and, if the default is not wanted, `EASYRMS_RETENTION_DAYS` (30 to 3650,
    default 365). Nothing is deleted until the script runs.
-2. Before the first real run, try `npm run retention:run -- --dry-run`: it lists the RMA numbers that would be erased and
+3. Before the first real run, try `npm run retention:run -- --dry-run`: it lists the RMA numbers that would be erased and
    changes nothing.
-3. Exit code 0 is a clean run, 1 means one or more requests failed (their RMA numbers are printed; fix the cause and run
+4. Exit code 0 is a clean run, 1 means one or more requests failed (their RMA numbers are printed; fix the cause and run
    again, the job is safe to repeat), 2 is a bad argument or setting.
 
 ## A customer's erasure request

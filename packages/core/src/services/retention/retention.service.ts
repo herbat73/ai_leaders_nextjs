@@ -41,6 +41,8 @@ export class RetentionService {
         }
         try {
           const counts = await this.retention.anonymize(target.id);
+          // Erased meanwhile by another run or an erasure request: not counted or listed as this run's work.
+          if (!counts.erased) continue;
           result.requests += 1;
           result.files += counts.files;
           result.auditRows += counts.auditRows;
@@ -70,6 +72,7 @@ export class RetentionService {
       throw new ConflictError("Request is not closed; use force to erase it anyway", { status: target.status });
     }
     const counts = await this.retention.anonymize(target.id);
+    if (!counts.erased) return { rma: target.rma, alreadyErased: true, files: 0, auditRows: 0 };
     return { rma: target.rma, alreadyErased: false, files: counts.files, auditRows: counts.auditRows };
   }
 }

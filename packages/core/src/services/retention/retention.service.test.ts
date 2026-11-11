@@ -11,7 +11,7 @@ function target(id: number, over: Partial<RetentionTarget> = {}): RetentionTarge
   return { id, rma: `RMA-${id}`, status: "resolved", anonymizedAt: null, ...over };
 }
 
-function setup(options: { due?: RetentionTarget[]; byRma?: RetentionTarget[]; failIds?: number[]; days?: number } = {}) {
+function setup(options: { due?: RetentionTarget[]; byRma?: RetentionTarget[]; failIds?: number[]; alreadyErasedIds?: number[]; days?: number } = {}) {
   const calls = { findDue: [] as { cutoff: Date; limit: number; afterId: number }[], anonymized: [] as number[], purge: [] as Date[] };
   const errors: { message: string; context?: Record<string, unknown> }[] = [];
   const port: RetentionPort = {
@@ -25,7 +25,8 @@ function setup(options: { due?: RetentionTarget[]; byRma?: RetentionTarget[]; fa
     async anonymize(id): Promise<AnonymizeCounts> {
       if (options.failIds?.includes(id)) throw new Error("lock timeout");
       calls.anonymized.push(id);
-      return { files: 2, auditRows: 3 };
+      if (options.alreadyErasedIds?.includes(id)) return { erased: false, files: 0, auditRows: 0 };
+      return { erased: true, files: 2, auditRows: 3 };
     },
     async purgeOrphans(cutoff) {
       calls.purge.push(cutoff);
@@ -82,6 +83,12 @@ describe("RetentionService.run", () => {
     expect(Object.keys(errors[0].context ?? {}).sort()).toEqual(["error", "requestId", "rma"]);
   });
 
+  it("does not count a request another run erased in the meantime", async () => {
+    const { service } = setup({ due: [target(1), target(2)], alreadyErasedIds: [1] });
+    const result = await service.run();
+    expect(result).toMatchObject({ requests: 1, files: 2, rmas: ["RMA-2"], failed: [] });
+  });
+
   it("does nothing when nothing is due", async () => {
     const { service } = setup();
     expect(await service.run()).toMatchObject({ requests: 0, files: 0, rmas: [] });
@@ -106,6 +113,11 @@ describe("RetentionService.eraseOne", () => {
     expect(calls.anonymized).toEqual([]);
     expect((await service.eraseOne("RMA-8", { force: true })).alreadyErased).toBe(false);
     expect(calls.anonymized).toEqual([8]);
+  });
+
+  it("reports an erasure that a concurrent run completed first as already erased", async () => {
+    const { service } = setup({ byRma: [target(10)], alreadyErasedIds: [10] });
+    expect(await service.eraseOne("RMA-10")).toEqual({ rma: "RMA-10", alreadyErased: true, files: 0, auditRows: 0 });
   });
 
   it("does not repeat an erasure", async () => {

@@ -53,7 +53,7 @@ export class MikroOrmRetentionRepository implements RetentionPort {
       async (tx): Promise<AnonymizeCounts> => {
         // Locks the row and skips a request another run already erased.
         const locked = await tx.execute<{ id: number }[]>(`select "id" from "return_requests" where "id" = ? and "anonymized_at" is null for update`, [requestId]);
-        if (locked.length === 0) return { files: 0, auditRows: 0 };
+        if (locked.length === 0) return { erased: false, files: 0, auditRows: 0 };
 
         // Audit rows first: they are found through the files, which the next statement deletes.
         const audit = await tx.execute<{ id: number }[]>(
@@ -75,7 +75,7 @@ export class MikroOrmRetentionRepository implements RetentionPort {
              "exchange_note" = null, "decision_note" = null, "anonymized_at" = now(), "updated_at" = now() where "id" = ?`,
           [requestId],
         );
-        return { files: files.length, auditRows: audit.length };
+        return { erased: true, files: files.length, auditRows: audit.length };
       },
       { propagation: TransactionPropagation.REQUIRED },
     );
