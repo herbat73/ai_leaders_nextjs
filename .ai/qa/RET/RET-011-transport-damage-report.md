@@ -5,7 +5,7 @@
 - **Priorytet:** High
 - **Typ:** UI
 - **Rola:** gość (klient), potem agent (konto QA z `MANAGE_RULES`)
-- **Specyfikacja:** [2026-11-10-transport-damage-and-missing-items](../../specs/2026-11-10-transport-damage-and-missing-items.md) (Faza 1, bez zdjęć)
+- **Specyfikacja:** [2026-11-10-transport-damage-and-missing-items](../../specs/implemented/2026-11-10-transport-damage-and-missing-items.md) (Faza 1, bez zdjęć)
 
 ## Test implementation
 
