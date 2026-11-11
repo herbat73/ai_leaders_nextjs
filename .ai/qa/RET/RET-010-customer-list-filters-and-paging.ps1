@@ -7,7 +7,7 @@
 $QaId = 'RET-010'
 . (Join-Path $PSScriptRoot '..\lib\common.ps1')
 Initialize-Qa
-function Rows { [int](Ab eval "document.querySelectorAll('section[aria-label=\"Zgłoszenia zwrotu i reklamacji\"] ul li').length" | Select-Object -Last 1) }
+function Rows { [int](Ab eval "document.querySelectorAll('section[aria-label=\"Zgłoszenia zwrotów, reklamacji, uszkodzeń i braków\"] ul li').length" | Select-Object -Last 1) }
 try {
   Step 'setup: customer submits a return through the API'
   GuestLookup 'PL-10001' 'anna.kowalska@example.pl'

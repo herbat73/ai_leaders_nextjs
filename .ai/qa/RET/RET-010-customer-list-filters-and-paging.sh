@@ -9,7 +9,7 @@ QA_ID=RET-010
 . "$(cd "$(dirname "$0")/../lib" && pwd)/common.sh"
 qa_init
 
-rows() { ab eval "document.querySelectorAll('section[aria-label=\"Zgłoszenia zwrotu i reklamacji\"] ul li').length" 2>&1 | tail -1; }
+rows() { ab eval "document.querySelectorAll('section[aria-label=\"Zgłoszenia zwrotów, reklamacji, uszkodzeń i braków\"] ul li').length" 2>&1 | tail -1; }
 
 step "setup: ten earlier requests on PL-10001 L2, each submitted and rejected (a fresh database has no history)"
 guest_lookup PL-10001 anna.kowalska@example.pl
