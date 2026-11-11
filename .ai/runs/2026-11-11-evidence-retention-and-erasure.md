@@ -31,3 +31,9 @@ Irreversible deletion (dry run, 30-day floor, final-status rule, per-request tra
 - [ ] 2.1 core and app: eraseOne and retention:erase
 - [ ] 2.2 app: anonymized state on the decision card and tracker 404
 - [ ] 2.3 docs: runbook, threat model, brief, QA scenario
+
+## Run log
+
+- Tried: implemented both phases on `feat/evidence-retention-and-erasure` (PR #148, spec PR #147).
+- Deviations from the spec: the customer tracker is by session order, so an anonymized request is not a 404 for its customer (status only, no text or photos); the partial index in the spec's Data Model was left out (it would drift from the entity metadata); no `.ai/qa/RET/` browser scenario was added (the only UI change is one label on the agent card and list).
+- `npm run test:db` (Docker Desktop started, `easyrms-postgres` on 5433): retention repository tests 10 passed; evidence and migration tests 96 passed.
