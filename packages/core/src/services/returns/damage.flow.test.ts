@@ -10,7 +10,7 @@ import { recommend } from "./recommendation";
 import { BRIEF_RULES } from "../../rules";
 import { ReturnLookupService } from "./return-lookup.service";
 import { ReturnService } from "./return.service";
-import type { NewReturnRequest, ReturnRepository, ReturnRequest, ReturnStatus } from "./types";
+import type { NewReturnRequest, ReturnRepository, ReturnRequest } from "./types";
 
 const NOW = new Date("2026-11-05T10:00:00Z");
 const KEY_A = "11111111-1111-4111-8111-111111111111";

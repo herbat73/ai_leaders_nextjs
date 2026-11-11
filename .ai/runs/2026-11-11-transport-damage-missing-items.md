@@ -22,10 +22,19 @@ Photos, scanner, `evidence_files`, thumbnails, carrier/supplier claims (Q9), cus
 
 ### Phase 1: Transport damage and missing items, text evidence
 
-- [ ] 1.1 core: request kinds, damage state machine, resolution resend_part, reason codes
-- [ ] 1.2 core: eligibility with transport window setting, shared quantity pool, quote reuse
-- [ ] 1.3 core: submit/quote validators, wizard steps, ReturnService branch
-- [ ] 1.4 db: migration courier_note, entity, repository mapping and test
-- [ ] 1.5 app: API routes accept the new kinds, route tests
-- [ ] 1.6 app: customer entry cards, wizard, summary, tracker mapping, Polish copy
-- [ ] 1.7 app: agent inbox kind filter, decision card, R10a badge, QA scenario
+- [x] 1.1 core: request kinds, damage state machine, resolution resend_part, reason codes — 34e40d8
+- [x] 1.2 core: eligibility with transport window setting, shared quantity pool, quote reuse — 925d347
+- [x] 1.3 core: submit/quote validators, wizard steps, ReturnService branch — 1d1ca19
+- [x] 1.4 db: migration courier_note, entity, repository mapping and test — 372fcb8
+- [x] 1.5 app: API routes accept the new kinds, route tests — 925d347
+- [x] 1.6 app: customer entry cards, wizard, summary, tracker mapping, Polish copy — c6e7dd8
+- [x] 1.7 app: agent inbox kind filter, decision card, R10a badge, QA scenario — 746379e
+
+## Outcome
+
+Phase 1 implemented. Phases 2 and 3 are not started (gated, see Scope).
+
+- Gate: `typecheck`, `test` (949 passed), `lint` (0 errors), `audit`, `docs:check`, `storybook:build` and `NODE_ENV=production npm run build` all green.
+- `npm run test:db` (outside the gate) against the local Docker Postgres on 5433: 13 files, 146 tests passed, including the new migration and repository tests.
+- QA scenarios `RET-011` and `RET-012` are written but were NOT run: the autonomous run could not use the QA environment descriptor and agent credentials (the read was blocked by the permission classifier, deliberately not worked around). Run them by hand before merging.
+- Interpretation notes: tracker stage copy reads Zgłoszone, Rozpatrzone, Rozwiązane (spec says "Rozpatrywane"; the middle stage means decided, so the past form is used). The returns page entry points are buttons next to the existing ones, not cards.

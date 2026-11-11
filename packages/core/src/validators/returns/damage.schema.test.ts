@@ -26,8 +26,7 @@ describe("damageSubmitSchema", () => {
   });
 
   it("takes the courier note as optional", () => {
-    const { courierNote: _omit, ...without } = base;
-    expect(damageSubmitSchema(now).safeParse(without).success).toBe(true);
+    expect(damageSubmitSchema(now).safeParse({ ...base, courierNote: undefined }).success).toBe(true);
   });
 
   it.each([
