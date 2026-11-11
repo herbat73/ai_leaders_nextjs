@@ -19,11 +19,12 @@ services:
       timeout: 5s
       retries: 10
 
-  # Malware scanner for evidence uploads (EASYRMS_CLAMAV_HOST=localhost, port 3310). Not started by `npm run setup`;
+  # Malware scanner for evidence uploads (EASYRMS_CLAMAV_HOST=localhost, port 3310). The -debian image is the one published
+  # for both amd64 and arm64. Not started by `npm run setup`;
   # start it with `docker compose up -d --wait clamav`. The first start downloads the virus definitions (a few
   # minutes), after which the health check passes. Without it uploads are refused with 503 (fail closed).
   clamav:
-    image: clamav/clamav:1.4
+    image: clamav/clamav-debian:1.4
     container_name: easyrms-clamav
     restart: unless-stopped
     ports:
