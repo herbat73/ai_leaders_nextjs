@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { z } from "zod";
 
 import { PayloadTooLargeError, ValidationError } from "../errors";
-import { parseJsonBody } from "./parse";
+import { parseJsonBody, readCappedBytes } from "./parse";
 
 const schema = z.object({ csv: z.string() });
 const post = (body: BodyInit, headers: HeadersInit = {}): Request =>
@@ -39,5 +39,36 @@ describe("parseJsonBody", () => {
     const error = await parseJsonBody(request, schema, { maxBytes: 100, tooLargeMessage: "Za duży" }).catch((e: unknown) => e);
     expect(error).toBeInstanceOf(PayloadTooLargeError);
     expect(error).toMatchObject({ status: 413, code: "payload_too_large", message: "Za duży" });
+  });
+});
+
+describe("readCappedBytes", () => {
+  const streamPost = (body: BodyInit | null, headers: Record<string, string> = {}) => new Request("http://x/upload", { method: "POST", body, headers });
+
+  it("returns the bytes up to the cap", async () => {
+    const bytes = await readCappedBytes(streamPost(new Uint8Array([1, 2, 3])), 3);
+    expect(Array.from(bytes)).toEqual([1, 2, 3]);
+  });
+
+  it("returns an empty array for no body", async () => {
+    expect((await readCappedBytes(streamPost(null), 10)).byteLength).toBe(0);
+  });
+
+  it("refuses from the declared length without reading", async () => {
+    await expect(readCappedBytes(streamPost("x", { "content-length": "999" }), 10)).rejects.toMatchObject({ status: 413 });
+  });
+
+  it("stops reading a streamed body that grows past the cap", async () => {
+    let pulled = 0;
+    const stream = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        pulled += 1;
+        controller.enqueue(new Uint8Array(4));
+        if (pulled > 100) controller.close();
+      },
+    });
+    const request = new Request("http://x/upload", { method: "POST", body: stream, duplex: "half" } as RequestInit);
+    await expect(readCappedBytes(request, 10)).rejects.toMatchObject({ status: 413, code: "payload_too_large" });
+    expect(pulled).toBeLessThan(10);
   });
 });

@@ -30,11 +30,11 @@ export interface ParseJsonBodyOptions {
   tooLargeMessage?: string;
 }
 
-/** Reads the body as text, throwing `PayloadTooLargeError` as soon as `maxBytes` is exceeded. */
-async function readCappedText(request: Request, maxBytes: number, message: string | undefined): Promise<string> {
+/** Reads the body as bytes, throwing `PayloadTooLargeError` as soon as `maxBytes` is exceeded (never buffers more). */
+export async function readCappedBytes(request: Request, maxBytes: number, message?: string): Promise<Uint8Array> {
   const declared = Number(request.headers.get("content-length"));
   if (Number.isFinite(declared) && declared > maxBytes) throw new PayloadTooLargeError(message);
-  if (!request.body) return "";
+  if (!request.body) return new Uint8Array(0);
   const reader = request.body.getReader();
   const chunks: Uint8Array[] = [];
   let received = 0;
@@ -54,7 +54,12 @@ async function readCappedText(request: Request, maxBytes: number, message: strin
     bytes.set(chunk, offset);
     offset += chunk.byteLength;
   }
-  return new TextDecoder().decode(bytes);
+  return bytes;
+}
+
+/** Reads the body as text, throwing `PayloadTooLargeError` as soon as `maxBytes` is exceeded. */
+async function readCappedText(request: Request, maxBytes: number, message: string | undefined): Promise<string> {
+  return new TextDecoder().decode(await readCappedBytes(request, maxBytes, message));
 }
 
 export async function parseJsonBody<T>(

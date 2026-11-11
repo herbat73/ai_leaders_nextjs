@@ -12,6 +12,7 @@ import {
   type AgentSessionService,
   type ApiLogger,
   type CaseSampleService,
+  type EvidenceService,
   type MailLogger,
   type GuestSessionService,
   type MailPort,
@@ -26,6 +27,8 @@ import {
 import { getOrm, registerDb } from "@easyrms/db";
 
 import { getAgentSessionService } from "./agent-session";
+import { createMalwareScanner, getEvidenceLimits } from "./evidence/evidence-config";
+import { SharpImageSanitizer } from "./evidence/sharp-sanitizer";
 import { createMailPort } from "./mail";
 import { getGuestSessionService } from "./guest-session";
 import { getApprovalConfig, getEligibilityConfig, getInviteConfig, getQuoteConfig, getRecommendationConfig, getTransportConfig } from "./return-config";
@@ -35,6 +38,7 @@ export interface Cradle {
   agentService: AgentService;
   agentSessionService: AgentSessionService;
   caseSampleService: CaseSampleService;
+  evidenceService: EvidenceService;
   guestSessionService: GuestSessionService;
   logger: ApiLogger;
   mailPort: MailPort;
@@ -81,6 +85,9 @@ function getRootContainer(): Promise<AwilixContainer> {
       eligibilityConfig: asFunction(getEligibilityConfig).singleton(),
       quoteConfig: asFunction(getQuoteConfig).singleton(),
       transportConfig: asFunction(getTransportConfig).singleton(),
+      evidenceLimits: asFunction(getEvidenceLimits).singleton(),
+      malwareScanner: asFunction(createMalwareScanner).singleton(),
+      imageSanitizer: asFunction(() => new SharpImageSanitizer()).singleton(),
       approvalConfig: asFunction(getApprovalConfig).singleton(),
       inviteConfig: asFunction(getInviteConfig).singleton(),
       recommendationConfig: asFunction(getRecommendationConfig).singleton(),
