@@ -7,6 +7,7 @@ import {
   COMPLAINT_DESCRIPTION_MAX_LENGTH,
   DAMAGE_WIZARD_STEPS,
   MISSING_REASON_CODES,
+  EVIDENCE_CONTENT_TYPES,
   MISSING_RESOLUTIONS,
   TRANSPORT_RESOLUTIONS,
   checkDamageWizardStep,
@@ -27,6 +28,8 @@ import {
   Banner,
   Field,
   LinePicker,
+  PhotoPicker,
+  type PhotoItem,
   MethodStep,
   ResolutionStep,
   SummaryStep,
@@ -52,6 +55,47 @@ interface SubmitFailure {
 
 type CourierAnswer = "yes" | "no" | "unknown";
 
+/** One file the customer picked: its own upload state; `evidenceId` is set once the server has stored it. */
+interface Photo {
+  key: string;
+  name: string;
+  size: number;
+  status: "uploading" | "done" | "error";
+  /** Language-neutral reason, mapped to Polish by `copy.photos.errors`. */
+  errorKey?: keyof typeof copy.photos.errors;
+  evidenceId?: string;
+}
+
+interface UploadResponse {
+  id: string;
+}
+
+const MB = 1024 * 1024;
+const sizeText = (bytes: number): string => `${(bytes / MB).toFixed(1).replace(".", ",")} MB`;
+
+/** Maps an upload failure to a copy key: the code is stable, the server message is never shown. */
+function uploadErrorKey(code: string, status: number): keyof typeof copy.photos.errors {
+  switch (code) {
+    case "scanner_unavailable":
+      return "scanner_unavailable";
+    case "too_large":
+    case "payload_too_large":
+      return "too_large";
+    case "not_an_image":
+      return "not_an_image";
+    case "rejected":
+      return "rejected";
+    case "quota_exceeded":
+      return "quota_exceeded";
+    case "rate_limited":
+      return "rate_limited";
+    case "unauthorized":
+      return "unauthorized";
+    default:
+      return status === 0 ? "network" : "unknown";
+  }
+}
+
 const COURIER_VALUES: Record<CourierAnswer, boolean | null> = { yes: true, no: false, unknown: null };
 
 /**
@@ -64,12 +108,17 @@ export function DamageWizard({
   today,
   deliveredOn,
   windowDays,
+  maxFiles,
+  maxFileMb,
 }: {
   kind: DamageKind;
   lines: LookupLineView[];
   today: string;
   deliveredOn: string | null;
   windowDays: number;
+  /** Photos per report and megabytes per photo, from the server configuration (Q4). */
+  maxFiles: number;
+  maxFileMb: number;
 }): ReactElement {
   const kindCopy = copy.kinds[kind];
   const resolutions: readonly DamageResolution[] = kind === "transport" ? TRANSPORT_RESOLUTIONS : MISSING_RESOLUTIONS;
@@ -83,6 +132,7 @@ export function DamageWizard({
   const [courierAnswer, setCourierAnswer] = useState<CourierAnswer | null>(null);
   const [reasonCode, setReasonCode] = useState<MissingReasonCode>("missing_element");
   const [resolution, setResolution] = useState<DamageResolution | null>(null);
+  const [photos, setPhotos] = useState<Photo[]>([]);
   const [acknowledged, setAcknowledged] = useState(false);
   const [showProblems, setShowProblems] = useState(false);
   const [quote, setQuote] = useState<QuoteState>({ status: "idle" });
@@ -102,6 +152,7 @@ export function DamageWizard({
     defectDescription,
     defectDiscoveredOn,
     courierNote: courierAnswer === null ? null : COURIER_VALUES[courierAnswer],
+    evidenceFileIds: photos.flatMap((photo) => (photo.status === "done" && photo.evidenceId ? [photo.evidenceId] : [])),
     resolution,
     acknowledged,
   };
@@ -145,7 +196,54 @@ export function DamageWizard({
     return key ? (copy.ineligible[key] ?? copy.ineligible.not_returnable)(windowDays) : undefined;
   }
 
+  const uploading = photos.some((photo) => photo.status === "uploading");
+
+  /** Uploads one file at a time, in the order picked, so the per-order limits are met in a predictable order. */
+  async function uploadAll(batch: { photo: Photo; file: File }[]): Promise<void> {
+    for (const { photo, file } of batch) {
+      const form = new FormData();
+      form.append("file", file, file.name);
+      const result = await apiCall<UploadResponse>("/api/evidence", { method: "POST", body: form });
+      setPhotos((current) =>
+        current.map((candidate) =>
+          candidate.key !== photo.key
+            ? candidate
+            : result.ok
+              ? { ...candidate, status: "done", evidenceId: result.data.id }
+              : { ...candidate, status: "error", errorKey: uploadErrorKey(result.error.code, result.status) },
+        ),
+      );
+    }
+  }
+
+  function addPhotos(files: File[]): void {
+    const room = Math.max(0, maxFiles - photos.length);
+    const picked = files.slice(0, room);
+    const batch: { photo: Photo; file: File }[] = [];
+    const added: Photo[] = picked.map((file) => {
+      const photo: Photo = { key: crypto.randomUUID(), name: file.name, size: file.size, status: "uploading" };
+      const type = (EVIDENCE_CONTENT_TYPES as readonly string[]).includes(file.type);
+      // Cheap checks first, so an obvious mistake never leaves the browser; the server checks the content again.
+      if (!type) return { ...photo, status: "error", errorKey: "not_an_image" };
+      if (file.size > maxFileMb * MB) return { ...photo, status: "error", errorKey: "too_large" };
+      batch.push({ photo, file });
+      return photo;
+    });
+    setPhotos((current) => [...current, ...added]);
+    setShowProblems(false);
+    void uploadAll(batch);
+  }
+
+  function removePhoto(key: string): void {
+    const photo = photos.find((candidate) => candidate.key === key);
+    setPhotos((current) => current.filter((candidate) => candidate.key !== key));
+    // Best effort: a file that stays staged is deleted by the server once it is older than the session.
+    if (photo?.evidenceId) void apiCall(`/api/evidence/${photo.evidenceId}`, { method: "DELETE" });
+  }
+
   function goNext(): void {
+    if (step === "photos" && uploading) return setFailure({ text: copy.photos.waitForUploads });
+    setFailure(null);
     if (!check.ok) return setShowProblems(true);
     setShowProblems(false);
     setStep(DAMAGE_WIZARD_STEPS[stepIndex + 1] ?? step);
@@ -159,6 +257,7 @@ export function DamageWizard({
 
   async function submit(): Promise<void> {
     if (submitting) return;
+    if (uploading) return setFailure({ text: copy.photos.waitForUploads });
     const invalid = firstInvalidDamageStep(state, wizardLines, context);
     if (invalid !== null) {
       setStep(invalid);
@@ -186,6 +285,7 @@ export function DamageWizard({
         defectDescription: defectDescription.trim(),
         defectDiscoveredOn,
         ...(kind === "transport" && courierAnswer !== null && COURIER_VALUES[courierAnswer] !== null ? { courierNote: COURIER_VALUES[courierAnswer] } : {}),
+        evidenceFileIds: state.evidenceFileIds,
         resolution,
         acknowledged: true,
         idempotencyKey: key,
@@ -202,6 +302,11 @@ export function DamageWizard({
     }
     const { key: errorKey, message } = errorMessage(result.error, result.status);
     if (errorKey === "unauthorized") return setFailure({ text: message, link: { href: "/", label: copy.sessionLink } });
+    if (errorKey === "validation_error" && result.error.fieldErrors?.evidenceFileIds) {
+      // A photo the server no longer accepts (removed, expired, or not this order's): back to the photos step.
+      setStep("photos");
+      return setFailure({ text: copy.photos.refusedOnSubmit });
+    }
     if (errorKey === "validation_error" && result.error.fieldErrors) {
       if (applyRefused(result.error.fieldErrors)) return setFailure({ text: copy.linesChanged });
       return setFailure({ text: copy.fieldErrors });
@@ -298,7 +403,37 @@ export function DamageWizard({
               onChange={(value) => setReasonCode(value as MissingReasonCode)}
             />
           )}
-          <Banner tone="info">{copy.details.photosNote}</Banner>
+        </div>
+      );
+    }
+    if (step === "photos") {
+      const items: PhotoItem[] = photos.map((photo) => ({
+        id: photo.key,
+        name: photo.name,
+        sizeText: sizeText(photo.size),
+        status: photo.status,
+        statusText: photo.status === "uploading" ? copy.photos.uploading : photo.status === "done" ? copy.photos.done : copy.photos.errors[photo.errorKey ?? "unknown"](maxFileMb),
+        ...(photo.status === "done" && photo.evidenceId ? { previewUrl: `/api/evidence/${photo.evidenceId}` } : {}),
+      }));
+      const full = photos.length >= maxFiles;
+      return (
+        <div className="space-y-4">
+          {failure && <Banner tone="error">{failure.text}</Banner>}
+          <PhotoPicker
+            legend={copy.photos.legend}
+            hint={kind === "transport" ? copy.photos.hintTransport : copy.photos.hintMissing}
+            addLabel={copy.photos.add}
+            accept={EVIDENCE_CONTENT_TYPES.join(",")}
+            items={items}
+            counterText={copy.photos.counter(state.evidenceFileIds.length, maxFiles, maxFileMb)}
+            removeText={copy.photos.remove}
+            removeLabel={copy.photos.removeLabel}
+            onAdd={addPhotos}
+            onRemove={removePhoto}
+            disabled={full}
+            disabledText={copy.photos.limitReached(maxFiles)}
+            error={shown((p) => p.problem === "photos_missing" || p.problem === "photos_too_many")}
+          />
         </div>
       );
     }
@@ -323,6 +458,7 @@ export function DamageWizard({
       ...(kind === "transport" && courierAnswer !== null && COURIER_VALUES[courierAnswer] !== null
         ? [{ label: copy.summary.rows.courierNote, value: copy.summary.courierAnswers[String(COURIER_VALUES[courierAnswer]) as "true" | "false"] }]
         : []),
+      { label: copy.summary.rows.photos, value: copy.summary.photoCount(state.evidenceFileIds.length) },
       { label: copy.summary.rows.resolution, value: resolution ? copy.resolution.options[resolution].label : "" },
       ...(quote.status === "ready" && quote.quote.amountText ? [{ label: copy.summary.rows.amount, value: quote.quote.amountText }] : []),
     ];
@@ -374,7 +510,7 @@ export function DamageWizard({
       currentId={step}
       stepperLabel={copy.stepperLabel}
       stepDoneLabel={copy.stepDoneLabel}
-      heading={step === "items" ? kindCopy.itemsHeading : step === "details" ? kindCopy.detailsHeading : step === "resolution" ? copy.resolution.legend : kindCopy.summaryHeading}
+      heading={step === "items" ? kindCopy.itemsHeading : step === "details" ? kindCopy.detailsHeading : step === "photos" ? copy.photos.heading : step === "resolution" ? copy.resolution.legend : kindCopy.summaryHeading}
       focusKey={step}
       backLabel={copy.backButton}
       nextLabel={copy.nextButton}

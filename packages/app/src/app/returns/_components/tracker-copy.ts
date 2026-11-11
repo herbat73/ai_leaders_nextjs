@@ -99,6 +99,9 @@ export const damageTrackerCopy = {
   descriptionLabel: { transport: "Opis uszkodzenia", missing: "Opis problemu" },
   discoveredOnLabel: { transport: "Uszkodzenie zauważone", missing: "Paczka otwarta" },
   courierNoteLabel: "Adnotacja kuriera",
+  photosHeading: "Zdjęcia",
+  photosLabel: "Zdjęcia do zgłoszenia",
+  openPhoto: (name: string): string => `Otwórz zdjęcie: ${name}`,
   courierNoteAnswers: { true: "Tak", false: "Nie" },
   /** Same three ids as the other kinds, read as Zgłoszone, Rozpatrzone, Rozwiązane. */
   stages: { ...trackerCopy.stages, approved: "Rozpatrzone", resolved: "Rozwiązane" } satisfies Record<TrackerStageId, string>,
