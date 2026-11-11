@@ -114,6 +114,14 @@ export function firstInvalidDamageStep(
   return DAMAGE_WIZARD_STEPS.find((step) => !checkDamageWizardStep(step, state, lines, context).ok) ?? null;
 }
 
+/**
+ * How many more photos the customer may add. A file that failed to upload was never stored, so it does not use a slot:
+ * only files that are uploading or done count toward the limit (it still sits in the list until the customer removes it).
+ */
+export function evidenceSlotsLeft(max: number, photos: readonly { status: "uploading" | "done" | "error" }[]): number {
+  return Math.max(0, max - photos.filter((photo) => photo.status !== "error").length);
+}
+
 /** Everything that goes into the submit request (except the key) as a stable string. */
 export function damageSubmitSignature(state: DamageWizardState): string {
   return JSON.stringify([

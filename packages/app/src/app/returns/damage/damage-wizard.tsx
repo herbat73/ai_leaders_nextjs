@@ -12,6 +12,7 @@ import {
   TRANSPORT_RESOLUTIONS,
   checkDamageWizardStep,
   damageSubmitSignature,
+  evidenceSlotsLeft,
   firstInvalidDamageStep,
   needsNewIdempotencyKey,
   refusedLinesFromFieldErrors,
@@ -218,7 +219,7 @@ export function DamageWizard({
   }
 
   function addPhotos(files: File[]): void {
-    const room = Math.max(0, maxFiles - photos.length);
+    const room = evidenceSlotsLeft(maxFiles, photos);
     const picked = files.slice(0, room);
     const batch: { photo: Photo; file: File }[] = [];
     const added: Photo[] = picked.map((file) => {
@@ -416,7 +417,7 @@ export function DamageWizard({
         statusText: photo.status === "uploading" ? copy.photos.uploading : photo.status === "done" ? copy.photos.done : copy.photos.errors[photo.errorKey ?? "unknown"](maxFileMb),
         ...(photo.status === "done" && photo.evidenceId ? { previewUrl: `/api/evidence/${photo.evidenceId}` } : {}),
       }));
-      const full = photos.length >= maxFiles;
+      const full = evidenceSlotsLeft(maxFiles, photos) === 0;
       return (
         <div className="space-y-4">
           {failure && <Banner tone="error">{failure.text}</Banner>}

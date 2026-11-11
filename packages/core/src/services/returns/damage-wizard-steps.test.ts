@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { DAMAGE_WIZARD_STEPS, checkDamageWizardStep, damageSubmitSignature, firstInvalidDamageStep, type DamageWizardState } from "./damage-wizard-steps";
+import { DAMAGE_WIZARD_STEPS, evidenceSlotsLeft, checkDamageWizardStep, damageSubmitSignature, firstInvalidDamageStep, type DamageWizardState } from "./damage-wizard-steps";
 
 const lines = [
   { lineRef: "L1", remainingQuantity: 2, eligible: true },
@@ -57,6 +57,16 @@ describe("damage wizard steps", () => {
 
   it("puts the photos step between the details and the remedy", () => {
     expect(DAMAGE_WIZARD_STEPS).toEqual(["items", "details", "photos", "resolution", "summary"]);
+  });
+
+  it("counts only uploading and done photos toward the limit: a failed file keeps no slot", () => {
+    const of = (...statuses: ("uploading" | "done" | "error")[]) => statuses.map((status) => ({ status }));
+    expect(evidenceSlotsLeft(6, [])).toBe(6);
+    expect(evidenceSlotsLeft(6, of("done", "uploading"))).toBe(4);
+    expect(evidenceSlotsLeft(6, of("done", "done", "done", "done", "done", "error"))).toBe(1);
+    expect(evidenceSlotsLeft(6, of("error", "error", "error"))).toBe(6);
+    expect(evidenceSlotsLeft(6, of("done", "done", "done", "done", "done", "done", "error"))).toBe(0);
+    expect(evidenceSlotsLeft(6, of("done", "done", "done", "done", "done", "done", "done"))).toBe(0);
   });
 
   it("changes the signature when a photo is added, so a retry after a change gets a new idempotency key", () => {

@@ -5,7 +5,7 @@
 - **Priorytet:** High
 - **Typ:** API
 - **Rola:** dwóch klientów-gości (PL-10001, PL-10005) i agent QA
-- **Specyfikacja:** [2026-11-10-transport-damage-and-missing-items](../../specs/2026-11-10-transport-damage-and-missing-items.md) (Faza 3)
+- **Specyfikacja:** [2026-11-10-transport-damage-and-missing-items](../../specs/implemented/2026-11-10-transport-damage-and-missing-items.md) (Faza 3)
 
 ## Test implementation
 
