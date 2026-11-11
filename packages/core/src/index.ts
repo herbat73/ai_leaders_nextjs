@@ -25,6 +25,7 @@ export * from "./services/evidence/config";
 export * from "./services/evidence/detect";
 export * from "./services/evidence/evidence.service";
 export * from "./services/evidence/types";
+export * from "./services/retention/config";
 export * from "./services/returns/complaint-eligibility";
 export * from "./services/returns/complaint-wizard-steps";
 export * from "./services/returns/complaint-quote";
