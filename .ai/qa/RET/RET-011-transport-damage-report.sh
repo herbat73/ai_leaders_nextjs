@@ -96,10 +96,17 @@ click_role button "Zatwierdź"
 wait_text "Zatwierdzone"
 click_role button "Zakończ"
 wait_text "Zakończone"
+# The audit trail of the photos (T-23): agents see it on the card ...
+expect_text "Historia zdjęć" "the photo history is missing on the decision card"
+expect_text "Klient dodał zdjęcie" "the card does not show who added the photo"
+expect_text "Agent otworzył zdjęcie" "the card does not show that an agent opened the photo"
 shot 03-card-resolved
 
 step "the customer-facing view shows the report as resolved"
 click_role link "Podgląd widoku klienta"
 wait_text "Aktualny status: Zakończone"
+# ... and the customer-facing preview does not.
+expect_no_text "Historia zdjęć" "the customer preview shows the agents-only photo history"
+expect_no_text "Agent otworzył" "the customer preview shows who opened a photo"
 rm -rf "$FX"
 echo "PASS: $QA_ID ($RMA)"
