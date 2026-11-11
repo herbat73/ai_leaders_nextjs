@@ -40,7 +40,7 @@ const columns: DataTableColumn<ReturnListItem>[] = [
     cell: (item) => <Badge variant={item.kind === "complaint" ? "secondary" : "outline"}>{copy.kindBadge[item.kind]}</Badge>,
   },
   { key: "order", header: copy.columns.order, cell: (item) => item.orderNumber },
-  { key: "customer", header: copy.columns.customer, cell: (item) => item.customerEmail },
+  { key: "customer", header: copy.columns.customer, cell: (item) => (item.anonymizedAt ? copy.columns.anonymized : item.customerEmail) },
   {
     key: "status",
     header: copy.columns.status,

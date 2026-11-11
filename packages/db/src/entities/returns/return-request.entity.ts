@@ -24,6 +24,8 @@ export const ReturnRequestSchema = defineEntity({
     defectConfirmed: p.boolean().nullable(),
     // Transport damage only: parcel accepted with a courier note; null when not answered.
     courierNote: p.boolean().nullable(),
+    // Set when retention or an erasure request removed the personal text and the photos (T-21); never cleared.
+    anonymizedAt: p.datetime().nullable(),
     idempotencyKey: p.uuid().nullable().unique(),
     createdAt: p.datetime().onCreate(() => new Date()),
     updatedAt: p

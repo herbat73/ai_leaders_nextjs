@@ -114,6 +114,8 @@ export class SupplierClaimService {
     const claim = await this.supplierClaimRepository.findById(id);
     if (!claim) throw new NotFoundError(`Supplier claim ${id} not found`);
     supplierClaimStateMachine.assert(claim.status, "sent");
+    // Retention blanks the text of a draft whose request was erased (T-21); an empty claim must never reach a supplier.
+    if (claim.subject === "" && claim.body === "") throw new AppError("The claim text was erased and cannot be sent", 409, "claim_erased");
     const supplier = await this.supplierRepository.findById(claim.supplierId);
     if (!supplier) throw new NotFoundError(`Supplier ${claim.supplierId} not found`);
     if (!this.mailPort.delivers) throw new AppError("Mail is not configured to deliver", 409, "mail_not_configured");

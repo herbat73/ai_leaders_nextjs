@@ -102,6 +102,7 @@ function toDomain(entity: ReturnRequestEntity): ReturnRequest {
     defectDiscoveredOn: entity.defectDiscoveredOn ?? null,
     defectConfirmed: entity.defectConfirmed ?? null,
     courierNote: entity.courierNote ?? null,
+    anonymizedAt: entity.anonymizedAt ?? null,
     createdAt: entity.createdAt,
     updatedAt: entity.updatedAt,
   };

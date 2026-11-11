@@ -24,7 +24,9 @@
     "docs:check": "node scripts/check-design-docs.mjs",
     "router:check": "node scripts/check-task-router.mjs",
     "setup": "node scripts/setup.mjs",
-    "agent:create": "npm run agent:create -w @easyrms/app --"
+    "agent:create": "npm run agent:create -w @easyrms/app --",
+    "retention:run": "npm run retention -w @easyrms/app -- run",
+    "retention:erase": "npm run retention -w @easyrms/app -- erase"
   },
   "allowScripts": {
     "esbuild@0.28.2": true,

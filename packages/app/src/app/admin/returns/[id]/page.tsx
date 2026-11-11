@@ -99,7 +99,9 @@ export default async function ReturnCardPage({ params }: { params: Promise<{ id:
               <dt className="text-muted-foreground">{copy.order}</dt>
               <dd className="break-words">{request.orderNumber}</dd>
               <dt className="text-muted-foreground">{copy.customer}</dt>
-              <dd className="break-words">{request.customerEmail}</dd>
+              <dd className="break-words">
+                {request.anonymizedAt ? `${copy.anonymized} ${formatDatePl(request.anonymizedAt)}` : request.customerEmail}
+              </dd>
               {(items.length === 0 || request.reason !== null) && (
                 <>
                   <dt className="text-muted-foreground">{copy.reason}</dt>
