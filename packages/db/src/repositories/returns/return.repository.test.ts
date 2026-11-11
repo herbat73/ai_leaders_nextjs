@@ -542,6 +542,92 @@ describe("complaints", () => {
   });
 });
 
+function damageInput(order: string, overrides: Partial<NewReturnRequest> = {}): NewReturnRequest {
+  return {
+    orderNumber: order,
+    customerEmail: "c@example.com",
+    kind: "transport",
+    items: [{ lineRef: "L1", sku: "SKU-1", name: "Kettle", quantity: 1, unitPrice: money(19990), reasonCode: "damaged_in_transit" }],
+    resolution: "replacement",
+    resolutionAmount: null,
+    returnMethod: null,
+    courierNote: true,
+    idempotencyKey: randomUUID(),
+    defectDescription: "The box was crushed and the kettle is cracked.",
+    defectDiscoveredOn: "2026-11-04",
+    ...overrides,
+  };
+}
+
+describe("transport damage and missing items", () => {
+  it("stores a transport report with the courier note and no return method", async () => {
+    const created = await repository().createWithItems(damageInput("D-1"));
+    expect(created).toMatchObject({
+      kind: "transport",
+      resolution: "replacement",
+      returnMethod: null,
+      courierNote: true,
+      defectDescription: "The box was crushed and the kettle is cracked.",
+      defectDiscoveredOn: "2026-11-04",
+    });
+    const detail = await repository().findDetail(created.id);
+    expect(detail?.request.courierNote).toBe(true);
+    expect(detail?.items[0]).toMatchObject({ reasonCode: "damaged_in_transit" });
+  });
+
+  it("keeps an unanswered courier note null and false distinct", async () => {
+    const unanswered = await repository().createWithItems(damageInput("D-2", { courierNote: undefined }));
+    const no = await repository().createWithItems(damageInput("D-2", { courierNote: false, items: [{ lineRef: "L2", sku: "S2", name: "Cup", quantity: 1, unitPrice: money(1000), reasonCode: "damaged_in_transit" }] }));
+    expect(unanswered.courierNote).toBeNull();
+    expect(no.courierNote).toBe(false);
+  });
+
+  it("stores a missing item with resend_part and the wrong_item reason", async () => {
+    const created = await repository().createWithItems(
+      damageInput("D-3", {
+        kind: "missing",
+        resolution: "resend_part",
+        courierNote: undefined,
+        items: [{ lineRef: "L1", sku: "SKU-1", name: "Kettle", quantity: 1, unitPrice: money(19990), reasonCode: "wrong_item" }],
+      }),
+    );
+    expect(created).toMatchObject({ kind: "missing", resolution: "resend_part", courierNote: null });
+    expect((await repository().findDetail(created.id))?.items[0]?.reasonCode).toBe("wrong_item");
+  });
+
+  it("leaves the courier note null on returns and complaints", async () => {
+    expect((await repository().createWithItems(portalInput("D-4"))).courierNote).toBeNull();
+    expect((await repository().createWithItems(complaintInput("D-5"))).courierNote).toBeNull();
+  });
+
+  it("counts the quantities with returns and complaints, and lists by kind", async () => {
+    const report = await repository().createWithItems(damageInput("D-6"));
+    await repository().createWithItems(complaintInput("D-6", { items: [{ lineRef: "L1", sku: "SKU-1", name: "Kettle", quantity: 2, unitPrice: money(19990), reasonCode: "defective" }] }));
+    expect(await repository().claimedQuantities("D-6")).toEqual({ L1: 3 });
+    const listed = await repository().list({ kind: "transport" });
+    expect(listed.map((row) => row.id)).toContain(report.id);
+    expect(listed.every((row) => row.kind === "transport")).toBe(true);
+  });
+
+  it("moves through the decision to resolved, and releases the quantity on rejection", async () => {
+    const report = await repository().createWithItems(damageInput("D-7"));
+    await repository().transition(report.id, "submitted", "approved", "OK", agentId);
+    const resolved = await repository().transition(report.id, "approved", "resolved", null, agentId);
+    expect(resolved).toMatchObject({ result: "moved", request: { status: "resolved", kind: "transport" } });
+
+    const rejected = await repository().createWithItems(damageInput("D-8"));
+    await repository().transition(rejected.id, "submitted", "rejected", "Brak podstaw", agentId);
+    expect(await repository().claimedQuantities("D-8")).toEqual({});
+  });
+
+  it("filters the inbox by the new kinds", async () => {
+    const report = await repository().createWithItems(damageInput("D-9", { kind: "missing", resolution: "resend_part", courierNote: undefined }));
+    const page = await repository().listInbox({ kind: "missing", page: 1, pageSize: 50, now: new Date(), escalationDays: 10 });
+    expect(page.rows.map((row) => row.id)).toContain(report.id);
+    expect(page.rows.every((row) => row.kind === "missing")).toBe(true);
+  });
+});
+
 describe("transition with a rules comparison", () => {
   const comparisons = (id: number) =>
     db.query<{ recommended: string; rule_ids: string; actual_status: string; followed: boolean | null; agent_id: number }>(
