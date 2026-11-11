@@ -21,6 +21,7 @@ export * from "./services/orders/order-lookup.port";
 export * from "./services/orders/order-source";
 export * from "./services/rules/rules.service";
 export * from "./services/rules/types";
+export * from "./services/evidence/config";
 export * from "./services/evidence/detect";
 export * from "./services/evidence/evidence.service";
 export * from "./services/evidence/types";

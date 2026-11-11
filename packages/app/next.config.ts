@@ -2,6 +2,8 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   // Internal packages ship TypeScript source, so Next.js must compile them.
+  // Native module (libvips): it must be loaded from node_modules, never bundled.
+  serverExternalPackages: ["sharp"],
   transpilePackages: ["@easyrms/core", "@easyrms/db", "@easyrms/ui"],
   // The order lookup moved from `/returns/lookup` to `/`; old links and bookmarks keep working (308).
   redirects() {

@@ -9,7 +9,8 @@
     "typecheck": "tsc --noEmit",
     "storybook": "storybook dev -p 6006",
     "storybook:build": "storybook build -o storybook-static",
-    "agent:create": "tsx scripts/agent-create.ts"
+    "agent:create": "tsx scripts/agent-create.ts",
+    "test": "vitest run"
   },
   "dependencies": {
     "@easyrms/core": "*",
@@ -20,7 +21,8 @@
     "nodemailer": "^10.2.1",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "server-only": "^0.0.1"
+    "server-only": "^0.0.1",
+    "sharp": "^0.35.5"
   },
   "devDependencies": {
     "@storybook/addon-a11y": "10.6.3",
@@ -41,6 +43,7 @@
     "tailwindcss": "^4.3.3",
     "tsx": "^4.23.15",
     "typescript": "^5",
-    "vite": "8.2.4"
+    "vite": "8.2.4",
+    "vitest": "^4.1.12"
   }
 }

@@ -19,5 +19,24 @@ services:
       timeout: 5s
       retries: 10
 
+  # Malware scanner for evidence uploads (EASYRMS_CLAMAV_HOST=localhost, port 3310). Not started by `npm run setup`;
+  # start it with `docker compose up -d --wait clamav`. The first start downloads the virus definitions (a few
+  # minutes), after which the health check passes. Without it uploads are refused with 503 (fail closed).
+  clamav:
+    image: clamav/clamav:1.4
+    container_name: easyrms-clamav
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3310:3310"
+    volumes:
+      - easyrms_clamdb:/var/lib/clamav
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/clamdcheck.sh"]
+      interval: 30s
+      timeout: 10s
+      retries: 20
+      start_period: 120s
+
 volumes:
   easyrms_pgdata:
+  easyrms_clamdb:
