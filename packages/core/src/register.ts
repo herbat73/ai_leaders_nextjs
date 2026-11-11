@@ -2,6 +2,7 @@ import { asClass, asValue, type AwilixContainer } from "awilix";
 
 import { AgentService } from "./services/agents/agent.service";
 import { CaseSampleService } from "./services/discovery/case-sample.service";
+import { EvidenceService } from "./services/evidence/evidence.service";
 import { ReturnLookupService } from "./services/returns/return-lookup.service";
 import { ReturnService } from "./services/returns/return.service";
 import { RulesService } from "./services/rules/rules.service";
@@ -14,6 +15,7 @@ export function registerCore(container: AwilixContainer): void {
     clock: asValue((): Date => new Date()),
     caseSampleService: asClass(CaseSampleService).singleton(),
     agentService: asClass(AgentService).scoped(),
+    evidenceService: asClass(EvidenceService).scoped(),
     returnService: asClass(ReturnService).scoped(),
     returnLookupService: asClass(ReturnLookupService).scoped(),
     rulesService: asClass(RulesService).scoped(),
