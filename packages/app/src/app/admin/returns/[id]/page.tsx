@@ -71,6 +71,10 @@ export default async function ReturnCardPage({ params }: { params: Promise<{ id:
     : [null, []];
   const activeSuppliers = suppliers.filter((supplier) => supplier.active);
 
+  // Agents only: loaded here, after the agent is confirmed, and shown only on this card. It is never part of
+  // `TrackerBody`, so the customer tracker and the agent's customer preview stay free of it (T-23).
+  const photoHistory = evidence && evidence.length > 0 ? await scope.cradle.evidenceService.listAudit(id) : [];
+
   return (
     <AdminShell agent={agent}>
       <main className="mx-auto max-w-3xl space-y-6 p-8">
@@ -264,6 +268,31 @@ export default async function ReturnCardPage({ params }: { params: Promise<{ id:
                   linkLabel: copy.openPhoto(file.label),
                 }))}
               />
+            </CardContent>
+          </Card>
+        )}
+
+        {photoHistory.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>{copy.photoHistory.heading}</CardTitle>
+              <p className="text-sm text-muted-foreground">{copy.photoHistory.hint}</p>
+            </CardHeader>
+            <CardContent>
+              <ul aria-label={copy.photoHistory.listLabel} className="divide-y text-sm">
+                {photoHistory.map((entry) => (
+                  <li key={entry.id} className="flex flex-wrap justify-between gap-x-4 gap-y-1 py-2 first:pt-0 last:pb-0">
+                    <span>
+                      {copy.photoHistory.actions[entry.action]}
+                      {copy.photoHistory.byAgent(entry.actor === "agent" ? entry.agentName : null)}
+                      <span className="text-muted-foreground"> · {entry.label ?? copy.photoHistory.fileRemoved}</span>
+                    </span>
+                    <time dateTime={entry.createdAt.toISOString()} className="text-muted-foreground">
+                      {formatEventTime(entry.createdAt)}
+                    </time>
+                  </li>
+                ))}
+              </ul>
             </CardContent>
           </Card>
         )}

@@ -93,6 +93,18 @@ export const returnsCopy = {
     itemsReported: "Zgłoszone produkty",
     photos: "Zdjęcia od klienta",
     photosLabel: "Zdjęcia do zgłoszenia",
+    photoHistory: {
+      heading: "Historia zdjęć",
+      hint: "Widoczna tylko dla agentów. Klient jej nie widzi, także w podglądzie widoku klienta.",
+      listLabel: "Historia zdjęć zgłoszenia",
+      fileRemoved: "plik usunięty",
+      actions: {
+        added: "Klient dodał zdjęcie",
+        removed: "Klient usunął zdjęcie",
+        downloaded: "Agent otworzył zdjęcie",
+      },
+      byAgent: (name: string | null): string => (name ? `: ${name}` : ""),
+    },
     openPhoto: (name: string) => `Otwórz zdjęcie: ${name}`,
     itemSku: (sku: string) => `SKU: ${sku}`,
     itemQuantity: (quantity: number) => `${quantity} szt.`,
