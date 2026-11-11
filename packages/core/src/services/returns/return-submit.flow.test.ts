@@ -84,6 +84,7 @@ function makeRepo(): FakeRepo {
       itemsOf.set(id, input.items);
       return row;
     },
+    attachEvidence: async () => ({ result: "attached", files: [] }),
     withOrderLock: async (orderNumber, fn) => {
       repo.lockKeys.push(orderNumber);
       await repo.beforeLock?.();

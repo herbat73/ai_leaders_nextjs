@@ -5,6 +5,7 @@ import { warsawDateString, type DamageKind, type ReturnLookupView } from "@easyr
 import { Banner } from "@easyrms/ui/public";
 
 import { createRequestScope } from "@/server/container";
+import { getEvidenceLimits } from "@/server/evidence/evidence-config";
 import { getTransportConfig } from "@/server/return-config";
 import { GUEST_SESSION_COOKIE, getGuestSessionService } from "@/server/guest-session";
 import { RetryButton } from "../new/retry-button";
@@ -62,6 +63,8 @@ export async function DamagePage({ kind }: { kind: DamageKind }) {
         <DamageWizard
           kind={kind}
           windowDays={getTransportConfig().windowDays}
+          maxFiles={getEvidenceLimits().maxFilesPerRequest}
+          maxFileMb={Math.floor(getEvidenceLimits().maxFileBytes / (1024 * 1024))}
           lines={loaded.view.lines}
           today={warsawDateString(new Date())}
           deliveredOn={loaded.view.deliveredAt ? warsawDateString(new Date(loaded.view.deliveredAt)) : null}

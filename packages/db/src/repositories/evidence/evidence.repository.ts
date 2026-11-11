@@ -135,6 +135,16 @@ export class MikroOrmEvidenceRepository implements EvidencePort {
     }
   }
 
+  async deleteStaged(orderNumber: string, id: string): Promise<boolean> {
+    if (!UUID_PATTERN.test(id)) return false;
+    // Only a staged file of this order: an attached file is immutable (T-23), a foreign one does not match.
+    const deleted = await this.em.execute<{ id: string }[]>(
+      `delete from "evidence_files" where "id" = ? and "order_number" = ? and "return_request_id" is null returning "id"`,
+      [id, orderNumber],
+    );
+    return deleted.length > 0;
+  }
+
   async deleteForRequest(returnRequestId: number): Promise<number> {
     const deleted = await this.em.execute<{ id: string }[]>(`delete from "evidence_files" where "return_request_id" = ? returning "id"`, [returnRequestId]);
     return deleted.length;

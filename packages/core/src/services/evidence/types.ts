@@ -8,6 +8,9 @@ export const EVIDENCE_EXTENSIONS: Record<EvidenceContentType, string> = {
   "image/webp": "webp",
 };
 
+/** Photos per report: the ceiling of `evidenceFileIds` in the submit body (Q4); the configured limit can only lower it. */
+export const MAX_EVIDENCE_FILES = 6;
+
 /** The numbers of Q4 (the owner may change them through configuration). */
 export interface EvidenceLimits {
   /** Bytes per file. */
@@ -41,6 +44,14 @@ export interface EvidenceFile {
   /** Sanitized original name, display only. */
   label: string;
   createdAt: Date;
+}
+
+/** What a request detail shows of an attached file: enough to render a thumbnail through the download route, never the bytes. */
+export interface EvidenceSummary {
+  id: string;
+  label: string;
+  contentType: EvidenceContentType;
+  byteSize: number;
 }
 
 export interface EvidenceContent {
@@ -79,6 +90,8 @@ export interface EvidencePort {
    * else nothing changes and the answer is `invalid` (the same for an unknown, foreign or already attached id).
    */
   attach(orderNumber: string, ids: readonly string[], returnRequestId: number): Promise<AttachOutcome>;
+  /** Removes one staged (unattached) file of the order before submit; `false` when there is no such file (unknown, foreign or already attached). */
+  deleteStaged(orderNumber: string, id: string): Promise<boolean>;
   /** Deletes every file of a request (erasure path, Q8); returns how many. */
   deleteForRequest(returnRequestId: number): Promise<number>;
 }

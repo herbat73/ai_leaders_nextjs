@@ -1,4 +1,4 @@
-import { EVIDENCE_EXTENSIONS, NotFoundError, NOT_FOUND_MESSAGE, apiHandler, isAppError, type EvidencePrincipal } from "@easyrms/core";
+import { EVIDENCE_EXTENSIONS, NotFoundError, NOT_FOUND_MESSAGE, apiHandler, isAppError, requireGuestSession, type EvidencePrincipal } from "@easyrms/core";
 
 import { requireAgent } from "@/server/agent-auth";
 import { createRequestScope } from "@/server/container";
@@ -42,4 +42,17 @@ export const GET = apiHandler(async (request, { params }) => {
       "cache-control": "private, no-store",
     },
   });
+}, httpOptions);
+
+/**
+ * The customer takes back a photo before submitting (wizard "Usuń"). Guest session of the file's own order only, and only
+ * a staged file: another order's file, an unknown id and an attached file are the same 404 (T-17), and an attached file can
+ * never be removed (T-23). Agents do not delete here. 200 `{ removed: true }`.
+ */
+export const DELETE = apiHandler(async (request, { params }) => {
+  const { id = "" } = await params;
+  const scope = await createRequestScope();
+  const session = await requireGuestSession(scope.cradle.guestSessionService, readSessionToken(request.headers.get("cookie")));
+  await scope.cradle.evidenceService.removeStaged(session.orderNumber, id);
+  return { removed: true };
 }, httpOptions);

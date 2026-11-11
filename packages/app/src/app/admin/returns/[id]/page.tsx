@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { approvalBlockedFor, formatDatePl, formatEventTime, formatMoney, type ReturnDetailView, type ReturnEvent } from "@easyrms/core";
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Timeline, type TimelineEvent } from "@easyrms/ui/admin";
+import { PhotoThumbnails } from "@easyrms/ui/public";
 
 import type { AwilixContainer } from "awilix";
 
@@ -61,7 +62,7 @@ export default async function ReturnCardPage({ params }: { params: Promise<{ id:
   const agent = await requireAgentPage(`/admin/returns/${rawId}`);
   if (!detailPromise) notFound();
 
-  const { request, decisionNote, items, events, recommendation } = await detailPromise;
+  const { request, decisionNote, items, events, recommendation, evidence } = await detailPromise;
 
   // The vendor claim section: only for a complaint whose defect was confirmed.
   const claimable = request.kind === "complaint" && request.defectConfirmed === true;
@@ -244,6 +245,25 @@ export default async function ReturnCardPage({ params }: { params: Promise<{ id:
                 </p>
               )}
               <p className="text-muted-foreground">{copy.recommendation.advisory}</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {evidence && evidence.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>{copy.photos}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <PhotoThumbnails
+                label={copy.photosLabel}
+                items={evidence.map((file) => ({
+                  href: `/api/evidence/${file.id}`,
+                  src: `/api/evidence/${file.id}`,
+                  caption: file.label,
+                  linkLabel: copy.openPhoto(file.label),
+                }))}
+              />
             </CardContent>
           </Card>
         )}

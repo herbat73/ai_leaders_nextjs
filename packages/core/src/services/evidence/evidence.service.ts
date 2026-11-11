@@ -133,7 +133,15 @@ export class EvidenceService {
     return content;
   }
 
-  /** For the submit of a later phase: attaches staged files of the order to a request, once. */
+  /**
+   * The customer takes back a photo before submitting. Only a staged file of the session's own order: an unknown,
+   * foreign or already attached id is the same 404 as a read (T-17), and an attached file can never be removed (T-23).
+   */
+  async removeStaged(orderNumber: string, id: string): Promise<void> {
+    if (!(await this.evidence.deleteStaged(orderNumber, id))) throw new NotFoundError(NOT_FOUND_MESSAGE);
+  }
+
+  /** Attaches staged files of the order to a request, once. */
   attach(orderNumber: string, ids: readonly string[], returnRequestId: number): Promise<AttachOutcome> {
     return this.evidence.attach(orderNumber, ids, returnRequestId);
   }

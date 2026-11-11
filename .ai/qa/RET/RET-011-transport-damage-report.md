@@ -14,6 +14,7 @@
 ## Warunki wstępne
 
 - Działa środowisko testowe (`sh .ai/scripts/test-env-up.sh`); `.ai/qa/test-env.env` (gitignorowany) zawiera `TEST_AGENT_EMAIL` / `TEST_AGENT_PASSWORD`.
+- Potrzebny działający kontener skanera (`docker compose up -d --wait clamav`).
 - Dane: PL-10001 / anna.kowalska@example.pl, dostarczone 3 dni temu, pozycja „Buty trekkingowe”.
 
 ## Scenariusz
@@ -30,9 +31,12 @@ And agent zatwierdza i kończy je bez etapu odesłania, a podgląd klienta pokaz
 | 1 | Wyszukaj zamówienie, „Uszkodzenie w transporcie” | Krok z listą produktów |
 | 2 | „Dalej” bez wyboru (negatywny) | „Wybierz co najmniej jeden produkt.” |
 | 3 | Produkt, opis „za krótko” (negatywny) | „Opisz problem w co najmniej 20 znakach.” |
-| 4 | Poprawny opis, data, „Tak” przy adnotacji kuriera | Krok rozwiązania bez „Dosłanie…” i bez pytania o sposób odesłania |
-| 5 | Wymiana, potwierdzenie, „Wyślij zgłoszenie uszkodzenia” | Strona zgłoszenia z RMA, trzy etapy, opis i adnotacja |
-| 6 | Agent: „Zatwierdź”, „Zakończ” | Brak przycisku „Oznacz jako w drodze”; status „Zakończone” |
+| 4 | Poprawny opis, data, „Tak” przy adnotacji kuriera | Krok „Dodaj zdjęcia” |
+| 4a | „Dalej” bez zdjęcia (negatywny) | „Dodaj co najmniej jedno zdjęcie.” |
+| 4b | Plik SVG pod nazwą .png (negatywny), potem „Usuń”, potem poprawny JPEG | „To nie jest zdjęcie…”; „Dodane”, „1 z 6 zdjęć”; przyciski „Dodaj zdjęcia” i „Usuń zdjęcie ok.jpg” mają nazwy, pole pliku nie jest w kolejności tabulacji, `fieldset` z legendą |
+| 4c | „Dalej” | Krok rozwiązania bez „Dosłanie…” i bez pytania o sposób odesłania |
+| 5 | Wymiana, potwierdzenie, „Wyślij zgłoszenie uszkodzenia” | Strona zgłoszenia z RMA, trzy etapy, opis, adnotacja i miniatura „Otwórz zdjęcie: ok.jpg” |
+| 6 | Agent: karta ze zdjęciem, „Zatwierdź”, „Zakończ” | Miniatura na karcie; brak przycisku „Oznacz jako w drodze”; status „Zakończone” |
 | 7 | „Podgląd widoku klienta” | „Aktualny status: Zakończone” |
 
 ## Sprzątanie
@@ -41,4 +45,4 @@ Jak w RET-007: skrypt zwalnia jednostkę zgłoszenia w jednorazowej bazie testow
 
 ## Stan wykonania
 
-Skrypt napisany w ramach PR #139; nie został uruchomiony przez agenta autonomicznego (brak dostępu do `test-env.json` i danych logowania agenta QA). Uruchomić ręcznie przed scaleniem: `sh .ai/qa/RET/RET-011-transport-damage-report.sh`.
+Faza 1 (#139) zaliczona ręcznie przez właściciela. Rozszerzony o zdjęcia w #143: zaliczony 2026-11-11, zrzuty w `doc/previdences/pr-143/`.

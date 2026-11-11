@@ -1,4 +1,5 @@
 import type { Money } from "../../domain/money";
+import type { AttachOutcome, EvidenceSummary } from "../evidence/types";
 import type { Recommendation } from "./recommendation";
 
 export const RETURN_STATUSES = [
@@ -158,6 +159,8 @@ export interface ReturnDetail {
   decisionNote: string | null;
   items: ReturnItem[];
   events: ReturnEvent[];
+  /** Transport and missing reports: the attached photos, oldest first; absent on other kinds and on hand-built values (tests). */
+  evidence?: EvidenceSummary[];
 }
 
 /** What the decision card shows: the detail with the derived list values on the request. */
@@ -166,6 +169,8 @@ export interface ReturnDetailView {
   decisionNote: string | null;
   items: ReturnItem[];
   events: ReturnEvent[];
+  /** Same as `ReturnDetail.evidence`. */
+  evidence?: EvidenceSummary[];
   /** Agent reads only, and only while the rules recommendations flag is on and the request awaits a decision. */
   recommendation?: Recommendation;
 }
@@ -201,6 +206,8 @@ export interface NewReturnRequest {
   defectDiscoveredOn?: string;
   /** Transport only. */
   courierNote?: boolean;
+  /** Transport and missing: staged evidence files of the same order, attached once inside the same transaction. */
+  evidenceFileIds?: string[];
 }
 
 export interface ReturnListFilter {
@@ -265,6 +272,11 @@ export interface ReturnRepository {
   /** With items and events, like `findDetail`. */
   findByRma(rma: string): Promise<ReturnDetail | null>;
   findByIdempotencyKey(key: string): Promise<ReturnRequest | null>;
+  /**
+   * Attaches staged evidence files of `orderNumber` to a request, in the caller's transaction (call it on the `tx` of
+   * `withOrderLock`), so a refused id rolls the whole submit back. Unknown, foreign and already attached ids all give `invalid`.
+   */
+  attachEvidence(orderNumber: string, ids: readonly string[], returnRequestId: number): Promise<AttachOutcome>;
   /**
    * Quantity per `lineRef` held by the order's requests whose status is not `cancelled` or `rejected` (those release it).
    * An unreadable stored status counts as held.

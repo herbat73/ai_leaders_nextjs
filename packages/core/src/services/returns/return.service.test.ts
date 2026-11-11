@@ -83,6 +83,7 @@ function makeRepository(initial: ReturnRequest[] = []): Fake {
     findByIdempotencyKey: unsupported,
     claimedQuantities: unsupported,
     withOrderLock: unsupported,
+    attachEvidence: unsupported,
     transition: async (id, from, to, note, agentId, _defectConfirmed, comparison) => {
       fake.beforeTransition?.();
       if (comparison) fake.comparisons.push({ id, ...comparison });

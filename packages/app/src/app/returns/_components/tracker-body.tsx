@@ -1,5 +1,5 @@
 import { formatDatePl, formatEventTime, formatMoney, isDamageKind, trackerEventView, trackerView, type ReturnDetailView } from "@easyrms/core";
-import { Banner, StageList, Timeline, type Stage } from "@easyrms/ui/public";
+import { Banner, PhotoThumbnails, StageList, Timeline, type Stage } from "@easyrms/ui/public";
 import type { ReactElement } from "react";
 
 import { complaintTrackerCopy, damageTrackerCopy, trackerCopy as copy } from "./tracker-copy";
@@ -10,7 +10,7 @@ import { complaintTrackerCopy, damageTrackerCopy, trackerCopy as copy } from "./
  * is built only from `trackerView` and `trackerEventView`, has no links or actions, and never shows who decided.
  */
 export function TrackerBody({ detail }: { detail: ReturnDetailView }): ReactElement {
-  const { request, decisionNote, items, events } = detail;
+  const { request, decisionNote, items, events, evidence } = detail;
   const complaint = request.kind === "complaint";
   const damageKind = isDamageKind(request.kind) ? request.kind : null;
   const kindCopy = complaint
@@ -137,6 +137,23 @@ export function TrackerBody({ detail }: { detail: ReturnDetailView }): ReactElem
               </li>
             ))}
           </ul>
+        </section>
+      )}
+
+      {damageKind && evidence && evidence.length > 0 && (
+        <section aria-labelledby="tracker-photos" className="space-y-3">
+          <h2 id="tracker-photos" className="text-lg font-semibold">
+            {damageTrackerCopy.photosHeading}
+          </h2>
+          <PhotoThumbnails
+            label={damageTrackerCopy.photosLabel}
+            items={evidence.map((file) => ({
+              href: `/api/evidence/${file.id}`,
+              src: `/api/evidence/${file.id}`,
+              caption: file.label,
+              linkLabel: damageTrackerCopy.openPhoto(file.label),
+            }))}
+          />
         </section>
       )}
 

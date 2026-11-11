@@ -2,15 +2,16 @@ import {
   COMPLAINT_DESCRIPTION_MAX_LENGTH,
   COMPLAINT_DESCRIPTION_MIN_LENGTH,
 } from "../../validators/returns/complaint-submit.schema";
+import { MAX_EVIDENCE_FILES } from "../evidence/types";
 import { isDamageResolutionOf } from "../../validators/returns/damage-quote.schema";
 import type { WizardLine } from "./wizard-steps";
 import type { DamageKind, DamageResolution, MissingReasonCode } from "./types";
 
 /**
- * Steps of the shared wizard for transport damage and missing items. Photos come with a later phase and add a `photos`
- * step before `resolution`; neither kind has a return method.
+ * Steps of the shared wizard for transport damage and missing items: one to six photos are required (Q2, Q14), so the
+ * `photos` step sits before `resolution`. Neither kind has a return method.
  */
-export const DAMAGE_WIZARD_STEPS = ["items", "details", "resolution", "summary"] as const;
+export const DAMAGE_WIZARD_STEPS = ["items", "details", "photos", "resolution", "summary"] as const;
 export type DamageWizardStep = (typeof DAMAGE_WIZARD_STEPS)[number];
 
 export interface DamageWizardItemState {
@@ -28,6 +29,8 @@ export interface DamageWizardState {
   defectDiscoveredOn: string;
   /** Transport only; `null` is "I do not know / not answered" (Q11, optional). */
   courierNote: boolean | null;
+  /** Ids of photos already uploaded and staged by this session; a file still uploading or failed is not in it. */
+  evidenceFileIds: string[];
   resolution: DamageResolution | null;
   acknowledged: boolean;
 }
@@ -42,6 +45,8 @@ export type DamageWizardProblem =
   | "date_invalid"
   | "date_future"
   | "date_before_delivery"
+  | "photos_missing"
+  | "photos_too_many"
   | "resolution_missing"
   | "resolution_not_allowed"
   | "acknowledgement_missing";
@@ -88,6 +93,9 @@ export function checkDamageWizardStep(
     else if (!isRealDate(date)) problems.push({ problem: "date_invalid" });
     else if (date > context.today) problems.push({ problem: "date_future" });
     else if (context.deliveredOn !== null && date < context.deliveredOn) problems.push({ problem: "date_before_delivery" });
+  } else if (step === "photos") {
+    if (state.evidenceFileIds.length === 0) problems.push({ problem: "photos_missing" });
+    else if (state.evidenceFileIds.length > MAX_EVIDENCE_FILES) problems.push({ problem: "photos_too_many" });
   } else if (step === "resolution") {
     if (state.resolution === null) problems.push({ problem: "resolution_missing" });
     else if (!isDamageResolutionOf(state.kind, state.resolution)) problems.push({ problem: "resolution_not_allowed" });
@@ -114,6 +122,7 @@ export function damageSubmitSignature(state: DamageWizardState): string {
     state.defectDescription.trim(),
     state.defectDiscoveredOn,
     state.kind === "transport" ? state.courierNote : null,
+    state.evidenceFileIds,
     state.resolution,
   ]);
 }

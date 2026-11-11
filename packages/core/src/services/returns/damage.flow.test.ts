@@ -12,6 +12,8 @@ import { ReturnLookupService } from "./return-lookup.service";
 import { ReturnService } from "./return.service";
 import type { NewReturnRequest, ReturnRepository, ReturnRequest } from "./types";
 
+const PHOTO_A = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+const PHOTO_B = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
 const NOW = new Date("2026-11-05T10:00:00Z");
 const KEY_A = "11111111-1111-4111-8111-111111111111";
 const AGENT = { id: 7, permissions: [] as never[] };
@@ -66,6 +68,7 @@ function makeRepo(seed: ReturnRequest[] = []): FakeRepo {
       return row;
     },
     withOrderLock: async (_order, fn) => fn(repo),
+    attachEvidence: async () => ({ result: "attached", files: [] }),
     transition: async (id, from, to, _note, _agent, defectConfirmed) => {
       repo.transitions.push([id, from, to, defectConfirmed]);
       const row = repo.rows.find((candidate) => candidate.id === id);
@@ -115,6 +118,7 @@ function damage(overrides: Partial<DamageSubmitBody> = {}): DamageSubmitBody {
     defectDescription: "The box was crushed and the sole is cracked.",
     defectDiscoveredOn: "2026-11-04",
     resolution: "replacement",
+    evidenceFileIds: [PHOTO_A],
     acknowledged: true,
     idempotencyKey: KEY_A,
     ...overrides,
@@ -201,6 +205,63 @@ describe("ReturnService.submit with kind transport", () => {
     const { service } = setup();
     const error = await failure(service.submit("PL-10001", damage({ items: [{ lineRef: "L1", quantity: 2 }] })));
     expect(error).toBeInstanceOf(ValidationError);
+  });
+});
+
+describe("ReturnService.submit with evidence files", () => {
+  it("attaches the staged files to the new request, for the canonical order, in the order lock", async () => {
+    const { repo, service } = setup();
+    const attach = vi.fn(async () => ({ result: "attached" as const, files: [] }));
+    repo.attachEvidence = attach;
+    const result = await service.submit("PL-10001", damage({ evidenceFileIds: [PHOTO_A, PHOTO_B] }));
+    expect(result.created).toBe(true);
+    expect(attach).toHaveBeenCalledWith("PL-10001", [PHOTO_A, PHOTO_B], 1);
+  });
+
+  it("refuses a report without photos, and an empty list, before looking at the order (Q14)", async () => {
+    const { repo, service, sent } = setup();
+    const attach = vi.fn(async () => ({ result: "attached" as const, files: [] }));
+    repo.attachEvidence = attach;
+    for (const evidenceFileIds of [[], undefined as unknown as string[]]) {
+      const error = await failure(service.submit("PL-10001", damage({ evidenceFileIds })));
+      expect(error).toBeInstanceOf(ValidationError);
+      expect(fieldsOf(error)).toEqual({ evidenceFileIds: "required" });
+    }
+    expect(attach).not.toHaveBeenCalled();
+    expect(repo.inputs).toEqual([]);
+    expect(sent).toEqual([]);
+  });
+
+  it("refuses the submit with one 400 when an id is unknown, foreign or already attached, and sends no mail", async () => {
+    const { repo, service, sent } = setup();
+    repo.attachEvidence = async () => ({ result: "invalid" });
+    const error = await failure(service.submit("PL-10001", damage({ evidenceFileIds: [PHOTO_A] })));
+    expect(error).toBeInstanceOf(ValidationError);
+    expect(error.status).toBe(400);
+    expect(fieldsOf(error)).toEqual({ evidenceFileIds: "invalid" });
+    expect(sent).toEqual([]);
+  });
+
+  it("does not attach again on an idempotent replay: the first request keeps its files", async () => {
+    const { repo, service } = setup();
+    const attach = vi.fn(async () => ({ result: "attached" as const, files: [] }));
+    repo.attachEvidence = attach;
+    const first = repo.findByIdempotencyKey;
+    const body = damage({ evidenceFileIds: [PHOTO_A] });
+    await service.submit("PL-10001", body);
+    repo.findByIdempotencyKey = async () => repo.rows[0] ?? null;
+    const again = await service.submit("PL-10001", body);
+    expect(again.created).toBe(false);
+    expect(attach).toHaveBeenCalledTimes(1);
+    repo.findByIdempotencyKey = first;
+  });
+
+  it("attaches for a missing-item report too", async () => {
+    const { repo, service } = setup();
+    const attach = vi.fn(async () => ({ result: "attached" as const, files: [] }));
+    repo.attachEvidence = attach;
+    await service.submit("PL-10001", damage({ kind: "missing", resolution: "resend_part" }));
+    expect(attach).toHaveBeenCalledWith("PL-10001", [PHOTO_A], 1);
   });
 });
 

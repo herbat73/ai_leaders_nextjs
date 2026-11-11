@@ -13,7 +13,7 @@
 
 ## Warunki wstępne
 
-- Środowisko jak w RET-011. Dane: PL-10001 (dostarczone 3 dni temu) i PL-10003 (dostarczone 120 dni temu).
+- Środowisko jak w RET-011, w tym działający kontener skanera: zgłoszenie braku wymaga zdjęcia, które skrypt najpierw wysyła przez `POST /api/evidence`. Dane: PL-10001 (dostarczone 3 dni temu) i PL-10003 (dostarczone 120 dni temu).
 
 ## Scenariusz
 
@@ -29,11 +29,11 @@ And ta sama pozycja nie może być zgłoszona dwa razy, a agent widzi rodzaj i p
 |---|---|---|
 | 1 | PL-10003, `kind: missing` (negatywny) | `outside_window` |
 | 2 | PL-10001, `kind: transport`, `resend_part` (negatywny) | `validation_error` |
-| 3 | PL-10001, `kind: missing`, `resend_part` | 201, RMA, rozwiązanie `resend_part` |
+| 3 | Zdjęcie wysłane przez `POST /api/evidence`, potem PL-10001, `kind: missing`, `resend_part`, `evidenceFileIds` | 201, RMA, rozwiązanie `resend_part` |
 | 4 | Ta sama pozycja jeszcze raz (negatywny) | `already_claimed` |
-| 5 | Agent: karta, „Zatwierdź”, „Zakończ” | „Zakończone” |
+| 5 | Agent: karta, miniatura „Otwórz zdjęcie: ok.png”, „Zatwierdź”, „Zakończ” | „Zakończone” |
 | 6 | `/admin/returns?kind=missing` | RMA na liście |
 
 ## Stan wykonania
 
-Jak w RET-011: napisany, nie uruchomiony przez agenta autonomicznego; uruchomić ręcznie przed scaleniem.
+Faza 1 zaliczona ręcznie przez właściciela; rozszerzony o zdjęcia w #143 i zaliczony 2026-11-11.

@@ -7,6 +7,7 @@ import {
   COMPLAINT_REASON_CODE,
   COMPLAINT_KIND,
   COMPLAINT_RESOLUTIONS,
+  EVIDENCE_CONTENT_TYPES,
   MISSING_REASON_CODES,
   MISSING_RESOLUTIONS,
   REQUEST_KINDS,
@@ -15,6 +16,8 @@ import {
   RETURN_STATUSES,
   toReturnStatus,
   type ApiLogger,
+  type AttachOutcome,
+  type EvidenceSummary,
   ConflictError,
   RETURN_METHODS,
   RETURN_REASON_CODES,
@@ -46,6 +49,7 @@ import {
   type ReturnRequestItemEntity,
 } from "../../entities";
 import { fromDecimal, toDecimal } from "../../decimal";
+import { MikroOrmEvidenceRepository } from "../evidence/evidence.repository";
 
 /**
  * Joins the caller's transaction when there is one, otherwise opens its own (the default, NESTED, is a savepoint).
@@ -240,6 +244,11 @@ export class MikroOrmReturnRepository implements ReturnRepository {
     return claimed;
   }
 
+  attachEvidence(orderNumber: string, ids: readonly string[], returnRequestId: number): Promise<AttachOutcome> {
+    // Same entity manager, so inside `withOrderLock` the attach joins the submit's transaction and rolls back with it.
+    return new MikroOrmEvidenceRepository({ em: this.em }).attach(orderNumber, ids, returnRequestId);
+  }
+
   withOrderLock<T>(orderNumber: string, fn: (tx: ReturnRepository) => Promise<T>): Promise<T> {
     return this.em.transactional(async (tx) => {
       // Raw SQL: MikroORM has no advisory-lock API. The order number is a bound parameter, never concatenated; the lock
@@ -247,6 +256,19 @@ export class MikroOrmReturnRepository implements ReturnRepository {
       await tx.execute("select pg_advisory_xact_lock(hashtext(?))", [orderNumber]);
       return fn(new MikroOrmReturnRepository({ em: tx, logger: this.logger }));
     }, joinOrOpen());
+  }
+
+  private async evidenceOf(returnRequestId: number): Promise<EvidenceSummary[]> {
+    const rows = await this.em.execute<{ id: string; label: string; content_type: string; byte_size: number }[]>(
+      `select "id", "label", "content_type", "byte_size" from "evidence_files" where "return_request_id" = ? order by "created_at", "id"`,
+      [returnRequestId],
+    );
+    return rows.map((row) => ({
+      id: row.id,
+      label: row.label,
+      contentType: EVIDENCE_CONTENT_TYPES.find((type) => type === row.content_type) ?? "image/jpeg",
+      byteSize: Number(row.byte_size),
+    }));
   }
 
   private async toDetail(row: ReturnRequestEntity, withAgent: boolean): Promise<ReturnDetail> {
@@ -257,11 +279,14 @@ export class MikroOrmReturnRepository implements ReturnRepository {
       { orderBy: { createdAt: "asc", id: "asc" }, ...(withAgent ? { populate: ["agent"] as const } : {}), refresh: true },
     );
     const items = await this.em.find(ReturnRequestItemSchema, { returnRequest: row.id }, { orderBy: { id: "asc" } });
+    const request = toDomain(row);
     return {
-      request: toDomain(row),
+      request,
       decisionNote: row.decisionNote ?? null,
       items: items.map(toItem),
       events: events.map((event) => toEvent(event, withAgent)),
+      // Metadata only: the bytes stay in the table until the download route asks for one file.
+      ...(request.kind === "transport" || request.kind === "missing" ? { evidence: await this.evidenceOf(row.id) } : {}),
     };
   }
 

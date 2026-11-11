@@ -4,3 +4,5 @@ export * from "./method-step";
 export * from "./resolution-step";
 export * from "./summary-step";
 export * from "./wizard-shell";
+export * from "./photo-picker";
+export * from "./photo-thumbnails";

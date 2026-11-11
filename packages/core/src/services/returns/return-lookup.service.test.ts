@@ -53,6 +53,7 @@ function makeRepository(rows: ReturnRequest[] = [], claimed: Record<string, Reco
     findByIdempotencyKey: async () => null,
     claimedQuantities: async (orderNumber) => claimed[orderNumber] ?? {},
     withOrderLock: unsupported,
+    attachEvidence: unsupported,
     transition: unsupported,
   };
 }

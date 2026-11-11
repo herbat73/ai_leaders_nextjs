@@ -1,0 +1,96 @@
+import { Canvas, Controls, Meta } from "@storybook/addon-docs/blocks";
+
+import { DoDont } from "../../docs/blocks";
+import * as PhotoPickerStories from "./photo-picker.stories";
+
+<Meta of={PhotoPickerStories} />
+
+# PhotoPicker
+
+Krok kreatora ze zdjęciami: przycisk wyboru plików, lista dodanych zdjęć z ich stanem opisanym tekstem, pasek postępu podczas wysyłania i przycisk usunięcia. Komponent tylko pokazuje stan; wysyłkę robi aplikacja.
+
+<Canvas of={PhotoPickerStories.Mixed} />
+
+## Kiedy użyć
+
+- W kreatorze zgłoszenia uszkodzenia w transporcie lub braku elementu, gdzie wymagane jest od 1 do 6 zdjęć.
+- Gdy klient dodaje pliki jeden po drugim z możliwością cofnięcia przed wysłaniem zgłoszenia.
+
+## Kiedy nie użyć
+
+- Do pokazywania zdjęć już wysłanego zgłoszenia — to `PhotoThumbnails`.
+- Do plików innych niż obrazy (PDF, wideo, SVG) — serwer ich nie przyjmie.
+- Gdy potrzebne jest przeciąganie plików; tu celowo go nie ma (obsługa tylko przyciskiem, klawiaturą i czytnikiem ekranu).
+
+## Jak złożyć
+
+Kolejność kreatora: `LinePicker` → szczegóły → **PhotoPicker** → `ResolutionStep` → `SummaryStep`.
+
+Wejście: `legend`, `hint` (czym jest dobre zdjęcie, pokazywane zawsze), `addLabel`, `accept`, `items` (`id`, `name`, `sizeText`, `status`, `statusText`, `previewUrl?`), `counterText`, `removeText`, `removeLabel(name)`, `disabled?`, `disabledText?`, `error?`. Wyjście: `onAdd(files)` i `onRemove(id)`. Teksty, rozmiary i limity formatuje `app`; wysyłka (`apiCall` z `FormData` do `POST /api/evidence`, po jednym pliku na żądanie) i usuwanie (`DELETE /api/evidence/[id]`) też.
+
+```tsx
+<PhotoPicker
+  legend={copy.photos.legend}
+  hint={copy.photos.hint}
+  addLabel={copy.photos.add}
+  accept="image/jpeg,image/png,image/webp"
+  items={photos}
+  counterText={copy.photos.counter(done, 6, 5)}
+  removeText={copy.photos.remove}
+  removeLabel={copy.photos.removeLabel}
+  onAdd={addFiles}
+  onRemove={removePhoto}
+  disabled={photos.length >= 6}
+  error={error}
+/>
+```
+
+## Tokeny
+
+Wiersz: `border-border`, `bg-card`, `rounded-md`; miniatura `border-border`, `object-cover`; puste miejsce `bg-muted`. Tekst pomocniczy `text-muted-foreground`, błąd `text-destructive`, pasek postępu `accent-primary`. Przycisk dodawania: `ActionButton` `secondary`; usunięcie: `ActionButton` `link`.
+
+## Stany
+
+| Stan | Wygląd i zachowanie | Jak wywołać |
+|---|---|---|
+| empty | tylko wskazówka, przycisk i licznik | `items: []` |
+| uploading | pasek postępu i tekst „Wysyłanie…” | `status: "uploading"` |
+| done | miniatura z serwera i tekst „Dodane” | `status: "done"`, `previewUrl` |
+| error | tekst błędu z ⚠ i `role="alert"`, przycisk usunięcia | `status: "error"`, `statusText` |
+| scanner down | ten sam stan błędu z tekstem „Nie możemy teraz przyjąć zdjęć, spróbuj za chwilę” | `statusText` |
+| limit reached | przycisk dodawania wyłączony, powód w tekście obok | `disabled`, `disabledText` |
+| missing | błąd pod listą: co najmniej jedno zdjęcie | `error` |
+| focus-visible | pierścień 2 px na przyciskach | Tab |
+
+<Canvas of={PhotoPickerStories.ScannerDown} />
+
+<Canvas of={PhotoPickerStories.LimitReached} />
+
+<Canvas of={PhotoPickerStories.MissingError} />
+
+## Dostępność
+
+- To `fieldset` z `legend`; wskazówka, licznik i błąd są podpięte przez `aria-describedby`.
+- Natywny `input type="file"` jest ukryty tylko wizualnie i poza kolejnością tabulacji; fokus trafia na widoczny przycisk „Dodaj zdjęcia”, który go otwiera (Enter i spacja).
+- Stan każdego pliku jest tekstem (`role="status"`, błąd `role="alert"`), nie samym kolorem; pasek postępu ma `aria-label` z tym tekstem.
+- Przycisk usunięcia ma nazwę z nazwą pliku (`removeLabel`), więc czytnik odróżnia pliki.
+- Deweloper dostarcza: wszystkie teksty po polsku, rozmiary w MB, powody błędów, komunikat o limicie.
+
+## Rób i nie rób
+
+<DoDont
+  rob={[
+    "Pokaż w `hint`, czym jest dobre zdjęcie, zanim klient cokolwiek doda.",
+    "Pisz powód błędu tekstem przy pliku (za duży, nie obraz, skaner niedostępny) i pozwól go usunąć.",
+    "Wyłącz przycisk dodawania przy limicie i napisz dlaczego.",
+  ]}
+  nieRob={[
+    "Opierania stanu pliku tylko na kolorze lub ikonie.",
+    "Wysyłania plików z poziomu `ui` — komponent nie zna API.",
+    "Dodawania przeciągania jako jedynego sposobu dodania pliku.",
+  ]}
+/>
+
+## API
+
+<Controls of={PhotoPickerStories.Empty} />

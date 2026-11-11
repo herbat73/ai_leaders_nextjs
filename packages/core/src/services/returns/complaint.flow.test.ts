@@ -64,6 +64,7 @@ function makeRepo(seed: ReturnRequest[] = []): FakeRepo {
       return row;
     },
     withOrderLock: async (_order, fn) => fn(repo),
+    attachEvidence: async () => ({ result: "attached", files: [] }),
     transition: async (id, from, to, _note, _agent, defectConfirmed) => {
       repo.transitions.push([id, from, to, defectConfirmed]);
       const row = repo.rows.find((candidate) => candidate.id === id);

@@ -53,6 +53,12 @@ function setup(options: { scan?: ScanVerdict; inspect?: InspectOutcome; sanitize
       return file ? ({ file, data: new Uint8Array([1]) } satisfies EvidenceContent) : null;
     },
     attach: async () => ({ result: "invalid" }),
+    deleteStaged: async (orderNumber, id) => {
+      const index = stored.findIndex((candidate) => candidate.id === id && candidate.orderNumber === orderNumber && candidate.returnRequestId === null);
+      if (index < 0) return false;
+      stored.splice(index, 1);
+      return true;
+    },
     deleteForRequest: async () => 0,
   };
   const scanner: MalwareScannerPort = {
@@ -237,6 +243,27 @@ describe("read (T-17)", () => {
     const unknown = await failure(service.read("00000000-0000-4000-8000-000000000000", { kind: "agent" }));
     expect([foreign.status, foreign.code, foreign.message]).toEqual([unknown.status, unknown.code, unknown.message]);
     expect(foreign.status).toBe(404);
+  });
+});
+
+describe("removeStaged", () => {
+  it("removes the customer's own staged file, and a second removal is a 404", async () => {
+    const { service, stored } = setup();
+    const { id } = await upload(service, JPEG, "a.jpg");
+    await service.removeStaged("PL-10001", id);
+    expect(stored).toEqual([]);
+    expect((await failure(service.removeStaged("PL-10001", id))).status).toBe(404);
+  });
+
+  it("answers the same 404 for another order's file, an unknown id and an attached file", async () => {
+    const { service, stored } = setup();
+    const { id } = await upload(service, JPEG, "a.jpg");
+    const foreign = await failure(service.removeStaged("PL-10005", id));
+    const unknown = await failure(service.removeStaged("PL-10001", "00000000-0000-4000-8000-000000000000"));
+    stored[0] = { ...(stored[0] as EvidenceFile), returnRequestId: 7 };
+    const attached = await failure(service.removeStaged("PL-10001", id));
+    for (const refused of [foreign, unknown, attached]) expect([refused.status, refused.code, refused.message]).toEqual([404, "not_found", foreign.message]);
+    expect(stored).toHaveLength(1);
   });
 });
 

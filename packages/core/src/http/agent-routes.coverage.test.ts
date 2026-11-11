@@ -26,6 +26,7 @@ const PUBLIC_ROUTES = new Set([
   "POST /api/returns",
   "POST /api/evidence",
   "GET /api/evidence/5",
+  "DELETE /api/evidence/5",
   "POST /api/returns/lookup",
   "POST /api/returns/quote",
   "DELETE /api/returns/session",
