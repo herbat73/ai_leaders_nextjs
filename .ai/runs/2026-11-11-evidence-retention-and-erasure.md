@@ -17,20 +17,22 @@ Irreversible deletion (dry run, 30-day floor, final-status rule, per-request tra
 
 ## Progress
 
+PR: #148
+
 > Convention: `- [ ]` pending, `- [x]` done. Append ` — <commit sha>` when a step lands. Do not rename step titles.
 
 ### Phase 1: Retention core and job
 
-- [ ] 1.1 core: parseRetentionDays
-- [ ] 1.2 db: migration anonymized_at and RetentionRepository
-- [ ] 1.3 core: RetentionService.run
-- [ ] 1.4 app: retention script, DI and Configuration.md
+- [x] 1.1 core: parseRetentionDays — 3dabf8e
+- [x] 1.2 db: migration anonymized_at and RetentionRepository — 663fd0e
+- [x] 1.3 core: RetentionService.run — 061c8bd
+- [x] 1.4 app: retention script, DI and Configuration.md — 439ce61
 
 ### Phase 2: Erasure request and visibility
 
-- [ ] 2.1 core and app: eraseOne and retention:erase
-- [ ] 2.2 app: anonymized state on the decision card and tracker 404
-- [ ] 2.3 docs: runbook, threat model, brief, QA scenario
+- [x] 2.1 core and app: eraseOne and retention:erase — 439ce61
+- [x] 2.2 app: anonymized state on the decision card and tracker 404 — 1e9155e
+- [x] 2.3 docs: runbook, threat model, brief, QA scenario — 9150340
 
 ## Run log
 
