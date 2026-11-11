@@ -1,4 +1,5 @@
 import type { Money } from "../../domain/money";
+import type { AttachOutcome } from "../evidence/types";
 import type { Recommendation } from "./recommendation";
 
 export const RETURN_STATUSES = [
@@ -201,6 +202,8 @@ export interface NewReturnRequest {
   defectDiscoveredOn?: string;
   /** Transport only. */
   courierNote?: boolean;
+  /** Transport and missing: staged evidence files of the same order, attached once inside the same transaction. */
+  evidenceFileIds?: string[];
 }
 
 export interface ReturnListFilter {
@@ -265,6 +268,11 @@ export interface ReturnRepository {
   /** With items and events, like `findDetail`. */
   findByRma(rma: string): Promise<ReturnDetail | null>;
   findByIdempotencyKey(key: string): Promise<ReturnRequest | null>;
+  /**
+   * Attaches staged evidence files of `orderNumber` to a request, in the caller's transaction (call it on the `tx` of
+   * `withOrderLock`), so a refused id rolls the whole submit back. Unknown, foreign and already attached ids all give `invalid`.
+   */
+  attachEvidence(orderNumber: string, ids: readonly string[], returnRequestId: number): Promise<AttachOutcome>;
   /**
    * Quantity per `lineRef` held by the order's requests whose status is not `cancelled` or `rejected` (those release it).
    * An unreadable stored status counts as held.

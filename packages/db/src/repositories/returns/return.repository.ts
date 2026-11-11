@@ -15,6 +15,7 @@ import {
   RETURN_STATUSES,
   toReturnStatus,
   type ApiLogger,
+  type AttachOutcome,
   ConflictError,
   RETURN_METHODS,
   RETURN_REASON_CODES,
@@ -46,6 +47,7 @@ import {
   type ReturnRequestItemEntity,
 } from "../../entities";
 import { fromDecimal, toDecimal } from "../../decimal";
+import { MikroOrmEvidenceRepository } from "../evidence/evidence.repository";
 
 /**
  * Joins the caller's transaction when there is one, otherwise opens its own (the default, NESTED, is a savepoint).
@@ -238,6 +240,11 @@ export class MikroOrmReturnRepository implements ReturnRepository {
     const claimed: Record<string, number> = {};
     for (const item of items) claimed[item.lineRef] = (claimed[item.lineRef] ?? 0) + item.quantity;
     return claimed;
+  }
+
+  attachEvidence(orderNumber: string, ids: readonly string[], returnRequestId: number): Promise<AttachOutcome> {
+    // Same entity manager, so inside `withOrderLock` the attach joins the submit's transaction and rolls back with it.
+    return new MikroOrmEvidenceRepository({ em: this.em }).attach(orderNumber, ids, returnRequestId);
   }
 
   withOrderLock<T>(orderNumber: string, fn: (tx: ReturnRepository) => Promise<T>): Promise<T> {

@@ -187,6 +187,92 @@ describe("attach", () => {
   });
 });
 
+describe("deleteStaged", () => {
+  it("removes a staged file of the order and frees its place in the count and the bytes", async () => {
+    const order = "R-1";
+    const ids: string[] = [];
+    for (let i = 0; i < 3; i += 1) {
+      const outcome = await repository().stage(file(order, 300), LIMITS, LONG_AGO);
+      if (outcome.result === "stored") ids.push(outcome.file.id);
+    }
+    expect((await repository().stage(file(order, 100), LIMITS, LONG_AGO)).result).toBe("too_many_files");
+    expect(await repository().deleteStaged(order, ids[0] ?? "")).toBe(true);
+    expect(await repository().find(ids[0] ?? "")).toBeNull();
+    expect((await repository().stage(file(order, 300), LIMITS, LONG_AGO)).result).toBe("stored");
+  });
+
+  it("answers false for another order's file, an unknown id, a malformed id and an attached file, deleting nothing", async () => {
+    const order = "R-2";
+    const staged = await repository().stage(file(order), LIMITS, LONG_AGO);
+    const other = await repository().stage(file("R-3"), LIMITS, LONG_AGO);
+    if (staged.result !== "stored" || other.result !== "stored") throw new Error("stage failed");
+    expect(await repository().deleteStaged("R-3", staged.file.id)).toBe(false);
+    expect(await repository().deleteStaged(order, randomUUID())).toBe(false);
+    expect(await repository().deleteStaged(order, "1; drop table evidence_files")).toBe(false);
+    const requestId = await createRequest(order);
+    await repository().attach(order, [staged.file.id], requestId);
+    expect(await repository().deleteStaged(order, staged.file.id)).toBe(false);
+    expect(await repository().find(staged.file.id)).not.toBeNull();
+    expect(await repository().find(other.file.id)).not.toBeNull();
+  });
+});
+
+describe("attach inside the submit transaction", () => {
+  const returns = () => new MikroOrmReturnRepository({ em: db.fork(), logger: { error: () => undefined } });
+  const input = (order: string): NewReturnRequest => ({
+    orderNumber: order,
+    customerEmail: "c@example.com",
+    kind: "transport",
+    items: [{ lineRef: "L1", sku: "S", name: "Kettle", quantity: 1, unitPrice: money(1000), reasonCode: "damaged_in_transit" }],
+    resolution: "replacement",
+    resolutionAmount: null,
+    returnMethod: null,
+    idempotencyKey: randomUUID(),
+    defectDescription: "The box was crushed and the kettle is cracked.",
+    defectDiscoveredOn: "2026-11-04",
+  });
+
+  it("commits the request and its photos together", async () => {
+    const order = "T-1";
+    const staged = await repository().stage(file(order), LIMITS, LONG_AGO);
+    if (staged.result !== "stored") throw new Error("stage failed");
+    const created = await returns().withOrderLock(order, async (tx) => {
+      const request = await tx.createWithItems(input(order));
+      expect((await tx.attachEvidence(order, [staged.file.id], request.id)).result).toBe("attached");
+      return request;
+    });
+    expect((await repository().find(staged.file.id))?.file.returnRequestId).toBe(created.id);
+  });
+
+  it("rolls the whole submit back when a photo is refused: no request, and the other photos stay staged", async () => {
+    const order = "T-2";
+    const good = await repository().stage(file(order), LIMITS, LONG_AGO);
+    if (good.result !== "stored") throw new Error("stage failed");
+    const before = Number((await db.query<{ n: string }>(`select count(*) as n from "return_requests" where "order_number" = ?`, [order]))[0]?.n);
+    await expect(
+      returns().withOrderLock(order, async (tx) => {
+        const request = await tx.createWithItems(input(order));
+        const outcome = await tx.attachEvidence(order, [good.file.id, randomUUID()], request.id);
+        if (outcome.result === "invalid") throw new Error("refused");
+        return request;
+      }),
+    ).rejects.toThrow("refused");
+    const after = Number((await db.query<{ n: string }>(`select count(*) as n from "return_requests" where "order_number" = ?`, [order]))[0]?.n);
+    expect(after).toBe(before);
+    expect((await repository().find(good.file.id))?.file.returnRequestId).toBeNull();
+  });
+
+  it("does not let another order's request take a staged file", async () => {
+    const staged = await repository().stage(file("T-3"), LIMITS, LONG_AGO);
+    if (staged.result !== "stored") throw new Error("stage failed");
+    const outcome = await returns().withOrderLock("T-4", async (tx) => {
+      const request = await tx.createWithItems(input("T-4"));
+      return tx.attachEvidence("T-4", [staged.file.id], request.id);
+    });
+    expect(outcome.result).toBe("invalid");
+  });
+});
+
 describe("deleteForRequest", () => {
   it("deletes the files of one request and nothing else", async () => {
     const order = "D-1";

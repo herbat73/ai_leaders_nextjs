@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { warsawDateString } from "../../services/returns/complaint-eligibility";
+import { MAX_EVIDENCE_FILES } from "../../services/evidence/types";
 import { MISSING_REASON_CODES, MISSING_RESOLUTIONS, type DamageResolution, type MissingReasonCode } from "../../services/returns/types";
 import { COMPLAINT_DESCRIPTION_MAX_LENGTH, COMPLAINT_DESCRIPTION_MIN_LENGTH } from "./complaint-submit.schema";
 import { damageItemSchema, isDamageResolutionOf } from "./damage-quote.schema";
@@ -14,6 +15,8 @@ export interface DamageSubmitBody {
   defectDiscoveredOn: string;
   /** Transport only, optional (Q11): was the parcel accepted with a courier note. */
   courierNote?: boolean;
+  /** Staged files of this session's order, uploaded through `POST /api/evidence`; optional until the wizard sends them. */
+  evidenceFileIds?: string[];
   resolution: DamageResolution;
   acknowledged: true;
   idempotencyKey: string;
@@ -44,6 +47,7 @@ export function damageSubmitSchema(now: Date): z.ZodType<DamageSubmitBody> {
         .refine((value) => new Date(`${value}T00:00:00Z`).toISOString().startsWith(value), "Not a valid date")
         .refine((value) => value <= today, "The date cannot be in the future"),
       courierNote: z.boolean().optional(),
+      evidenceFileIds: z.array(z.uuid("Not a valid file id")).max(MAX_EVIDENCE_FILES, `At most ${MAX_EVIDENCE_FILES} photos`).optional(),
       resolution: z.enum(MISSING_RESOLUTIONS),
       acknowledged: z.literal(true, { error: "You must accept the terms" }),
       idempotencyKey: z.uuid("Idempotency key must be a UUID"),
@@ -54,6 +58,9 @@ export function damageSubmitSchema(now: Date): z.ZodType<DamageSubmitBody> {
       }
       if (body.kind === "missing" && body.courierNote !== undefined) {
         ctx.addIssue({ code: "custom", path: ["courierNote"], message: "The courier note applies to transport damage only" });
+      }
+      if (new Set(body.evidenceFileIds ?? []).size !== (body.evidenceFileIds ?? []).length) {
+        ctx.addIssue({ code: "custom", path: ["evidenceFileIds"], message: "The same photo is listed twice" });
       }
       const seen = new Set<string>();
       body.items.forEach((item, index) => {

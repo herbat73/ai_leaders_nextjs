@@ -55,6 +55,30 @@ describe("damageSubmitSchema", () => {
   });
 });
 
+describe("evidenceFileIds", () => {
+  const PHOTO = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+  const parse = (evidenceFileIds: unknown) => damageSubmitSchema(now).safeParse({ ...base, evidenceFileIds });
+
+  it("is optional, and accepts one to six distinct UUIDs", () => {
+    expect(damageSubmitSchema(now).safeParse(base).success).toBe(true);
+    expect(parse([PHOTO]).success).toBe(true);
+    const six = Array.from({ length: 6 }, (_, i) => `aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa${i}`);
+    expect(parse(six).success).toBe(true);
+  });
+
+  it.each([
+    ["seven ids", Array.from({ length: 7 }, (_, i) => `aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa${i}`)],
+    ["a repeated id", [PHOTO, PHOTO]],
+    ["text that is not a UUID", ["../../etc/passwd"]],
+    ["a number", [7]],
+    ["a string instead of a list", PHOTO],
+  ])("rejects %s", (_name, value) => {
+    const result = parse(value);
+    expect(result.success).toBe(false);
+    expect(pathsOf(result)).toContain("evidenceFileIds" + (Array.isArray(value) && value.length > 0 && result.error?.issues[0]?.path.length === 2 ? ".0" : ""));
+  });
+});
+
 describe("damageQuoteSchema", () => {
   const quote = { kind: "missing", items: [{ lineRef: "L1", quantity: 1 }], resolution: "resend_part" };
 
