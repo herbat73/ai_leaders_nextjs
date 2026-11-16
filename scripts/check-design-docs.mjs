@@ -2,8 +2,9 @@
 // and no raw palette colours sneak into `ui` or `app` (use the semantic tokens in `packages/ui/src/styles.css`).
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const root = new URL("..", import.meta.url).pathname;
+const root = fileURLToPath(new URL("..", import.meta.url));
 const uiSrc = join(root, "packages/ui/src");
 const docsDir = join(uiSrc, "storybook");
 
