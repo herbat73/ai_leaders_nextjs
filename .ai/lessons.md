@@ -7,6 +7,8 @@ This is the long-term memory for AI agents working in this repo. Append an entry
 - Learn something about this specific "not the Next.js you know" version that cost time to figure out
 - Find a better approach after an initial one failed
 
+- **2026-11-16 — "DevMentor" is not this project.** The repo is EasyRMS; "DevMentor" (mentors, bookings, payments, `@devmentor/core`) is only the scope of an unrelated source doc mentioned in `.ai/specs/implemented/2026-10-13-engineering-standards.md`. If a task names DevMentor, confirm the intended repository before writing docs or code here.
+
 **Before starting non-trivial work, read this file.** It's cheaper than repeating a mistake someone already made.
 
 For a lesson with enough depth to need code samples, longer explanations, or multiple related findings, write it as its own file in `.ai/lessons/YYYY-MM-DD-slug.md` and link it from an entry here instead of inlining everything.
