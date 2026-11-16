@@ -4,8 +4,10 @@
  * repository), which is why this file must only ever seed a local development database: `seedDevData` refuses when
  * `NODE_ENV` is `production`, and `npm run setup` seeds only the default local database.
  *
- * Idempotent and non-destructive: an existing supplier (same name, case-insensitive) or agent (same e-mail, any status)
- * is left exactly as it is, so a rerun never resets a password a developer changed or re-enables a disabled account.
+ * Idempotent and non-destructive: an existing supplier (same name, case-insensitive) and an `active` or `disabled` agent
+ * with the admin's e-mail are left exactly as they are, so a rerun never resets a password a developer changed or
+ * re-enables a disabled account. An agent still `invited` is the leftover of a seed that stopped between the invite and
+ * its acceptance (nobody holds that token), so a rerun completes it.
  * No `server-only` import and no container: `scripts/seed-dev.ts` passes in the services, tests pass in fakes.
  */
 import {
@@ -69,7 +71,8 @@ export async function seedDevData(deps: DevSeedDeps): Promise<DevSeedResult> {
     result.suppliersCreated.push(supplier.name);
   }
 
-  if (!(await deps.agentRepository.findCredentialsByEmail(DEV_SEED_ADMIN.email))) {
+  const existingAdmin = await deps.agentRepository.findCredentialsByEmail(DEV_SEED_ADMIN.email);
+  if (!existingAdmin || existingAdmin.status === "invited") {
     const { inviteToken } = await deps.agentService.invite({
       email: DEV_SEED_ADMIN.email,
       displayName: DEV_SEED_ADMIN.displayName,

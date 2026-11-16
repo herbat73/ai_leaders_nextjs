@@ -1,4 +1,4 @@
-import { hashInviteToken, type AgentCredentials, type NewSupplier, type Supplier } from "@easyrms/core";
+import { hashInviteToken, type AgentCredentials, type AgentStatus, type NewSupplier, type Supplier } from "@easyrms/core";
 import { describe, expect, it, vi } from "vitest";
 
 import { DEV_SEED_ADMIN, DEV_SEED_SUPPLIERS, DevSeedRefusedError, seedDevData, type DevSeedDeps } from "./dev-seed";
@@ -16,8 +16,11 @@ const supplier = (name: string, id: number): Supplier => ({
 });
 
 /** In-memory fakes of the four collaborators; `state` shows what the seeder left behind. */
-function fakes(initial: { suppliers?: Supplier[]; agentEmail?: string } = {}) {
-  const state = { suppliers: [...(initial.suppliers ?? [])], agents: new Set(initial.agentEmail ? [initial.agentEmail] : []) };
+function fakes(initial: { suppliers?: Supplier[]; agentEmail?: string; agentStatus?: AgentStatus } = {}) {
+  const state = {
+    suppliers: [...(initial.suppliers ?? [])],
+    agents: new Map<string, AgentStatus>(initial.agentEmail ? [[initial.agentEmail, initial.agentStatus ?? "active"]] : []),
+  };
   const tokens = new Map<string, string>();
   const deps: DevSeedDeps = {
     supplierService: {
@@ -32,14 +35,19 @@ function fakes(initial: { suppliers?: Supplier[]; agentEmail?: string } = {}) {
       invite: vi.fn(async (input) => {
         const inviteToken = `token-${state.agents.size}`;
         tokens.set(hashInviteToken(inviteToken), input.email);
-        state.agents.add(input.email);
+        state.agents.set(input.email, "invited");
         // The seeder only needs the token; the rest of the record is irrelevant here.
         return { agent: { id: 1, email: input.email } as never, inviteToken };
       }),
     },
     agentRepository: {
-      findCredentialsByEmail: async (email) => (state.agents.has(email) ? ({ email } as AgentCredentials) : null),
-      consumeInvite: vi.fn(async (tokenHash: string) => (tokens.has(tokenHash) ? ({ id: 1 } as never) : null)),
+      findCredentialsByEmail: async (email) => (state.agents.has(email) ? ({ email, status: state.agents.get(email) } as AgentCredentials) : null),
+      consumeInvite: vi.fn(async (tokenHash: string) => {
+        const email = tokens.get(tokenHash);
+        if (!email) return null;
+        state.agents.set(email, "active");
+        return { id: 1 } as never;
+      }),
     },
     passwordHasher: { hash: vi.fn(async (password: string) => `hashed:${password}`), verify: async () => true, needsRehash: () => false },
     clock: () => NOW,
@@ -78,14 +86,26 @@ describe("seedDevData", () => {
     expect(deps.agentService.invite).not.toHaveBeenCalled();
   });
 
-  it("leaves an existing agent with that e-mail alone, whatever its status (no password reset, no re-invite)", async () => {
-    const { deps } = fakes({ agentEmail: DEV_SEED_ADMIN.email });
+  it.each<AgentStatus>(["active", "disabled"])("leaves an %s agent with that e-mail alone (no password reset, no re-invite)", async (agentStatus) => {
+    const { deps } = fakes({ agentEmail: DEV_SEED_ADMIN.email, agentStatus });
 
     const result = await seedDevData(deps);
 
     expect(result.adminCreated).toBe(false);
     expect(deps.agentService.invite).not.toHaveBeenCalled();
     expect(deps.passwordHasher.hash).not.toHaveBeenCalled();
+  });
+
+  it("completes an agent left `invited` by a seed that stopped half way, and a rerun then has nothing to do", async () => {
+    const { deps, state } = fakes({ agentEmail: DEV_SEED_ADMIN.email, agentStatus: "invited" });
+
+    const first = await seedDevData(deps);
+    const second = await seedDevData(deps);
+
+    expect(first.adminCreated).toBe(true);
+    expect(state.agents.get(DEV_SEED_ADMIN.email)).toBe("active");
+    expect(second.adminCreated).toBe(false);
+    expect(deps.agentService.invite).toHaveBeenCalledTimes(1);
   });
 
   it("matches existing suppliers by name case-insensitively and creates only the missing one", async () => {
