@@ -6,6 +6,7 @@
 #   2026-10-24 portable port_open (node) instead of bash-only /dev/tcp
 #   2026-10-24 repair: attach to a healthy dev server already on the port (fixes "Another next dev server is already running")
 #   2026-10-27 repair: portable services step - skip db:start when the DB port is already open, use `docker compose` when no PostgreSQL binaries exist (db.sh exited silently on macOS); per-OS agent-browser binary and platform in the descriptor
+#   2026-11-16 repair: source .ai/qa/test-env.env so a direct run can build the QA template (TEST_AGENT_EMAIL was unset)
 set -eu
 
 # ---- project-specific variables ------------------------------------------------
@@ -16,6 +17,8 @@ LOCK_DIR="$QA_DIR/test-env.lock"
 CACHE_FILE="$QA_DIR/test-env-build-cache.json"
 LOG_FILE="$QA_DIR/test-env-app.log"
 PID_FILE="$QA_DIR/test-env-app.pid"
+# The QA template build (qa-db.sh) needs TEST_AGENT_EMAIL; load the gitignored env file when run outside a scenario.
+if [ -f "$QA_DIR/test-env.env" ]; then set -a; . "$QA_DIR/test-env.env"; set +a; fi
 . "$ROOT/.ai/qa/lib/qa-db.sh"
 PREFERRED_PORT=3000
 HEALTH_PATH=/api/health
