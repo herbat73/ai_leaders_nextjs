@@ -60,6 +60,8 @@ A fresh local checkout gets, without manual steps, two suppliers (`First Supplie
 
 ## Progress
 
+PR: #157
+
 > Convention: `- [ ]` pending, `- [x]` done. Append ` — <commit sha>` when a step lands. Do not rename step titles.
 
 ### Phase 1: Seeder
@@ -74,5 +76,11 @@ A fresh local checkout gets, without manual steps, two suppliers (`First Supplie
 
 ### Phase 3: Docs and gate
 
-- [ ] 3.1 Documentation
-- [ ] 3.2 Full gate and live verification
+- [x] 3.1 Documentation — 7100190
+- [x] 3.2 Full gate and live verification — 7100190
+
+## Outcome
+
+- Gate: typecheck, `npm test` (core, db, ui, app incl. 8 new seeder tests), lint (0 errors; 90 pre-existing warnings, none in the new files), audit, docs:check, storybook:build, `NODE_ENV=production npm run build` — all green.
+- Live check on a throwaway database (`easyrms_seed_check`, dropped afterwards; not the developer's `easyrms` database): first run created 2 suppliers + the admin (`active`, `MANAGE_RULES`, `scrypt$` hash, invite cleared); second run changed nothing; `NODE_ENV=production` refused; `POST /api/agents/login` with `admin@example.com` / `123412341234` answered 200, a wrong password 401.
+- Not run: `npm run test:db` (outside the gate; no db package change). `npm run setup` end to end on a fresh checkout was not run: the setup step is a three-line guard around `npm run seed:dev`.
