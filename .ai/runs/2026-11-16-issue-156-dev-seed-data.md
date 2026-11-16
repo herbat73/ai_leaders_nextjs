@@ -64,8 +64,8 @@ A fresh local checkout gets, without manual steps, two suppliers (`First Supplie
 
 ### Phase 1: Seeder
 
-- [ ] 1.1 Seed constants and idempotent `seedDevData`
-- [ ] 1.2 Unit tests for the seeder
+- [x] 1.1 Seed constants and idempotent `seedDevData` — 825547d
+- [x] 1.2 Unit tests for the seeder — 825547d
 
 ### Phase 2: Wiring
 
