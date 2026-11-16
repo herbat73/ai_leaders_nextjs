@@ -69,8 +69,8 @@ A fresh local checkout gets, without manual steps, two suppliers (`First Supplie
 
 ### Phase 2: Wiring
 
-- [ ] 2.1 `seed-dev.ts` script and `seed:dev` npm scripts
-- [ ] 2.2 Seed step in `npm run setup`
+- [x] 2.1 `seed-dev.ts` script and `seed:dev` npm scripts — 6eaedea
+- [x] 2.2 Seed step in `npm run setup` — 6eaedea
 
 ### Phase 3: Docs and gate
 
