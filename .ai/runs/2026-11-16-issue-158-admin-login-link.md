@@ -12,7 +12,7 @@ switch, only outside production.
 
 - `packages/app/src/app/_lookup/admin-login-link.tsx`: Server Component, renders `null` when `NODE_ENV === "production"`;
   fixed `top-4 right-16` so it sits left of `ThemeToggle` (`fixed right-4 top-4`, 36 px wide). Tailwind only (public page).
-- Pure helper `showAdminLoginLink(nodeEnv)` in `_lookup/admin-login-link.ts` so the rule is unit-testable (app tests are `*.test.ts`, node env).
+- Pure helper `showAdminLoginLink(nodeEnv)` in `_lookup/admin-login-visibility.ts` so the rule is unit-testable (app tests are `*.test.ts`, node env).
 - Polish copy in `_lookup/copy.ts`.
 - Rendered on `LookupPage` only (the issue says "main page").
 
@@ -32,6 +32,6 @@ switch, only outside production.
 
 ### Phase 1: Dev-only admin login link
 
-- [ ] 1.1 Add `showAdminLoginLink` helper, copy and link component, render it on the lookup page
-- [ ] 1.2 Unit test for the visibility rule
-- [ ] 1.3 Document in `Configuration.md`/README if dev-only UI is listed there, run the full gate
+- [x] 1.1 Add `showAdminLoginLink` helper, copy and link component, render it on the lookup page
+- [x] 1.2 Unit test for the visibility rule
+- [x] 1.3 No docs list dev-only UI; full gate green (typecheck, test, lint, audit, docs:check, storybook:build, production build)

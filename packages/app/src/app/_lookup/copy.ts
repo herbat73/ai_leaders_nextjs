@@ -9,4 +9,5 @@ export const lookupCopy = {
   submitting: "Sprawdzanie…",
   notDelivered: "To zamówienie nie zostało jeszcze dostarczone, więc nie można zgłosić zwrotu. Wróć, gdy paczka do Ciebie dotrze.",
   trackingLink: "Śledź przesyłkę",
+  adminLogin: "Logowanie dla administratorów",
 } as const;
