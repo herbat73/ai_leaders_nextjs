@@ -4,7 +4,7 @@ All configuration comes from environment variables. Back to the [README](./READM
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `EASYRMS_DATABASE_URL` | `postgres://easyrms:easyrms@localhost:5433/easyrms` | PostgreSQL connection string |
+| `EASYRMS_DATABASE_URL` | `postgres://easyrms:easyrms@localhost:5433/easyrms` | PostgreSQL connection string. `npm run setup` seeds the dev suppliers and the public-password dev admin (`admin@example.com`) only into the default local database, never into one set here; `npm run seed:dev` seeds whatever this points at and refuses when `NODE_ENV=production` |
 | `EASYRMS_DB_POOL_MIN` / `EASYRMS_DB_POOL_MAX` | `2` / `10` | Connection pool size |
 | `EASYRMS_DB_DEBUG` | `false` | Set to `true` to log SQL |
 | `EASYRMS_TRUST_PROXY` | unset (`false` in development and tests) | `true` or `false`; **required in production** (unset or any other value makes the first mutating request fail with an opaque 500 and a logged configuration error; `next build` is unaffected). `true` means a reverse proxy in front of the app overwrites `x-forwarded-host` (and `x-forwarded-for`): the CSRF check compares the `Origin` host with `x-forwarded-host`, and the client IP used for rate limiting (from the guest-session work) is the first `x-forwarded-for` entry. `false` means the `Host` header is used and all clients share one rate-limit bucket. A proxy that rewrites `Host` while the value is `false` makes every mutation (POST/PUT/PATCH/DELETE) return 403 `csrf_rejected` |
