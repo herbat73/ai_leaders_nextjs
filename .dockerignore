@@ -1,2 +1,10 @@
 node_modules
 .git
+.idea
+.next
+**/.next
+**/storybook-static
+**/*.tsbuildinfo
+.env*
+.ai
+doc

@@ -1,0 +1,51 @@
+# Local PostgreSQL for development when native PostgreSQL binaries are not installed (e.g. Windows).
+# Matches DEFAULT_DATABASE_URL in packages/db/src/config.ts; `npm run setup` starts it automatically.
+services:
+  postgres:
+    image: postgres:18.7
+    container_name: easyrms-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: easyrms
+      POSTGRES_PASSWORD: easyrms
+      POSTGRES_DB: easyrms
+    ports:
+      - "5433:5432"
+    volumes:
+      - easyrms_pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U easyrms -d easyrms"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - easyrms-docker-network      
+      
+  # Malware scanner for evidence uploads (EASYRMS_CLAMAV_HOST=localhost, port 3310). The -debian image is the one published
+  # for both amd64 and arm64. Not started by `npm run setup`;
+  # start it with `docker compose up -d --wait clamav`. The first start downloads the virus definitions (a few
+  # minutes), after which the health check passes. Without it uploads are refused with 503 (fail closed).
+  clamav:
+    image: clamav/clamav-debian:1.5.4
+    container_name: easyrms-clamav
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3310:3310"
+    volumes:
+      - easyrms_clamdb:/var/lib/clamav
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/clamdcheck.sh"]
+      interval: 30s
+      timeout: 10s
+      retries: 20
+      start_period: 120s
+    networks:
+      - easyrms-docker-network
+
+volumes:
+  easyrms_pgdata:
+  easyrms_clamdb:
+    
+networks:
+  easyrms-docker-network:
+    driver: bridge    
