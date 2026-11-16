@@ -7,7 +7,7 @@ import { CaseSampleService } from "./case-sample.service";
 
 const fixture = readFileSync(new URL("./__fixtures__/case-sample.csv", import.meta.url), "utf8");
 const service = new CaseSampleService();
-const HEADER = fixture.split("\n")[0] as string;
+const HEADER = fixture.split(/\r?\n/)[0] as string;
 const fieldErrors = (csv: string): Record<string, string> => {
   try {
     service.analyze({ csv });
