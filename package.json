@@ -25,6 +25,7 @@
     "router:check": "node scripts/check-task-router.mjs",
     "setup": "node scripts/setup.mjs",
     "agent:create": "npm run agent:create -w @easyrms/app --",
+    "seed:dev": "npm run seed:dev -w @easyrms/app",
     "retention:run": "npm run retention -w @easyrms/app -- run",
     "retention:erase": "npm run retention -w @easyrms/app -- erase"
   },

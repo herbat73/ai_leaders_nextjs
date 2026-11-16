@@ -119,6 +119,17 @@ const steps = [
       runOrFail("npm run db:migrate", "Check the database connection and re-run, or try `npm run db:migrate` manually.");
     },
   },
+  {
+    // Issue #156: two suppliers and an initial admin, for a fresh local checkout only. The admin's password is public, so
+    // a database set through EASYRMS_DATABASE_URL (shared, staging, production) is never seeded, and neither is a
+    // process that says it is production.
+    name: "seed dev data",
+    async run() {
+      if (!managesLocalDatabase) return "EASYRMS_DATABASE_URL is set, so setup does not seed it (`npm run seed:dev` would seed whatever that URL points at)";
+      if (process.env.NODE_ENV === "production") return "NODE_ENV is production";
+      runOrFail("npm run seed:dev", "Fix the error above, or run `npm run seed:dev` manually.");
+    },
+  },
 ];
 
 for (const step of steps) {
