@@ -19,7 +19,7 @@
     "@easyrms/db": "*",
     "@easyrms/ui": "*",
     "awilix": "^13.0.5",
-    "next": "16.4.1",
+    "next": "16.4.5",
     "nodemailer": "^10.2.1",
     "react": "19.2.8",
     "react-dom": "19.2.8",
