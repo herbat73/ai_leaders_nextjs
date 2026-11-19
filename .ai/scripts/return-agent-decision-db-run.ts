@@ -11,9 +11,9 @@ import { spawn, spawnSync, type ChildProcess } from "node:child_process";
 import { existsSync, rmSync, writeFileSync } from "node:fs";
 import { formatRma } from "@easyrms/core";
 
-const ADMIN_URL = process.env.EASYRMS_E2E_ADMIN_URL ?? "postgres://postgres@localhost:5433/postgres";
+const ADMIN_URL = process.env.EASYRMS_E2E_ADMIN_URL ?? "postgres://postgres@localhost:5432/postgres";
 const DB_NAME = "easyrms_e2e";
-const DB_URL = `postgres://easyrms:easyrms@localhost:5433/${DB_NAME}`;
+const DB_URL = `postgres://easyrms:easyrms@localhost:5432/${DB_NAME}`;
 const PORT = Number(process.env.EASYRMS_E2E_PORT ?? 3111);
 const BASE = `http://localhost:${PORT}`;
 const SNAPSHOT = `packages/db/src/migrations/.snapshot-${DB_NAME}.json`;

@@ -3,7 +3,7 @@ import { Migrator } from "@mikro-orm/migrations";
 
 import { entities } from "./entities";
 
-export const DEFAULT_DATABASE_URL = "postgres://easyrms:easyrms@localhost:5433/easyrms";
+export const DEFAULT_DATABASE_URL = "postgres://easyrms:easyrms@localhost:5432/easyrms";
 
 function intFromEnv(name: string, fallback: number): number {
   const parsed = Number.parseInt(process.env[name] ?? "", 10);

@@ -1,6 +1,6 @@
 # test:db run — agent login and roles (PR #33)
 
-Date: 2026-10-24. Local PostgreSQL 17 on :5433 (`npm run db:start`), throwaway schema per test file.
+Date: 2026-10-24. Local PostgreSQL 17 on :5432 (`npm run db:start`), throwaway schema per test file.
 
 `npm run test:db`: 6 test files, 75 tests passed. New in this PR:
 - `agent-login-migration.test.ts`: `agents` defaults, unique e-mail, unique invite token hash (many nulls allowed), restrict on deleting an agent that decided, `down` drops everything when no event carries an agent and refuses (changing nothing) when one does.

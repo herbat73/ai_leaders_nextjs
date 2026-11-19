@@ -13,7 +13,7 @@ With `EASYRMS_RULES_RECOMMENDATIONS=on`, the agent's decision card shows the R08
 Inbox badges (#109), rules page (#110), R10a/R10b, configurable thresholds, automatic approval, moving the spec to `implemented/`.
 
 ## Risks
-`test:db` needs the Docker Postgres on 5433 (see lessons); record its result in `.ai/runs/`. Migration is additive; `down` drops the table.
+`test:db` needs the Docker Postgres on 5432 (see lessons); record its result in `.ai/runs/`. Migration is additive; `down` drops the table.
 
 ## Progress
 
@@ -31,6 +31,6 @@ Inbox badges (#109), rules page (#110), R10a/R10b, configurable thresholds, auto
 ## Outcome
 
 - Gate (worktree): `typecheck`, `npm test` (811 passed), `lint` (0 errors, 86 existing warnings), `audit`, `docs:check`, `storybook:build`, `NODE_ENV=production npm run build`: all green.
-- `npm run test:db` against the Docker Postgres on 5433: 133 passed (new: 5 repository tests for the comparison write incl. rollback with the decision, 2 migration tests incl. `down` refusing once rows exist).
+- `npm run test:db` against the Docker Postgres on 5432: 133 passed (new: 5 repository tests for the comparison write incl. rollback with the decision, 2 migration tests incl. `down` refusing once rows exist).
 - Not exercised: the running app with the flag on (needs-qa, see PR).
 - Deviations from the spec: none. `recommendation` is read only in `ReturnService.getDetail` (the page); no API payload carries it because no `GET /api/returns/[id]` exists.

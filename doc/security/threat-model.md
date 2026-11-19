@@ -107,7 +107,7 @@ None. No LLM SDK, prompt, tool or MCP server in the repository; the lethal trife
 - [ ] The real order platform adapter does not exist; its auth, error behaviour and rate limits are unknown (T-11).
 - [ ] Whether the QA scripts in `.ai/qa/` rely on the unauthenticated `GET /api/returns` (the lessons file says they use it to check state). Fixing T-01 will need those scripts to log in first.
 - [x] Retention period for customer data (R16) is one year (legal, 2026-11-11), set by `EASYRMS_RETENTION_DAYS`; the job must be scheduled by the operator; mail delivery is off by default.
-- [ ] Whether the database is reachable from outside the host in production (compose publishes 5433 with default credentials `easyrms/easyrms`).
+- [ ] Whether the database is reachable from outside the host in production (compose publishes 5432 with default credentials `easyrms/easyrms`).
 - [ ] Not checked: rendering of customer free text in every admin component (only one `dangerouslySetInnerHTML` was found, the theme script in `layout.tsx`, which takes no user input).
 
 ## 2. What can go wrong?

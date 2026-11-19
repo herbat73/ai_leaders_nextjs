@@ -41,4 +41,4 @@ Seeded 100008 legacy rows (100000 generated, 8 named: every legacy status, a cor
 
 ## Database suite
 
-`npm run test:db` (Vitest in `@easyrms/db`, Postgres 17 on localhost:5433, one throwaway schema per file): 2 files, 28 tests passed, three consecutive runs (the two-agent race is repeated 18 times without a second event).
+`npm run test:db` (Vitest in `@easyrms/db`, Postgres 17 on localhost:5432, one throwaway schema per file): 2 files, 28 tests passed, three consecutive runs (the two-agent race is repeated 18 times without a second event).

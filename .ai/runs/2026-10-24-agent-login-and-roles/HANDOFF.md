@@ -16,7 +16,7 @@
 - none (D10/D11 owner confirmation and the finance reviewer are flagged for Step 4.4 / the PR)
 
 ## Environment caveats
-- Dev runtime runnable: yes (dev server may still run on :3100; Postgres on :5433 is shared with the main checkout)
+- Dev runtime runnable: yes (dev server may still run on :3100; Postgres on :5432 is shared with the main checkout)
 - Browser / UI checks: agent-browser at ~/.cache/agent-tools/agent-browser/v0.35.2/
 - Database/migration state: dev DB migrated to Migration20261024192605
 

@@ -55,7 +55,7 @@ Scratch database dropped, dev server stopped.
 
 ## Database suite
 
-`npm run test:db` (Vitest in `@easyrms/db`, Postgres 17 on localhost:5433, one throwaway schema per file): 4 files, 52 tests passed, three consecutive runs. New file `packages/db/src/tests/customer-portal-concurrency.test.ts` (separate forks/connections, a 150 ms pause inside the lock):
+`npm run test:db` (Vitest in `@easyrms/db`, Postgres 18 on localhost:5432, one throwaway schema per file): 4 files, 52 tests passed, three consecutive runs. New file `packages/db/src/tests/customer-portal-concurrency.test.ts` (separate forks/connections, a 150 ms pause inside the lock):
 
 - ✅ two submits for one order line: one request, one `ConflictError`, serialised (the second enters only after the first leaves); six racers: one winner
 - ✅ different orders do not block each other (two 150 ms pauses overlap)

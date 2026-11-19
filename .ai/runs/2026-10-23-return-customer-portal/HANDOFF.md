@@ -18,7 +18,7 @@
 ## Environment caveats
 - Dev runtime runnable: yes (production build passes)
 - Browser / UI checks: skipped — no browser provider installed; curl on rendered HTML instead
-- Database/migration state: local Postgres on :5433 (pg_ctl, data in /tmp/pgdata); migrations are applied per throwaway schema in tests
+- Database/migration state: local Postgres on :5432 (pg_ctl, data in /tmp/pgdata); migrations are applied per throwaway schema in tests
 
 ## Worktree
 - Path: /workspace/.ai/tmp/om-auto-create-pr-loop/return-customer-portal-20261023-202510

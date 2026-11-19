@@ -5,7 +5,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 DATA="$ROOT/.data/postgres"
-PORT="${EASYRMS_DB_PORT:-5433}"
+PORT="${EASYRMS_DB_PORT:-5432}"
 PGBIN="${PGBIN:-$(ls -d /usr/lib/postgresql/*/bin 2>/dev/null | sort -V | tail -1)}"
 [ -n "$PGBIN" ] || PGBIN="$(dirname "$(command -v pg_ctl)")"
 
