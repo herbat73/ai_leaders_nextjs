@@ -19,9 +19,9 @@ Destructive; guarded by environment + loopback host + `MANAGE_RULES` + CSRF + co
 
 ### Phase 1: Reset endpoint
 
-- [ ] 1.1 db: DevDatabaseResetRepository.truncateAll
-- [ ] 1.2 app: isDevResetAvailable and resetDevEnvironment service
-- [ ] 1.3 app: POST /api/dev/reset route and permission table entry
+- [x] 1.1 db: DevDatabaseResetRepository.truncateAll — 6f2bc3b
+- [x] 1.2 app: isDevResetAvailable and resetDevEnvironment service — cbec8df
+- [x] 1.3 app: POST /api/dev/reset route and permission table entry — cbec8df
 
 ### Phase 2: Button and docs
 
