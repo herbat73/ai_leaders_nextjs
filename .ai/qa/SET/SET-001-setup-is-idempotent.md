@@ -14,7 +14,7 @@
 
 ## Warunki wstępne
 
-- Node i npm; baza PostgreSQL osiągalna na `localhost:5433`.
+- Node i npm; baza PostgreSQL osiągalna na `localhost:5432`.
 - Test nie używa środowiska testowego i nie loguje agenta.
 
 ## Scenariusz

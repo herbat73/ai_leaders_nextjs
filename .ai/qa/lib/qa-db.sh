@@ -8,7 +8,7 @@
 #
 # QA-only: this drops databases. It only ever drops $QA_DB_NAME. Override with EASYRMS_QA_DB_BASE (no database name, no slash).
 
-QA_PG_BASE="${EASYRMS_QA_DB_BASE:-postgres://easyrms:easyrms@localhost:5433}"
+QA_PG_BASE="${EASYRMS_QA_DB_BASE:-postgres://easyrms:easyrms@localhost:5432}"
 QA_DB_NAME=easyrms_qa
 QA_DB_TEMPLATE=easyrms_qa_template
 QA_DEV_DB=easyrms

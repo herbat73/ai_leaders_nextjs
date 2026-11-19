@@ -11,7 +11,7 @@ npm run dev        # starts @easyrms/app
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-`npm run setup` is idempotent: re-running it skips every step that is already done (dependencies up to date, database reachable, no pending migrations) and prints which ones were skipped. It starts only the default local database: with `scripts/db.sh` when PostgreSQL binaries are found, otherwise with `docker compose up -d --wait postgres` (`docker-compose.yml`, same credentials and port 5433); if you set `EASYRMS_DATABASE_URL` to another PostgreSQL, start that yourself and setup only runs the migrations (and does not seed it).
+`npm run setup` is idempotent: re-running it skips every step that is already done (dependencies up to date, database reachable, no pending migrations) and prints which ones were skipped. It starts only the default local database: with `scripts/db.sh` when PostgreSQL binaries are found, otherwise with `docker compose up -d --wait postgres` (`docker-compose.yml`, same credentials and port 5432); if you set `EASYRMS_DATABASE_URL` to another PostgreSQL, start that yourself and setup only runs the migrations (and does not seed it).
 
 **Dev seed data.** On a fresh local database setup also runs `npm run seed:dev`, which creates two suppliers (`First Supplier`, `firstsupplier@example.com`; `Another Supplier`, `anothersupplier@example.com`) and one administrator with the `MANAGE_RULES` permission: **`admin@example.com` / `123412341234`**. Sign in at `/admin/login` and the supplier-claim flow works at once. The password is public (it is in the repository), so this is for local development only: the seeder refuses to run when `NODE_ENV=production`, and setup never seeds a database selected through `EASYRMS_DATABASE_URL`. `npm run seed:dev` is safe to rerun: an existing supplier (same name) and an `active` or `disabled` agent with that e-mail are left as they are, so it never resets a password you changed or re-enables an account (an agent left `invited` by an interrupted seed is completed). It seeds whatever database `EASYRMS_DATABASE_URL` points at, so check that value before running it by hand. To get a different first agent, use `npm run agent:create` (see the README).
 
@@ -21,7 +21,7 @@ The same steps by hand, if you prefer or if `npm run setup` fails:
 
 ```bash
 npm install
-npm run db:start    # local PostgreSQL on localhost:5433 (needs PostgreSQL binaries; set PGBIN if not found)
+npm run db:start    # local PostgreSQL on localhost:5432 (needs PostgreSQL binaries; set PGBIN if not found)
 # or: docker compose up -d --wait postgres
 npm run db:migrate
 npm run seed:dev     # optional: dev suppliers and the admin@example.com agent (local development only)

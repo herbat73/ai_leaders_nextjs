@@ -170,7 +170,7 @@ function ComplaintToReceived($defectConfirmed) {
 # through the API, so its unit stays held for good. Not for app code.
 function DbSql($sql) {
   if (Get-Command psql -ErrorAction SilentlyContinue) {
-    $url = if ($env:DATABASE_URL) { $env:DATABASE_URL } else { 'postgres://easyrms:easyrms@127.0.0.1:5433/easyrms' }
+    $url = if ($env:DATABASE_URL) { $env:DATABASE_URL } else { 'postgres://easyrms:easyrms@127.0.0.1:5432/easyrms' }
     & psql $url -qtAc $sql
   } else {
     Push-Location $script:Root; try { & docker compose exec -T postgres psql -U easyrms -d easyrms -qtAc $sql } finally { Pop-Location }

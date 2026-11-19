@@ -15,13 +15,13 @@ Add `scripts/setup.mjs` (Node ESM, no dependencies, same style as `scripts/audit
 
 Alternatives considered:
 - **Extend `scripts/db.sh`** — rejected: it is bash-only, scoped to Postgres, and has no concept of install or migrate steps.
-- **Docker Compose** — originally rejected (new tool choice needing approval). **Amended 2026-10-18 (approved by the user):** `docker-compose.yml` is the fallback for step 3 when no PostgreSQL binaries are found (e.g. native Windows); it uses the same default URL (`easyrms` user/db, host port 5433). Native binaries via `scripts/db.sh` are still preferred.
+- **Docker Compose** — originally rejected (new tool choice needing approval). **Amended 2026-10-18 (approved by the user):** `docker-compose.yml` is the fallback for step 3 when no PostgreSQL binaries are found (e.g. native Windows); it uses the same default URL (`easyrms` user/db, host port 5432). Native binaries via `scripts/db.sh` are still preferred.
 - **`npm run setup` chaining existing scripts with `&&`** — rejected: it cannot skip completed steps or give actionable errors.
 
 Non-goals: starting the dev server; installing Node or PostgreSQL; seeding data; production/CI provisioning; any change to `scripts/db.sh`, MikroORM config, migrations or app code.
 
 ## 📝 Architecture
-Tooling only; no package in `packages/*` changes, so the dependency direction in AGENTS.md is untouched. The script reuses the existing entry points rather than duplicating them: `npm install`, `npm run db:start` (→ `scripts/db.sh start`, already idempotent: it reuses `.data/postgres` and creates the role and database only when missing) and `npm run db:migrate` (MikroORM `migration:up`, a no-op when nothing is pending). The one piece of knowledge it must share with `packages/db/src/config.ts` is the default URL `postgres://easyrms:easyrms@localhost:5433/easyrms`; the script restates it as a constant with a comment pointing at `DEFAULT_DATABASE_URL` (importing the TypeScript config from a plain `.mjs` script is out of scope).
+Tooling only; no package in `packages/*` changes, so the dependency direction in AGENTS.md is untouched. The script reuses the existing entry points rather than duplicating them: `npm install`, `npm run db:start` (→ `scripts/db.sh start`, already idempotent: it reuses `.data/postgres` and creates the role and database only when missing) and `npm run db:migrate` (MikroORM `migration:up`, a no-op when nothing is pending). The one piece of knowledge it must share with `packages/db/src/config.ts` is the default URL `postgres://easyrms:easyrms@localhost:5432/easyrms`; the script restates it as a constant with a comment pointing at `DEFAULT_DATABASE_URL` (importing the TypeScript config from a plain `.mjs` script is out of scope).
 
 Step order and checks:
 
@@ -42,14 +42,14 @@ Command surface only:
 - Child commands run from the repo root with inherited stdio so the user sees npm/MikroORM output.
 
 ## 📝 UI/UX
-Terminal output only. One line per step in the form `✔ install dependencies — done` / `↷ start database — skipped (already reachable on localhost:5433)`, then `Next: npm run dev → http://localhost:3000`. Errors name the step, the cause and the manual command to try (for example `npm run db:start`).
+Terminal output only. One line per step in the form `✔ install dependencies — done` / `↷ start database — skipped (already reachable on localhost:5432)`, then `Next: npm run dev → http://localhost:3000`. Errors name the step, the cause and the manual command to try (for example `npm run db:start`).
 
 README changes (same PR as the implementation): "Getting started" leads with `npm run setup` and a note that it is safe to re-run; the existing manual commands move under a "Manual setup" subsection as the alternative; the Status note is corrected to the real variable names (`EASYRMS_DATABASE_URL`, `EASYRMS_DB_POOL_MIN`, `EASYRMS_DB_POOL_MAX`).
 
 ## 📝 Edge Cases & Failure Scenarios
 - **Postgres already running** (started by an earlier run or by the user): step 3 skips; step 4 still runs.
 - **Postgres stopped after a prior setup**: step 3 restarts it via `db:start`.
-- **Port 5433 taken by something else**: the TCP check passes but migrations fail; step 4 reports the failing command's output. Accepted limitation; a protocol-level check is out of scope.
+- **Port 5432 taken by something else**: the TCP check passes but migrations fail; step 4 reports the failing command's output. Accepted limitation; a protocol-level check is out of scope.
 - **`npm install` interrupted**: `node_modules/.package-lock.json` is written at the end of a successful install, so a partial install is re-run next time.
 - **`package-lock.json` changed after a `git pull`**: the lockfile is newer than the marker, so step 2 re-runs.
 - **Missing PostgreSQL binaries**: preflight message names the missing binary and the `PGBIN` override that `scripts/db.sh` already honors.

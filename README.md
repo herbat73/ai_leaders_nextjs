@@ -40,7 +40,22 @@
 
 ## 🚀 Getting started
 
+Copy .env.example file to .env and modify environment settings if needed
+
 ```bash
+cp .env.example .env
+```
+
+Run docker compose to start postgres db and malvare scanner (clamav)
+
+```bash
+docker-compose up-d
+```
+
+Run npm install & setups
+
+```bash
+npm install
 npm run setup    # install, migrate and seed a local dev database
 npm run dev      # start the app
 ```

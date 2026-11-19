@@ -22,7 +22,7 @@ if [ -f "$QA_DIR/test-env.env" ]; then set -a; . "$QA_DIR/test-env.env"; set +a;
 . "$ROOT/.ai/qa/lib/qa-db.sh"
 PREFERRED_PORT=3000
 HEALTH_PATH=/api/health
-DB_PORT=5433                                  # scripts/db.sh default (EASYRMS_DB_PORT)
+DB_PORT=5432                                  # scripts/db.sh default (EASYRMS_DB_PORT)
 PREP_CMD="npm install"                        # skipped while the fingerprint matches
 MIGRATE_CMD="npm run db:migrate"
 FINGERPRINT_INPUTS="package-lock.json package.json packages/db/src/migrations"

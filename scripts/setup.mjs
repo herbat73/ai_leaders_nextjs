@@ -13,7 +13,7 @@ const root = fileURLToPath(new URL("..", import.meta.url));
 // Next.js 16 requires Node >= 20.9 (its `engines` field); checked before node_modules exists.
 const MIN_NODE = [20, 9];
 // Keep in sync with DEFAULT_DATABASE_URL in packages/db/src/config.ts.
-const DEFAULT_DATABASE_URL = "postgres://easyrms:easyrms@localhost:5433/easyrms";
+const DEFAULT_DATABASE_URL = "postgres://easyrms:easyrms@localhost:5432/easyrms";
 const databaseUrl = process.env.EASYRMS_DATABASE_URL ?? DEFAULT_DATABASE_URL;
 const managesLocalDatabase = databaseUrl === DEFAULT_DATABASE_URL;
 

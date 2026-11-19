@@ -35,6 +35,6 @@ Photos, scanner, `evidence_files`, thumbnails, carrier/supplier claims (Q9), cus
 Phase 1 implemented. Phases 2 and 3 are not started (gated, see Scope).
 
 - Gate: `typecheck`, `test` (949 passed), `lint` (0 errors), `audit`, `docs:check`, `storybook:build` and `NODE_ENV=production npm run build` all green.
-- `npm run test:db` (outside the gate) against the local Docker Postgres on 5433: 13 files, 146 tests passed, including the new migration and repository tests.
+- `npm run test:db` (outside the gate) against the local Docker Postgres on 5432: 13 files, 146 tests passed, including the new migration and repository tests.
 - QA scenarios `RET-011` and `RET-012` are written but were NOT run: the autonomous run could not use the QA environment descriptor and agent credentials (the read was blocked by the permission classifier, deliberately not worked around). Run them by hand before merging.
 - Interpretation notes: tracker stage copy reads Zgłoszone, Rozpatrzone, Rozwiązane (spec says "Rozpatrywane"; the middle stage means decided, so the past form is used). The returns page entry points are buttons next to the existing ones, not cards.

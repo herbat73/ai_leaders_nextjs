@@ -1,6 +1,6 @@
 # test:db run — complaints and vendor claims (PR #36)
 
-Date: 2026-10-25. Local PostgreSQL 17 on :5433 (`npm run db:start`), throwaway schema per test file.
+Date: 2026-10-25. Local PostgreSQL 17 on :5432 (`npm run db:start`), throwaway schema per test file.
 
 `npm run test:db`: 9 test files, 99 tests passed (was 6 files, 75 tests). New in this PR:
 - `complaints-migration.test.ts`: existing rows keep null defect fields, the nullable serial number, `down` drops the columns while no complaint exists and refuses (changing nothing) once one does.
