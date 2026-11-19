@@ -9,5 +9,12 @@ export const shellCopy = {
   signedInAs: (name: string) => `Zalogowano: ${name}`,
   logout: "Wyloguj",
   loggingOut: "Wylogowywanie…",
+  resetDb: "Resetuj bazę",
+  resetDbTitle: "Reset bazy",
+  resetDbQuestion: "Czy chcesz zresetować bazę do pierwotnego stanu developerskiego?",
+  resetDbConfirm: "Resetuj",
+  resetDbCancel: "Anuluj",
+  resettingDb: "Resetowanie…",
+  resetDbFailed: "Nie udało się zresetować bazy. Uruchom `npm run seed:dev`.",
   logoutFailed: "Nie udało się wylogować. Spróbuj ponownie.",
 };
