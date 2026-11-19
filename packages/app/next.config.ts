@@ -5,6 +5,8 @@ const nextConfig: NextConfig = {
   // Native module (libvips): it must be loaded from node_modules, never bundled.
   serverExternalPackages: ["sharp"],
   experimental: { agentUpgrade: "security" },
+  // Dev only: lets the dev server be opened via 127.0.0.1 (not just localhost) without blocking HMR/dev assets.
+  allowedDevOrigins: ["127.0.0.1"],
   transpilePackages: ["@easyrms/core", "@easyrms/db", "@easyrms/ui"],
   // The order lookup moved from `/returns/lookup` to `/`; old links and bookmarks keep working (308).
   redirects() {
