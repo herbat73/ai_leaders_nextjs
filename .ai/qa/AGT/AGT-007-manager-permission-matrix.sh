@@ -42,6 +42,12 @@ check_manager_only PATCH /api/agents/999999 '{"status":"disabled"}'
 check_manager_only POST  /api/suppliers '{}'
 check_manager_only PATCH /api/suppliers/999999 '{"active":false}'
 
+# POST /api/dev/reset (issue #174) is manager-only too, but unlike the rows above it is NOT side-effect free for a manager:
+# a passed permission check wipes and reseeds the database. So only the denial is asserted, with the plain agent.
+step "destructive manager-only action: plain agent 403 (the manager is deliberately not called)"
+c=$(plain_code POST /api/dev/reset ''); [ "$c" = 403 ] || fail "plain agent: POST /api/dev/reset answered $c, expected 403"
+echo "ok  POST /api/dev/reset  plain=403"
+
 step "shared actions: a plain agent keeps access"
 check_any_agent GET   /api/suppliers ''
 check_any_agent GET   /api/supplier-claims ''

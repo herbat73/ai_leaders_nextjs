@@ -30,8 +30,9 @@ And agent bez uprawnienia nadal ma dostęp do tras wspólnych (dostawcy GET, ros
 |---|---|---|
 | 1 | `GET`/`POST /api/agents`, `PATCH /api/agents/<id>` | agent: 403; menedżer: 200/400/404 |
 | 2 | `POST /api/suppliers`, `PATCH /api/suppliers/<id>` | agent: 403; menedżer: 400/404 |
-| 3 | `GET /api/suppliers`, trasy `/api/supplier-claims`, `/api/returns` | agent: ani 401, ani 403 |
-| 4 | `GET /api/agents` bez sesji (negatywny) | 401 |
+| 3 | `POST /api/dev/reset` (issue #174; tylko agent bez uprawnienia, menedżer nie jest wywoływany, bo reset czyści bazę) | agent: 403 |
+| 4 | `GET /api/suppliers`, trasy `/api/supplier-claims`, `/api/returns` | agent: ani 401, ani 403 |
+| 5 | `GET /api/agents` bez sesji (negatywny) | 401 |
 
 Statyczną stronę tego pokrycia daje `packages/core/src/http/agent-routes.coverage.test.ts` (każda trasa agenta deklaruje `permission` i jest w tabeli `ROUTE_PERMISSIONS`; brak decyzji = `npm test` czerwony).
 
