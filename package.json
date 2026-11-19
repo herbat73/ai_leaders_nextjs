@@ -29,6 +29,13 @@
     "retention:run": "npm run retention -w @easyrms/app -- run",
     "retention:erase": "npm run retention -w @easyrms/app -- erase"
   },
+  "overrides": {
+    "@joshwooding/vite-plugin-react-docgen-typescript": {
+      "glob": {
+        "minimatch": "^11.0.5"
+      }
+    }
+  },
   "allowScripts": {
     "esbuild@0.28.2": true,
     "fsevents@2.3.3": true,
