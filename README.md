@@ -46,6 +46,8 @@ Copy .env.example file to .env and modify environment settings if needed
 cp .env.example .env
 ```
 
+> `@easyrms/app` scripts (`npm run dev`, `build`, `start`, `seed:dev`, etc.) preload variables from the repository root `/.env`, so for local work you can keep config in one place.
+
 generate secretes session values in .eve for
 EASYRMS_GUEST_SESSION_SECRET
 EASYRMS_AGENT_SESSION_SECRET
