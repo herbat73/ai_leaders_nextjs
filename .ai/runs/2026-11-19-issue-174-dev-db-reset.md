@@ -15,6 +15,8 @@ Destructive; guarded by environment + loopback host + `MANAGE_RULES` + CSRF + co
 
 ## Progress
 
+PR: #176
+
 > Convention: `- [ ]` pending, `- [x]` done. Append ` — <commit sha>` when a step lands. Do not rename step titles.
 
 ### Phase 1: Reset endpoint
@@ -37,4 +39,5 @@ Destructive; guarded by environment + loopback host + `MANAGE_RULES` + CSRF + co
 - Deviation from the spec: the wipe is `TRUNCATE … CASCADE` **without** `RESTART IDENTITY` (spec Q1 said restart). A live check showed the reseeded admin then got id 1 again and the pre-reset session cookie still worked; without the restart every old cookie is rejected (401 on the API, redirect to `/admin/login` on pages). Recorded in `.ai/lessons.md`; the spec PR text is corrected separately.
 - Live check (throwaway database `easyrms_reset174`, `next dev -p 3174`, dropped afterwards): no session 401; no CSRF header 403 `csrf_rejected`; reset 200 with `tablesEmptied: 11`; an extra supplier was removed and only the two dev suppliers and `admin@example.com` (new id) remain; old cookie 401 / page 307 to login; re-login 200 and new session works; the admin page HTML contains "Resetuj bazę". Not browser-driven (no `agent-browser` installed): the dialog interaction is covered by the QA step.
 - Gate (all green): typecheck, test (1058), lint (0 errors), audit, docs:check, storybook:build, `NODE_ENV=production npm run build` (route `/api/dev/reset` present), `router:check`.
+- Review (`om-auto-review-pr --autofix`): one major fixed (AGT-007 403 case for the manager-only route, `0aedd6c`); spec PR #175 text aligned with the no-`RESTART IDENTITY` decision.
 - `npm run test:db`: 17 files, 203 tests passed (includes the 3 new `dev-reset.repository` tests).
