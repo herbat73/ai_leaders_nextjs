@@ -19,7 +19,11 @@ export class MikroOrmDevResetRepository {
     this.em = deps.em;
   }
 
-  /** Empties all data tables and restarts their identity columns; returns the names of the tables it emptied. */
+  /**
+   * Empties all data tables and returns their names. Identity columns are deliberately NOT restarted: a reseeded admin
+   * then gets a new id, so a session cookie signed for the old admin (id and epoch) never matches the new account.
+   * With `restart identity` the new admin would be id 1 again and the old cookie would still open the back office.
+   */
   async truncateAll(): Promise<string[]> {
     return this.em.transactional(async (tx) => {
       await tx.execute(`select pg_advisory_xact_lock(?)`, [RESET_LOCK_KEY]);
@@ -33,7 +37,7 @@ export class MikroOrmDevResetRepository {
       if (tables.length > 0) {
         // Names come from the catalog, never from input; each is quoted as an identifier.
         const list = tables.map((name) => `"${name.replaceAll('"', '""')}"`).join(", ");
-        await tx.execute(`truncate table ${list} restart identity cascade`);
+        await tx.execute(`truncate table ${list} cascade`);
       }
       return tables;
     });
