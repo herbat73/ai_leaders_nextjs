@@ -3,16 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "typecheck": "tsc --noEmit",
-    "storybook": "storybook dev -p 6006",
-    "storybook:build": "storybook build -o storybook-static",
-    "agent:create": "tsx scripts/agent-create.ts",
-    "seed:dev": "tsx scripts/seed-dev.ts",
-    "retention": "tsx scripts/retention.ts",
-    "test": "vitest run"
+    "dev": "node scripts/with-root-env.mjs next dev",
+    "build": "node scripts/with-root-env.mjs next build",
+    "start": "node scripts/with-root-env.mjs next start",
+    "typecheck": "node scripts/with-root-env.mjs tsc --noEmit",
+    "storybook": "node scripts/with-root-env.mjs storybook dev -p 6006",
+    "storybook:build": "node scripts/with-root-env.mjs storybook build -o storybook-static",
+    "agent:create": "node scripts/with-root-env.mjs tsx scripts/agent-create.ts",
+    "seed:dev": "node scripts/with-root-env.mjs tsx scripts/seed-dev.ts",
+    "retention": "node scripts/with-root-env.mjs tsx scripts/retention.ts",
+    "test": "node scripts/with-root-env.mjs vitest run"
   },
   "dependencies": {
     "@easyrms/core": "*",
