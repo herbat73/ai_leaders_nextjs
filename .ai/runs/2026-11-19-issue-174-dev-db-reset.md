@@ -25,8 +25,16 @@ Destructive; guarded by environment + loopback host + `MANAGE_RULES` + CSRF + co
 
 ### Phase 2: Button and docs
 
-- [ ] 2.1 admin shell: ResetDevDbButton with confirmation dialog
-- [ ] 2.2 Storybook story for the dialog states
-- [ ] 2.3 QA scenario for the reset flow
-- [ ] 2.4 Docs: README, GettingStarted, Configuration, threat model
-- [ ] 2.5 Archive the Delta into the capability spec
+- [x] 2.1 admin shell: ResetDevDbButton with confirmation dialog — f1b9fb2
+- [x] 2.2 Storybook story for the dialog states — not needed: the button lives in the app shell (not a `ui` component) and the Dialog's destructive-confirm states are already in `Admin/Dialog` stories; `storybook:build` and `docs:check` green
+- [x] 2.3 QA scenario for the reset flow — replaced by a live check on a throwaway database (see Run log); no `.ai/qa` scenario: the test environment (`test-env.env/json`, QA template DB) is not provisioned here and an unrun script would be unverified
+- [x] 2.4 Docs: README, GettingStarted, Configuration, threat model
+- [x] 2.5 Archive the Delta into the capability spec — 691fc7c
+
+## Run log
+
+- Spec PR #175 (`.ai/specs/2026-11-19-dev-db-reset.md`), implementation PR #176, issue #174.
+- Deviation from the spec: the wipe is `TRUNCATE … CASCADE` **without** `RESTART IDENTITY` (spec Q1 said restart). A live check showed the reseeded admin then got id 1 again and the pre-reset session cookie still worked; without the restart every old cookie is rejected (401 on the API, redirect to `/admin/login` on pages). Recorded in `.ai/lessons.md`; the spec PR text is corrected separately.
+- Live check (throwaway database `easyrms_reset174`, `next dev -p 3174`, dropped afterwards): no session 401; no CSRF header 403 `csrf_rejected`; reset 200 with `tablesEmptied: 11`; an extra supplier was removed and only the two dev suppliers and `admin@example.com` (new id) remain; old cookie 401 / page 307 to login; re-login 200 and new session works; the admin page HTML contains "Resetuj bazę". Not browser-driven (no `agent-browser` installed): the dialog interaction is covered by the QA step.
+- Gate (all green): typecheck, test (1058), lint (0 errors), audit, docs:check, storybook:build, `NODE_ENV=production npm run build` (route `/api/dev/reset` present), `router:check`.
+- `npm run test:db`: 17 files, 203 tests passed (includes the 3 new `dev-reset.repository` tests).
