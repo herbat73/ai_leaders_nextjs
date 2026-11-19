@@ -99,6 +99,7 @@ const ROUTE_PERMISSIONS: Record<string, string[]> = {
   "agents/route.ts": ["MANAGE_RULES", "MANAGE_RULES"],
   "agents/[id]/route.ts": ["MANAGE_RULES"],
   "agents/logout/route.ts": ["any-agent"],
+  "dev/reset/route.ts": ["MANAGE_RULES"],
   "discovery/case-sample/route.ts": ["any-agent"],
   "returns/route.ts": ["any-agent"],
   "returns/[id]/route.ts": ["any-agent"],

@@ -3,6 +3,7 @@ import type { EntityManager, MikroORM } from "@mikro-orm/postgresql";
 
 import { MikroOrmAgentRepository } from "./repositories/agents/agent.repository";
 import { PostgresRateLimiter } from "./repositories/security/postgres-rate-limiter";
+import { MikroOrmDevResetRepository } from "./repositories/dev/dev-reset.repository";
 import { MikroOrmEvidenceRepository } from "./repositories/evidence/evidence.repository";
 import { MikroOrmRetentionRepository } from "./repositories/retention/retention.repository";
 import { MikroOrmReturnRepository } from "./repositories/returns/return.repository";
@@ -19,6 +20,7 @@ export function registerDb(container: AwilixContainer, orm: MikroORM): void {
     em: asFunction(({ orm }: { orm: MikroORM }): EntityManager => orm.em.fork() as EntityManager).scoped(),
     // One limiter per process; the budgets live in Postgres, so a restart or a second instance shares them.
     rateLimiter: asFunction(({ orm }: { orm: MikroORM }) => new PostgresRateLimiter({ orm, clock: () => new Date() })).singleton(),
+    devResetPort: asClass(MikroOrmDevResetRepository).scoped(),
     evidencePort: asClass(MikroOrmEvidenceRepository).scoped(),
     retentionPort: asClass(MikroOrmRetentionRepository).scoped(),
     returnRepository: asClass(MikroOrmReturnRepository).scoped(),

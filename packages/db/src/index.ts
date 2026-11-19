@@ -10,3 +10,4 @@ export * from "./repositories/supplier-claims/supplier-claim.repository";
 export * from "./repositories/security/postgres-rate-limiter";
 export * from "./repositories/evidence/evidence.repository";
 export * from "./repositories/retention/retention.repository";
+export * from "./repositories/dev/dev-reset.repository";

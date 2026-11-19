@@ -8,6 +8,7 @@ import {
   registerCore,
   selectOrderSource,
   withLookupTimeout,
+  type AgentRepository,
   type AgentService,
   type AgentSessionService,
   type ApiLogger,
@@ -30,6 +31,7 @@ import { getAgentSessionService } from "./agent-session";
 import { createMalwareScanner, getEvidenceLimits } from "./evidence/evidence-config";
 import { SharpImageSanitizer } from "./evidence/sharp-sanitizer";
 import { createMailPort } from "./mail";
+import { isDevResetAvailableHere, resetDevEnvironment, type DevResetService } from "./dev-reset";
 import { getGuestSessionService } from "./guest-session";
 import { getApprovalConfig, getEligibilityConfig, getInviteConfig, getQuoteConfig, getRecommendationConfig, getTransportConfig } from "./return-config";
 
@@ -38,6 +40,7 @@ export interface Cradle {
   agentService: AgentService;
   agentSessionService: AgentSessionService;
   caseSampleService: CaseSampleService;
+  devResetService: DevResetService;
   evidenceService: EvidenceService;
   guestSessionService: GuestSessionService;
   logger: ApiLogger;
@@ -94,6 +97,20 @@ function getRootContainer(): Promise<AwilixContainer> {
     });
     registerCore(container);
     registerDb(container, await getOrm());
+    container.register({
+      // Scoped: it uses the scoped repositories. The availability check is read per call, not at wiring time.
+      devResetService: asFunction(
+        ({ devResetPort, supplierService, agentService, agentRepository, passwordHasher, logger }: Cradle & { devResetPort: { truncateAll(): Promise<string[]> }; agentRepository: AgentRepository }): DevResetService => ({
+          reset: () =>
+            resetDevEnvironment({
+              devResetPort,
+              available: isDevResetAvailableHere(),
+              logger,
+              seed: { supplierService, agentService, agentRepository, passwordHasher, clock: () => new Date(), nodeEnv: process.env.NODE_ENV },
+            }),
+        }),
+      ).scoped(),
+    });
     return container;
   })().catch((error) => {
     globalForContainer.__easyrmsContainer = undefined;
@@ -152,4 +169,9 @@ export function resolveSupplierService(): Promise<SupplierService> {
 /** Resolver for supplier claim routes: one request scope per call. */
 export function resolveSupplierClaimService(): Promise<SupplierClaimService> {
   return createRequestScope().then((scope) => scope.cradle.supplierClaimService);
+}
+
+/** Resolver for the dev reset route: one request scope per call. */
+export function resolveDevResetService(): Promise<DevResetService> {
+  return createRequestScope().then((scope) => scope.cradle.devResetService);
 }

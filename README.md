@@ -69,7 +69,7 @@ npm run setup    # install, migrate and seed a local dev database
 npm run dev      # start the app
 ```
 
-Open [http://localhost:3000](http://localhost:3000). Agents sign in at `/admin/login`; for the customer demo use the seeded order `PL-10001`. Photo uploads also need the local scanner: `docker compose up -d --wait clamav`.
+Open [http://localhost:3000](http://localhost:3000). Agents sign in at `/admin/login`; for the customer demo use the seeded order `PL-10001`. In development the admin header has a "Resetuj bazę" button that restores the seeded dev state (see `GettingStarted.md`). Photo uploads also need the local scanner: `docker compose up -d --wait clamav`.
 
 That's the short version — the details are in the docs 👇
 
