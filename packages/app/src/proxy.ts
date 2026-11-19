@@ -37,5 +37,5 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 
 export const config = {
   // Constants only (Next analyses them at build time). The exact public/protected split lives in `isAgentProtectedPath`.
-  matcher: ["/admin/:path*", "/api/agents/:path*", "/api/discovery/:path*", "/api/returns", "/api/returns/:id"],
+  matcher: ["/admin/:path*", "/api/agents/:path*", "/api/dev/:path*", "/api/discovery/:path*", "/api/returns", "/api/returns/:id"],
 };

@@ -17,6 +17,8 @@ describe("isAgentProtectedPath", () => {
     "/api/agents/5",
     "/api/agents/invite",
     "/api/agents/login/x",
+    "/api/dev/reset",
+    "/api/dev",
     "/api/discovery/case-sample",
     "/api/rules",
     "/api/rules/simulate",

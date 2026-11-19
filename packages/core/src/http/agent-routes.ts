@@ -7,7 +7,7 @@ const PUBLIC_RETURNS_METHODS: ReadonlySet<string> = new Set(["POST"]);
  * these lists is a fail-open hole.
  *
  * Protected: every `/admin/**` page except the login page and the invite page (one token segment), `/api/agents/**`
- * except login and invite acceptance, `/api/discovery/**`, `/api/rules/**`, `/api/suppliers/**`, `/api/supplier-claims/**`, and `/api/returns/<digits>` (the agent decision route). `/api/returns`
+ * except login and invite acceptance, `/api/dev/**`, `/api/discovery/**`, `/api/rules/**`, `/api/suppliers/**`, `/api/supplier-claims/**`, and `/api/returns/<digits>` (the agent decision route). `/api/returns`
  * is per method: `POST` (customer submission) is public, every other method (the list, `GET`) needs an agent. The other
  * customer routes (`lookup`, `quote`, `session`) stay public.
  */
@@ -20,6 +20,7 @@ export function isAgentProtectedPath(pathname: string, method = "GET"): boolean 
   if (pathname === "/api/agents" || pathname.startsWith("/api/agents/")) {
     return pathname !== "/api/agents/login" && pathname !== "/api/agents/invite/accept";
   }
+  if (pathname === "/api/dev" || pathname.startsWith("/api/dev/")) return true;
   if (pathname === "/api/discovery" || pathname.startsWith("/api/discovery/")) return true;
   if (pathname === "/api/rules" || pathname.startsWith("/api/rules/")) return true;
   if (pathname === "/api/suppliers" || pathname.startsWith("/api/suppliers/")) return true;
