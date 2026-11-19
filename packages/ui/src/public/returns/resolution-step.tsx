@@ -34,7 +34,8 @@ export function ResolutionStep({ legend, options, value, onChange, error, quote,
           <TextInput value={exchange.value} onChange={(e) => exchange.onChange(e.target.value)} />
         </Field>
       )}
-      <div aria-live="polite" aria-atomic="true" aria-busy={quote.status === "pending"}>
+      {/* min-h-5 = one pending line: the region keeps its height while the quote loads, so the buttons below do not jump. */}
+      <div aria-live="polite" aria-atomic="true" aria-busy={quote.status === "pending"} className="min-h-5">
         {quote.status === "pending" && <p className="text-sm text-muted-foreground">{quote.pendingText}</p>}
         {quote.status === "ready" && (
           <div className="rounded-md bg-muted p-3.5">

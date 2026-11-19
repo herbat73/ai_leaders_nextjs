@@ -50,6 +50,14 @@ function ClickRole($role, $name) { Ab find role $role click --name $name | Out-N
 function FillLabel($label, $value) { Ab find label $label fill $value | Out-Null; if ($LASTEXITCODE -ne 0) { Fail "no field labelled '$label'" } }
 function ExpectSnap($pattern, $msg) { if ((Snap) -notmatch $pattern) { Fail $msg } }
 function ExpectNoSnap($pattern, $msg) { if ((Snap) -match $pattern) { Fail $msg } }
+function WaitRadioChecked { for ($i = 0; $i -lt 20; $i++) { if (EvalBool "!!document.querySelector('[role=radio][aria-checked=true],input[type=radio]:checked')") { return }; Ab wait 250 | Out-Null }; Fail 'no radio became checked' }
+function ClickUntilText($name, $text) {
+  for ($n = 0; $n -lt 4; $n++) {
+    Ab find role button click --name $name | Out-Null; if ($LASTEXITCODE -ne 0) { Fail "no button named '$name'" }
+    for ($j = 0; $j -lt 8; $j++) { if (PageHas $text) { return }; Ab wait 250 | Out-Null }
+  }
+  Fail "expected text '$text' after clicking '$name' on $(CurUrl)"
+}
 function EvalBool($js) { ((Ab eval $js | Select-Object -Last 1) -eq 'true') }
 function PageHas($text) { EvalBool ("document.body.innerText.includes('" + ($text -replace "'", "\'") + "')") }
 function ExpectText($text, $msg) { if (-not (PageHas $text)) { Fail $msg } }

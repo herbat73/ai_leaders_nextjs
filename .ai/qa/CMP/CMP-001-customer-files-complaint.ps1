@@ -44,8 +44,8 @@ try {
   WaitText 'Czego oczekujesz?'
   WaitText 'Zgodnie z prawem w pierwszej kolejności przysługuje Ci naprawa lub wymiana.'
   ClickRole 'radio' 'Naprawa'
-  ClickRole 'button' 'Dalej'
-  WaitText 'Sprawdź i wyślij reklamację'
+  WaitRadioChecked
+  ClickUntilText 'Dalej' 'Sprawdź i wyślij reklamację'
   WaitText $ItemName
   Shot '02-summary'
 

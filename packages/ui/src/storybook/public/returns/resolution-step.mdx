@@ -68,6 +68,8 @@ Wycena: `bg-muted`, `rounded-md`, etykiety `text-muted-foreground`, kwota `font-
 | invalid (wybór) | błąd pod grupą radio | `error` |
 | wymiana | dodatkowe pole tekstowe z etykietą, podpowiedzią i błędem | `exchange` |
 
+Region wyceny ma stałą minimalną wysokość jednej linii (`min-h-5`), więc tekst oczekiwania nie przesuwa przycisków Wstecz/Dalej w dół, a ich zniknięcie (np. przy naprawie, gdzie wyceny nie ma) nie przesuwa ich w górę. Karta `ready` jest wyższa i przesuwa układ jednorazowo, po wyborze.
+
 <Canvas of={ResolutionStepStories.QuotePending} />
 
 <Canvas of={ResolutionStepStories.QuoteError} />

@@ -46,6 +46,28 @@ fill_date() {
   got=$(ab eval "(()=>{const i=document.querySelector('input[type=date]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(i,'$1');i.dispatchEvent(new Event('input',{bubbles:true}));return i.value})()" 2>&1 | tail -1)
   [ "$got" = "\"$1\"" ] || fail "date input not set to $1 (got $got)"
 }
+# After clicking a radio, wait until React has committed the choice (a click on "Dalej" before that is ignored).
+wait_radio_checked() {
+  i=0
+  until ab eval "!!document.querySelector('[role=radio][aria-checked=true],input[type=radio]:checked')" 2>&1 | tail -1 | grep -q true; do
+    i=$((i + 1)); [ "$i" -gt 20 ] && fail "no radio became checked"
+    ab wait 250 >/dev/null 2>&1
+  done
+}
+# Click a button until the page shows the expected text: a click that lands during a React re-render can be dropped.
+click_until_text() {
+  n=0
+  while [ "$n" -lt 4 ]; do
+    ab find role button click --name "$1" >/dev/null 2>&1 || fail "no button named \"$1\""
+    j=0
+    while [ "$j" -lt 8 ]; do
+      ab eval "document.body.innerText.includes('$2')" 2>&1 | tail -1 | grep -q true && return 0
+      ab wait 250 >/dev/null 2>&1; j=$((j + 1))
+    done
+    n=$((n + 1))
+  done
+  fail "expected text \"$2\" after clicking \"$1\" on $(cur_url)"
+}
 expect_snap() { snap | grep -q "$1" || fail "$2"; }
 expect_no_snap() { snap | grep -q "$1" && fail "$2"; return 0; }
 # Visible page text, for assertions that an interactive snapshot cannot make (headings, paragraphs).

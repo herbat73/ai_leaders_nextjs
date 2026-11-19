@@ -45,8 +45,8 @@ click_role button "Dalej"
 wait_text "Czego oczekujesz?"
 wait_text "Zgodnie z prawem w pierwszej kolejności przysługuje Ci naprawa lub wymiana."
 ab find role radio click --name "Naprawa" >/dev/null 2>&1 || fail "no repair option"
-click_role button "Dalej"
-wait_text "Sprawdź i wyślij reklamację"
+wait_radio_checked
+click_until_text "Dalej" "Sprawdź i wyślij reklamację"
 wait_text "$ITEM_NAME"
 shot 02-summary
 
