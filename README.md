@@ -46,6 +46,15 @@ Copy .env.example file to .env and modify environment settings if needed
 cp .env.example .env
 ```
 
+generate secretes session values in .eve for
+EASYRMS_GUEST_SESSION_SECRET
+EASYRMS_AGENT_SESSION_SECRET
+
+by executing 2x and copy values 
+```bash
+openssl rand -hex 32
+```
+
 Run docker compose to start postgres db and malvare scanner (clamav)
 
 ```bash
