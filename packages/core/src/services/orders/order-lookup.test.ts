@@ -92,6 +92,11 @@ describe("selectOrderSource", () => {
     expect(() => selectOrderSource({ nodeEnv: "production", source: undefined })).toThrow(ConfigurationError);
   });
 
+  it("allows fake in production only with the explicit opt-in", () => {
+    expect(selectOrderSource({ nodeEnv: "production", source: "fake", allowFakeInProduction: true })).toBe("fake");
+    expect(() => selectOrderSource({ nodeEnv: "production", source: undefined, allowFakeInProduction: true })).toThrow(ConfigurationError);
+  });
+
   it("rejects an unknown value", () => {
     expect(() => selectOrderSource({ nodeEnv: "development", source: "shopify" })).toThrow(ConfigurationError);
     expect(() => selectOrderSource({ nodeEnv: "production", source: "shopify" })).toThrow(ConfigurationError);
