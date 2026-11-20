@@ -64,7 +64,15 @@ const logger: ApiLogger & MailLogger = {
  * production fails closed (opaque 500) on the first customer request.
  */
 function createOrderLookup(): OrderLookup {
-  const source = selectOrderSource({ nodeEnv: process.env.NODE_ENV, source: process.env.EASYRMS_ORDER_SOURCE });
+  const allowFakeInProduction = process.env.EASYRMS_ALLOW_FAKE_ORDERS_IN_PRODUCTION === "true";
+  const source = selectOrderSource({
+    nodeEnv: process.env.NODE_ENV,
+    source: process.env.EASYRMS_ORDER_SOURCE,
+    allowFakeInProduction,
+  });
+  if (allowFakeInProduction && process.env.NODE_ENV === "production") {
+    logger.error("EASYRMS_ALLOW_FAKE_ORDERS_IN_PRODUCTION is on: serving fake orders in production (temporary)", {});
+  }
   switch (source) {
     case "fake":
       return withLookupTimeout(createFakeOrderLookup());
